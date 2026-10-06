@@ -14,7 +14,7 @@ Branch: `feat/mvp-foundation` (base `main` @ 7c2ef1a). Delivery strategy: ask-on
   - `.gitignore` extended (exports, OS/IDE files).
   - Check: `godot --headless --path . --quit` loads with no errors; run main scene headless for a few frames.
   - Test-first exception: configuration only, no meaningful runnable RED.
-- [ ] **T0.2 gdUnit4** — install addon, one passing smoke test, headless runner command documented.
+- [x] **T0.2 gdUnit4** — install addon, one passing smoke test, headless runner command documented.
 
 ## Acceptance
 
@@ -25,9 +25,13 @@ Branch: `feat/mvp-foundation` (base `main` @ 7c2ef1a). Delivery strategy: ask-on
 
 - T0.1: `godot --headless --path . --import` → no errors; `godot --headless --path . --quit-after 30` → exit 0, no errors.
   Input actions: `grab` (LMB), `restart` (R), `pause` (Esc); touch emulates mouse. Aspect `keep` per SDD 5.1.
+  Commit `23ecdf2`. Review assess: risk medium, `review_due=false` (`under_budget`, 110 lines) — pending in slice.
+
+- T0.2: gdUnit4 v6.2.1 (GitHub tag) extracted to `addons/gdUnit4`, plugin enabled. `./run_tests.ps1` →
+  2 test cases, 0 errors, 0 failures, exit 0.
 
 ## Next step
 
-T0.2.
+Phase 1 (T1.1–T1.6) — new feature doc `odd/tasks/puzzle-model.md`.
 
 Engram mirror: pending (engram MCP unavailable this session).

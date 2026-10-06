@@ -7,7 +7,7 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
 
 - [x] **T0.1 Project setup** — folders (`scripts/model`, `scripts/views`, `scripts/ui`, `scenes`, `data/levels`, `tests`), stretch mode `canvas_items`, base viewport, black clear color, input actions, `GameState` autoload.
   Skills: `godot-prompter:godot-project-setup`, `godot-prompter:responsive-ui`
-- [ ] **T0.2 Test framework** — install **gdUnit4** (decided), one passing smoke test.
+- [x] **T0.2 Test framework** — install **gdUnit4** (decided), one passing smoke test.
   Skills: `godot-prompter:godot-testing`
 
 ## Phase 1 — Pure model (no nodes, test-first)

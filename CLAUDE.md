@@ -21,6 +21,9 @@ Decisions already made (all details in `docs/SDD.md`, do not re-ask):
 - Architecture: pure `PuzzleModel` (RefCounted) + views; one autoload (`GameState`); signals up, calls down; no EventBus.
 - GDScript only. Tests with gdUnit4. Write the model test-first.
 
+Run tests: `./run_tests.ps1` (gdUnit4 v6.2.1 in `addons/gdUnit4`, tests in `tests/`, files `test_*.gd`
+extending `GdUnitTestSuite`). Godot binary on PATH: `godot` (4.7.2). Task tracking: `odd/tasks/`.
+
 Conventions: code, comments, identifiers and UI text in English. Conversation with the user in Spanish (Rioplatense).
 Use commits as conventional commits, no AI attribution. The user wanted to be told before implementation starts (they were switching model).
 
