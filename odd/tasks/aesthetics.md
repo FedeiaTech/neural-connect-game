@@ -65,6 +65,9 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `4d8a73d` (phase 3 review
 - Not visually captured: the tension break (no shipped mission has a tension dendrite yet); its code
   path is covered headless by `tests/level/test_level_fx.gd`.
 
-Next: native review of the 4a slice (base `4d8a73d`), then run 4b (T4.5–T4.7).
+- Review 4a: slice `4d8a73d..8c183a4` medium, `slice_budget_reached` (2445 lines); user **declined** (candidate-scoped).
+  Parent spot check `./run_tests.ps1` → 269 cases, exit 0. Next slice base: `8c183a4`.
+
+Next: run 4b (T4.5–T4.7).
 
 Engram mirror: pending (engram MCP unavailable this session).
