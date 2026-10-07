@@ -18,8 +18,12 @@ Visual identity: black background, white neurons and white boundary, red fixed n
    no physical resistance).
 3. Two dendrites **cross** when their segments intersect. Dendrites sharing a neuron
    never count as crossing at that shared point.
-4. The level is **complete when there are zero crossings**.
+4. The level is **complete when there are zero crossings** (dendrites and dynamic receptor
+   links, see 3) **and every receptor holds its required links**, checked on release.
 5. Neurons cannot leave the play area (boundary, see 5.3).
+6. **Lethal walls** (T7.2): a neuron that touches a lethal play-area side or lethal obstacle
+   stops at the contact, overloads and is destroyed: the level is lost and restarts after the
+   explosion (like a tension break). Non-lethal geometry keeps blocking as before.
 
 ### 2.1 Dragging collisions (mixed model)
 
@@ -38,6 +42,14 @@ Visual identity: black background, white neurons and white boundary, red fixed n
 | Multi-dendrite neuron | White | Neuron with 2+ dendrites | Early/mid levels |
 | Normal dendrite | White line | Unlimited stretch (visual only) | Level 1 |
 | Tension dendrite | Light green line | Has a max length; thins as it stretches; **breaks at the limit → level restarts** | Advanced levels |
+| Lethal wall | Electric violet membrane with magenta crackle | Play-area side (`LevelData.lethal_edges`) or obstacle (`lethal_obstacles`); touching it destroys the neuron → level lost, quick restart; glows and an alarm rises as a grabbed neuron approaches (warning range 2 radii) | Chapter 5 Live Wires |
+| Receptor neuron | Cyan soma, pulsing reach halo, searching stub, one dot per required link | Immovable; `reach` and `required_links` (1 or 2); links the closest movable neuron(s) in reach | Chapter 6 Synapses |
+| Receptor link | Cyan line grown from the receptor | Dynamic: forms when a movable neuron enters reach (center distance − radius ≤ reach), breaks when it leaves (not a loss); thins and flickers near the limit; counts as a dendrite for crossings | Chapter 6 Synapses |
+
+Receptor link rule: after every move each receptor drops links whose neuron left its reach, then
+links the closest in-reach candidates (ties: lower id) until it has `required_links`. Candidates
+are movable (not fixed, not receptors), not yet linked to that receptor and not statically
+connected to it. Links are identified as `(receptor_id, neuron_id)`; they never get an edge id.
 
 Tension dendrite details:
 - Thickness interpolates from normal to a minimum as length goes from rest length to max length.
@@ -46,8 +58,11 @@ Tension dendrite details:
 
 ## 4. Feedback
 
-- Crossing dendrites are highlighted (e.g. color change or blink), **and** the neurons at
-  both ends of those dendrites are highlighted too.
+- Crossing dendrites are highlighted **without changing their identity color** (white, tension
+  green, receptor-link cyan): they show travelling dashes and a crackling flicker, and a
+  crackling **spark marker** sits on every exact crossing point (one per crossing pair; the
+  midpoint for collinear overlaps). The neurons at both ends get a dashed amber ring, never a
+  tint that could read as a red fixed neuron. A soft electric buzz loops while crossings exist.
 - Feedback is a per-level/per-mode flag so harder modes can disable it later.
 - Level complete: a clear visual/audio confirmation, then star summary.
 
@@ -80,7 +95,8 @@ on other platforms later.
 ## 5.4 Art direction and atmosphere
 
 Mood: a dark, quiet, bioluminescent microscopic world. The palette stays strict
-(black, white, red, light green) and the beauty comes from light, motion and sound.
+(black, white, red, light green, plus amber crossing sparks, violet lethal walls and cyan
+receptors since Phase 7) and the beauty comes from light, motion and sound.
 
 - **Background:** pure black base with a very subtle drifting layer of faint particles
   (floating cells/spores) and a soft vignette. Never competes with gameplay readability.
@@ -91,13 +107,26 @@ Mood: a dark, quiet, bioluminescent microscopic world. The palette stays strict
   Aesthetic is isolated from logic (see 8.1) so it can later switch to curved/organic branches.
 - **Tension dendrites:** light green, thinning and trembling as they near the limit, with a
   rising warning flicker; the break plays a snap flash and particle burst.
-- **Crossing feedback:** involved dendrites and their neurons pulse/flicker; it calms down smoothly when resolved.
+- **Crossing feedback:** involved dendrites keep their color and flicker with travelling
+  dashes; spark markers crackle at each crossing point (static stars with reduced motion);
+  neurons get an amber dashed ring; everything calms down smoothly when resolved.
+- **Lethal walls:** violet membrane with magenta lightning crackling along it, glowing
+  stronger (and a hot spot on the nearest wall point) as a grabbed neuron approaches; on
+  contact the neuron trembles and burns violet-white, then explodes (particles, flash, shock
+  ring, light shake) before the restart.
+- **Receptors:** cyan soma, soft pulsing halo at the reach limit, a searching stub swaying
+  towards the nearest candidate and link dots. A link grows from the receptor with a cyan flash;
+  near the limit it thins and flickers; a broken link stretches, trembles and snaps with sparks.
+  The completion wave also travels through the links.
 - **Level complete:** a wave of light travels through the whole network, the membrane
   exhales, then the star summary appears.
 - **Juice:** easing on every transition, soft screen-wide glow (WorldEnvironment glow is
   available in GL Compatibility; verify on target platforms), and a light screen shake only on tension-dendrite break.
 - **Audio (target):** ambient drone, soft synaptic "blips" on grab/release, a rising tone
-  as tension increases, a resolved chord on completion.
+  as tension increases, a resolved chord on completion; a soft electric buzz while crossings
+  exist (volume follows the count, capped), a rising alarm near lethal walls and an overload
+  explosion, an ascending synaptic click when a receptor link forms and a small snap when it
+  breaks. All synthesized (Synth/SoundBank).
 - **Performance:** keep effects cheap (CPU/GPU particles with low counts, simple shaders) so
   the same look runs on mobile later.
 
@@ -165,7 +194,17 @@ Initial rule (to tune):
 - Every level must be verified solvable by its author (a known solution layout is stored in the
   level data and used for validation/hints).
 - Start with 4 neurons. Difficulty ramp: more neurons → multi-dendrite neurons → obstacles and
-  irregular shapes → fixed red neurons → tension dendrites → combinations.
+  irregular shapes → fixed red neurons → tension dendrites → lethal walls → receptor neurons →
+  combinations.
+- Chapters (30 missions, ids `m01`..`m30` in campaign order): 1 First Signals (m01–m05),
+  2 Shaped Minds (m06–m10), 3 Anchored (m11–m14), 4 Tension (m15–m18), 5 Live Wires (m19–m21),
+  6 Synapses (m22–m25), 7 Convergence (m26–m30, every mechanic including receptors and lethal
+  walls). The old Convergence missions m19/m20/m21 became m26/m28/m30; save format v2 migrates
+  their records.
+- Difficulty curve (content tests): a start may have at most 14 crossings more than the hardest
+  of the three missions before it; the first mission of a new-mechanic chapter starts with at
+  most 6; the most tangled start is in Convergence. New-mechanic chapters may restart with
+  smaller networks (mean size never below Shaped Minds).
 
 ## 7.1 Missions
 
@@ -175,7 +214,7 @@ missions; there are no randomly generated levels.
 Structure:
 - Missions are numbered and played in a fixed order, grouped into **chapters** (themed sets,
   each introducing or combining mechanics: multi-dendrite, obstacles/shapes, red fixed neurons,
-  tension dendrites).
+  tension dendrites, lethal walls, receptor neurons).
 - Each mission has an id, a name, its chapter, and its own `LevelData` (see 8.2).
 - A mission selection screen shows completion state and stars per mission.
 - Completing a mission unlocks the next one. Chapter unlock rules beyond that are undecided.
@@ -191,18 +230,29 @@ Structure:
   drawing only reads it. This allows changing dendrite aesthetics (curves, glow, pulse)
   without touching rules.
 - Signals up, calls down. A small enum state machine for game state:
-  `PLAYING`, `COMPLETE`, `RESTARTING`.
+  `PLAYING`, `COMPLETE`, `RESTARTING`. A loss (`LevelController.LossReason`: `TENSION_BREAK`
+  or `OVERLOAD` from a lethal wall) emits `level_lost(reason)` and restarts after the reason's
+  delay (0.6 s break, 1.2 s overload explosion).
 
 ### 8.2 Data
 - `LevelData` custom `Resource` (`.tres`): play area polygon, obstacle polygons, neurons
   (id, position, type), dendrites (neuron ids, type, max length), reference solution positions,
   feedback flag, `par_moves`, `par_time`, mission id/name, chapter id, optional `story_text`.
+- Hazards (T7.2): `lethal_edges: PackedInt32Array` (play-area edge i = point i → i + 1) and
+  `lethal_obstacles: PackedInt32Array` (indices into `obstacles`). Validation keeps start and
+  solution positions at least 0.75 radii (surface gap) away from lethal geometry.
+- Receptors (T7.3): `NeuronData.kind = RECEPTOR` with `reach` and `required_links` (1–2); the
+  solution must satisfy every receptor with zero crossings and the start must not be solved.
 - Levels are authored by hand (ideally editable in the Godot Inspector/editor).
 
 ### 8.3 Crossing detection
 - Test every pair of dendrites that do not share a neuron using
   `Geometry2D.segment_intersects_segment`.
 - Cost is O(E²), which is fine for the expected level sizes. Recomputed while dragging.
+- The segment set is the static dendrites (edge id = index) plus the dynamic receptor links.
+  `get_crossing_edges()` lists static ids, `get_crossing_links()` the links; the count, the
+  involved neurons and `get_crossing_points()` (exact points, one per pair, emitted through
+  `crossing_points_changed`) include both.
 
 ### 8.4 Scene tree (approved)
 

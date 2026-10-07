@@ -85,6 +85,19 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
 - [x] **T6.4 Docs** — SDD 5.5/5.6/10 and this plan.
   (Evidence in `odd/tasks/localization-and-reset.md`.)
 
+## Phase 7 — Sparks, hazards and synapses
+
+- [x] **T7.1 Crossing marks** — `PuzzleModel.get_crossing_points()` + `crossing_points_changed`; dendrites keep their identity color (dash/crackle modulation), neurons get an amber dashed ring, `CrossingSparksView` crackles at every crossing point (static stars with reduced motion), electric buzz loop.
+  Skills: `godot-prompter:math-essentials`, `godot-prompter:shader-basics`, `godot-prompter:particles-vfx`, `godot-prompter:audio-system`
+- [x] **T7.2 Lethal walls** — `LevelData.lethal_edges` / `lethal_obstacles`; destroy on contact (`neuron_destroyed`, `is_lost()`), hazard proximity, validation margin, planner keeps away; violet crackling walls, overload explosion, `LossReason.OVERLOAD` restart, alarm and explosion sounds.
+  Skills: `godot-prompter:math-essentials`, `godot-prompter:particles-vfx`, `godot-prompter:tween-animation`, `godot-prompter:audio-system`
+- [x] **T7.3 Receptor neurons** — `NeuronData.Kind.RECEPTOR` (`reach`, `required_links`); dynamic links keyed `(receptor, neuron)` that count for crossings and the win; receptor halo/stub/dots, growing/straining/snapping links, wave through links, link sounds; planner replays on a shadow model.
+  Skills: `godot-prompter:math-essentials`, `godot-prompter:tween-animation`, `godot-prompter:resource-pattern`
+- [x] **T7.4 Content** — chapters 5 Live Wires (m19–m21) and 6 Synapses (m22–m25), Convergence becomes chapter 7 (m26–m30, reworked to combine everything); campaign rebalanced (no crossing spikes), stories revised, en/es texts, save v2 migration (m19/m20/m21 → m26/m28/m30), `tools/find_start.gd` authoring helper.
+  Skills: `godot-prompter:resource-pattern`, `godot-prompter:localization`, `godot-prompter:save-load`, `godot-prompter:godot-testing`
+- [x] **T7.5 Docs** — SDD 2/3/4/5.4/7/8 and this plan.
+  (Evidence in `odd/tasks/sparks-hazards-synapses.md`.)
+
 ## Open items (SDD section 10)
 
 - GDScript only; restart button in every level; local save format; chapter unlock rules. (Test framework decided: gdUnit4.)
