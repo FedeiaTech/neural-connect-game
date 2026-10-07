@@ -21,6 +21,9 @@
 [ext_resource type="Resource" path="res://data/levels/m16.tres" id="19_m16"]
 [ext_resource type="Resource" path="res://data/levels/m17.tres" id="20_m17"]
 [ext_resource type="Resource" path="res://data/levels/m18.tres" id="21_m18"]
+[ext_resource type="Resource" path="res://data/levels/m19.tres" id="22_m19"]
+[ext_resource type="Resource" path="res://data/levels/m20.tres" id="23_m20"]
+[ext_resource type="Resource" path="res://data/levels/m21.tres" id="24_m21"]
 
 [sub_resource type="Resource" id="Chapter_1"]
 script = ExtResource("2_chapter")
@@ -50,6 +53,13 @@ title = "Tension"
 subtitle = "Strained bonds glow green. Pull them too far apart and they snap."
 missions = Array[ExtResource("3_level")]([ExtResource("18_m15"), ExtResource("19_m16"), ExtResource("20_m17"), ExtResource("21_m18")])
 
+[sub_resource type="Resource" id="Chapter_5"]
+script = ExtResource("2_chapter")
+chapter_id = 5
+title = "Convergence"
+subtitle = "Walls, anchors and fragile bonds. Everything the network has learned, at once."
+missions = Array[ExtResource("3_level")]([ExtResource("22_m19"), ExtResource("23_m20"), ExtResource("24_m21")])
+
 [resource]
 script = ExtResource("1_campaign")
-chapters = Array[ExtResource("2_chapter")]([SubResource("Chapter_1"), SubResource("Chapter_2"), SubResource("Chapter_3"), SubResource("Chapter_4")])
+chapters = Array[ExtResource("2_chapter")]([SubResource("Chapter_1"), SubResource("Chapter_2"), SubResource("Chapter_3"), SubResource("Chapter_4"), SubResource("Chapter_5")])
