@@ -125,6 +125,18 @@ func test_pause_mission_select_unpauses_and_leaves_the_level() -> void:
 	assert_int(_host.get_current_screen()).is_equal(ScreenHost.Screen.MISSION_SELECT)
 
 
+func test_requests_report_whether_they_were_accepted() -> void:
+	GameState.reduced_motion = false
+	assert_bool(_host.go_to(ScreenHost.Screen.SETTINGS)).is_true()
+	assert_bool(_host.go_to(ScreenHost.Screen.MISSION_SELECT)).is_false()
+	assert_bool(_host.play_mission(&"m01")).is_false()
+	await await_millis(int(Transition.FADE_DURATION * 1000.0) + 150)
+	assert_bool(_host.is_busy()).is_false()
+	assert_bool(_host.play_mission(&"m01")).is_true()
+	await await_millis(int(Transition.FADE_DURATION * 1000.0) + 150)
+	assert_int(_host.get_current_screen()).is_equal(ScreenHost.Screen.LEVEL)
+
+
 func test_transition_fades_instead_of_cutting() -> void:
 	GameState.reduced_motion = false
 	_host.go_to(ScreenHost.Screen.SETTINGS)

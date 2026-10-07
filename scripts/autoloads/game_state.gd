@@ -6,7 +6,8 @@ extends Node
 ##   {"version": 1,
 ##    "progress": {"missions": {"m01": {"completed": true, "stars": 3, "moves": 5, "time": 31.2}}},
 ##    "settings": {"master_volume": 1.0, "reduced_motion": false}}
-## A missing or corrupt file means fresh progress and default settings, never a crash.
+## A missing or corrupt file means fresh progress and default settings, never a crash; a corrupt
+## file is moved to <save_path>.bak first. Unknown fields (newer saves) survive a save.
 ## Unlock rule (SDD 7.1, chapter rules undecided -> linear): the first campaign mission is always
 ## unlocked; any other mission is unlocked once the mission before it in campaign order (across
 ## chapters) is completed.
@@ -27,6 +28,8 @@ var progress := Progress.new()
 ## Linear 0..1.
 var master_volume := 1.0
 var reduced_motion := false
+## Data read by the last load_game(); save_game() merges into it to keep unknown fields.
+var _loaded_data := {}
 
 var current_mission: StringName = &"":
 	set(value):
@@ -41,9 +44,12 @@ func _ready() -> void:
 
 
 ## Replaces progress and settings with the content of save_path (defaults when unusable).
+## An unusable file is moved to a .bak first, so the next save never overwrites it.
 func load_game() -> void:
-	var data := SaveFile.read_json(save_path)
-	data = _migrate(data)
+	var data := _migrate(SaveFile.read_json(save_path))
+	if data.is_empty() and FileAccess.file_exists(save_path):
+		SaveFile.backup(save_path)
+	_loaded_data = data
 	progress = Progress.from_dict(data.get("progress"))
 	var settings: Variant = data.get("settings")
 	if not settings is Dictionary:
@@ -57,12 +63,36 @@ func load_game() -> void:
 	settings_changed.emit()
 
 
+## Writes the save. Fields this version does not know (e.g. from a newer game version) are
+## kept from the loaded file, and the version number is never downgraded.
 func save_game() -> Error:
-	return SaveFile.write_json(save_path, {
+	var known := {
 		"version": SAVE_VERSION,
 		"progress": progress.to_dict(),
 		"settings": {"master_volume": master_volume, "reduced_motion": reduced_motion},
-	})
+	}
+	return SaveFile.write_json(save_path, merge_save_data(_loaded_data, known))
+
+
+## Deep merge: known values win, unknown keys of the loaded data survive (missions included),
+## and the result keeps max(loaded version, SAVE_VERSION).
+static func merge_save_data(loaded: Dictionary, known: Dictionary) -> Dictionary:
+	var merged := _merge_dicts(loaded, known)
+	var loaded_version: Variant = loaded.get("version")
+	if (loaded_version is int or loaded_version is float) and int(loaded_version) > SAVE_VERSION:
+		merged["version"] = int(loaded_version)
+	return merged
+
+
+static func _merge_dicts(base: Dictionary, override: Dictionary) -> Dictionary:
+	var merged := base.duplicate(true)
+	for key: Variant in override:
+		var value: Variant = override[key]
+		if value is Dictionary and merged.get(key) is Dictionary:
+			merged[key] = _merge_dicts(merged[key], value)
+		else:
+			merged[key] = value
+	return merged
 
 
 func get_level(mission_id: StringName) -> LevelData:

@@ -24,6 +24,9 @@ func exit() -> void:
 
 
 static func _delete_temp() -> void:
-	for path in [TEMP_PATH, TEMP_PATH + ".tmp"]:
-		if FileAccess.file_exists(path):
-			DirAccess.remove_absolute(path)
+	var dir := DirAccess.open("user://")
+	if dir == null:
+		return
+	for file in dir.get_files():
+		if file.begins_with(TEMP_PATH.get_file()):
+			dir.remove(file)

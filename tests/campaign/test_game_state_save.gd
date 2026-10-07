@@ -28,9 +28,16 @@ func _new_state() -> Node:
 
 
 func _delete_temp() -> void:
-	for path in [TEMP_PATH, TEMP_PATH + ".tmp"]:
-		if FileAccess.file_exists(path):
-			DirAccess.remove_absolute(path)
+	var dir := DirAccess.open("user://")
+	if dir == null:
+		return
+	for file in dir.get_files():
+		if file.begins_with(TEMP_PATH.get_file()):
+			dir.remove(file)
+
+
+func _read_saved() -> Dictionary:
+	return JSON.parse_string(FileAccess.get_file_as_string(TEMP_PATH))
 
 
 func _write_temp(text: String) -> void:
@@ -105,6 +112,58 @@ func test_corrupt_file_gives_fresh_progress() -> void:
 		var state := _new_state()
 		assert_int(state.progress.get_completed_count()).override_failure_message(text).is_equal(0)
 		assert_bool(state.is_unlocked(&"m01")).is_true()
+
+
+func test_unusable_save_is_backed_up_before_it_can_be_overwritten() -> void:
+	for text in ["{ not json", "{\"no_version\": true}"]:
+		_delete_temp()
+		_write_temp(text)
+		var state := _new_state()
+		assert_str(FileAccess.get_file_as_string(TEMP_PATH + ".bak")).override_failure_message(text) \
+			.is_equal(text)
+		state.record_result(&"m01", _result(5, 30.0, 3))
+		assert_str(FileAccess.get_file_as_string(TEMP_PATH + ".bak")).is_equal(text)
+
+
+func test_missing_save_creates_no_backup() -> void:
+	assert_bool(FileAccess.file_exists(TEMP_PATH + ".bak")).is_false()
+
+
+func test_newer_save_keeps_its_version_and_unknown_fields() -> void:
+	_write_temp(JSON.stringify({
+		"version": 99,
+		"cloud": {"id": 3},
+		"progress": {
+			"streak": 4,
+			"missions": {
+				"m01": {"completed": true, "stars": 2, "moves": 5, "time": 30.0, "ghost": "x"},
+				"m77": {"completed": true, "stars": 1, "moves": 9, "time": 90.0},
+			},
+		},
+		"settings": {"master_volume": 0.5, "reduced_motion": false, "future": "y"},
+	}))
+	var state := _new_state()
+	assert_int(state.progress.get_best_stars(&"m01")).is_equal(2)
+	state.record_result(&"m01", _result(4, 20.0, 3))
+	var data := _read_saved()
+	assert_int(int(data["version"])).is_equal(99)
+	assert_dict(data["cloud"]).is_equal({"id": 3.0})
+	assert_int(int(data["progress"]["streak"])).is_equal(4)
+	var m01: Dictionary = data["progress"]["missions"]["m01"]
+	assert_str(m01["ghost"]).is_equal("x")
+	assert_int(int(m01["stars"])).is_equal(3)
+	assert_bool(data["progress"]["missions"].has("m77")).is_true()
+	assert_str(data["settings"]["future"]).is_equal("y")
+	assert_float(float(data["settings"]["master_volume"])).is_equal_approx(0.5, 0.0001)
+
+
+func test_current_save_never_downgrades_below_save_version() -> void:
+	_write_temp(JSON.stringify({"version": 1, "progress": {"missions": {}}, "extra": 1}))
+	var state := _new_state()
+	state.set_reduced_motion(true)
+	var data := _read_saved()
+	assert_int(int(data["version"])).is_equal(GameStateScript.SAVE_VERSION)
+	assert_int(int(data["extra"])).is_equal(1)
 
 
 func test_settings_persist_and_are_clamped() -> void:

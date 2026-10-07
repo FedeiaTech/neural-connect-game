@@ -26,25 +26,22 @@ var _busy := false
 
 
 ## Fades to the given screen. For Screen.LEVEL use play_mission() instead.
-func go_to(screen: Screen, mission_id: StringName = &"") -> void:
+## Returns false (and does nothing) when a transition is already running.
+func go_to(screen: Screen, mission_id: StringName = &"") -> bool:
 	if _busy:
-		return
+		return false
 	_busy = true
-	if transition != null:
-		await transition.cover()
-	_swap(screen, mission_id)
-	if transition != null:
-		await transition.reveal()
-	_busy = false
+	_run_transition(screen, mission_id)
+	return true
 
 
-## Starts a mission if it exists and is unlocked (SDD 7.1). Returns false otherwise.
+## Starts a mission if it exists and is unlocked (SDD 7.1). Returns false otherwise, or when
+## the request is dropped because a transition is running.
 func play_mission(mission_id: StringName) -> bool:
 	if GameState.get_level(mission_id) == null or not GameState.is_unlocked(mission_id):
 		push_warning("ScreenHost: mission '%s' is unknown or locked." % mission_id)
 		return false
-	go_to(Screen.LEVEL, mission_id)
-	return true
+	return go_to(Screen.LEVEL, mission_id)
 
 
 func get_current_screen() -> Screen:
@@ -60,6 +57,15 @@ func is_busy() -> bool:
 
 
 # --- Internals ---------------------------------------------------------------
+
+func _run_transition(screen: Screen, mission_id: StringName) -> void:
+	if transition != null:
+		await transition.cover()
+	_swap(screen, mission_id)
+	if transition != null:
+		await transition.reveal()
+	_busy = false
+
 
 func _swap(screen: Screen, mission_id: StringName) -> void:
 	if _current != null:
