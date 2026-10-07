@@ -24,18 +24,20 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
   Skills: `godot-prompter:godot-testing`
 - [x] **T1.6 Level validation** — reference solution of every `LevelData` must have zero crossings (test).
   Skills: `godot-prompter:godot-testing`
+- [x] **T1.7 Review follow-ups** — pair-count `crossings_changed`, start layout must be tangled, loud import failure in `run_tests.ps1`, tension guard tests.
+  Skills: `godot-prompter:godot-testing`
 
 ## Phase 2 — Playable core (placeholder visuals)
 
-- [ ] **T2.1 NeuronView / DendriteView / ObstacleView / Boundary** — plain white/red/green drawing driven by model signals.
+- [x] **T2.1 NeuronView / DendriteView / ObstacleView / Boundary** — plain white/red/green drawing driven by model signals.
   Skills: `godot-prompter:2d-essentials`, `godot-prompter:scene-organization`
-- [ ] **T2.2 InputController** — mouse drag with generous grab radius, written to extend to touch.
+- [x] **T2.2 InputController** — mouse drag with generous grab radius, written to extend to touch.
   Skills: `godot-prompter:input-handling`
-- [ ] **T2.3 LevelController** — builds the model from `LevelData`, timer, moves, restart, scoring and stars.
+- [x] **T2.3 LevelController** — builds the model from `LevelData`, timer, moves, restart, scoring and stars.
   Skills: `godot-prompter:state-machine`, `godot-prompter:scene-organization`
-- [ ] **T2.4 Minimal HUD** — moves, time, restart, story text overlay.
+- [x] **T2.4 Minimal HUD** — moves, time, restart, story text overlay.
   Skills: `godot-prompter:hud-system`, `godot-prompter:godot-ui`
-- [ ] **T2.5 First 4-neuron level playable end to end.**
+- [x] **T2.5 First 4-neuron level playable end to end.** (`m01`, plus `m02` with a multi-dendrite neuron)
 
 ## Phase 3 — Flow and persistence
 
