@@ -52,4 +52,8 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `471da49` (phase 1 review
 - Not covered by automated checks: visual look and real mouse play in a window (rendering is not unit-tested).
 - Next: native review of the phase 2 slice (base `471da49`), then Phase 3 (ScreenHost, progress save).
 
+- Review: slice `471da49..13a078c` assessed medium, `slice_budget_reached` (2355 lines); user **declined**
+  review for this candidate (candidate-scoped). Parent spot check: `./run_tests.ps1` → 162 cases, exit 0.
+  Next slice base: `13a078c`.
+
 Engram mirror: pending (engram MCP unavailable this session).
