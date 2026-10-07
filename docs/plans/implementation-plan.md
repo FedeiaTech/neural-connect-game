@@ -58,11 +58,11 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
   Skills: `godot-prompter:particles-vfx`, `godot-prompter:shader-basics`
 - [x] **T4.4 Crossing feedback and tension effects** — pulsing highlights, green tremble, break flash and burst.
   Skills: `godot-prompter:particles-vfx`, `godot-prompter:tween-animation`
-- [ ] **T4.5 Interactive animated menus** — living main menu, network-style mission map, star summary, theme.
+- [x] **T4.5 Interactive animated menus** — living main menu, network-style mission map, star summary, theme.
   Skills: `godot-prompter:godot-ui`, `godot-prompter:tween-animation`, `godot-prompter:shader-basics`
-- [ ] **T4.6 Audio** — ambient, grab/release blips, tension tone, completion chord.
+- [x] **T4.6 Audio** — ambient, grab/release blips, tension tone, completion chord (all synthesized; scene-local AudioDirector).
   Skills: `godot-prompter:audio-system`
-- [ ] **T4.7 Glow and performance pass** — verify in GL Compatibility.
+- [x] **T4.7 Glow and performance pass** — verify in GL Compatibility (WorldEnvironment glow stays off on this GPU; perf numbers in `odd/tasks/aesthetics.md`).
   Skills: `godot-prompter:godot-optimization`
 
 ## Phase 5 — Content
