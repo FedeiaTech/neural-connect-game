@@ -99,9 +99,12 @@ func test_completion_records_result_and_offers_the_next_mission() -> void:
 
 
 func test_last_mission_offers_no_next_mission() -> void:
-	GameState.record_result(&"m01", _result(2))
-	_host.play_mission(&"m02")
+	var ids := GameState.campaign.get_mission_ids()
+	for id in ids.slice(0, ids.size() - 1):
+		GameState.record_result(id, _result(2))
+	_host.play_mission(ids[-1])
 	var level := _host.get_current_node() as Level
+	assert_str(String(level.get_controller().get_level().mission_id)).is_equal(String(ids[-1]))
 	level.get_controller().level_completed.emit(_result(1))
 	assert_bool(level.get_hud().get_next_button().visible).is_false()
 

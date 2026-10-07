@@ -59,7 +59,9 @@ func test_exposes_the_campaign_and_levels() -> void:
 	assert_str(String(_state.get_level(&"m01").mission_id)).is_equal("m01")
 	assert_object(_state.get_level(&"missing")).is_null()
 	assert_str(String(_state.next_mission_after(&"m01"))).is_equal("m02")
-	assert_str(String(_state.next_mission_after(&"m02"))).is_empty()
+	assert_str(String(_state.next_mission_after(&"m02"))).is_equal("m03")
+	var last: StringName = _state.campaign.get_mission_ids()[-1]
+	assert_str(String(_state.next_mission_after(last))).is_empty()
 
 
 func test_only_the_first_mission_starts_unlocked() -> void:

@@ -15,7 +15,7 @@ func test_chapter_one_holds_m01_then_m02() -> void:
 	assert_int(chapter.chapter_id).is_equal(1)
 	assert_str(chapter.title).is_not_empty()
 	assert_str(chapter.subtitle).is_not_empty()
-	assert_array(campaign.get_mission_ids()).is_equal([&"m01", &"m02"])
+	assert_array(campaign.get_mission_ids().slice(0, 2)).is_equal([&"m01", &"m02"])
 
 
 func test_every_mission_belongs_to_its_chapter_and_is_valid() -> void:

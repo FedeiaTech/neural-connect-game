@@ -5,13 +5,16 @@
 [ext_resource type="Script" path="res://scripts/model/level_data.gd" id="3_level"]
 [ext_resource type="Resource" path="res://data/levels/m01.tres" id="4_m01"]
 [ext_resource type="Resource" path="res://data/levels/m02.tres" id="5_m02"]
+[ext_resource type="Resource" path="res://data/levels/m03.tres" id="6_m03"]
+[ext_resource type="Resource" path="res://data/levels/m04.tres" id="7_m04"]
+[ext_resource type="Resource" path="res://data/levels/m05.tres" id="8_m05"]
 
 [sub_resource type="Resource" id="Chapter_1"]
 script = ExtResource("2_chapter")
 chapter_id = 1
 title = "First Signals"
 subtitle = "A dormant network wakes. Untangle its first connections."
-missions = Array[ExtResource("3_level")]([ExtResource("4_m01"), ExtResource("5_m02")])
+missions = Array[ExtResource("3_level")]([ExtResource("4_m01"), ExtResource("5_m02"), ExtResource("6_m03"), ExtResource("7_m04"), ExtResource("8_m05")])
 
 [resource]
 script = ExtResource("1_campaign")
