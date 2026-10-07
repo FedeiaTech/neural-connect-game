@@ -73,6 +73,48 @@ func test_tension_dendrite_is_green_and_thins_with_ratio() -> void:
 	assert_float(view.get_line_width()).is_equal_approx(expected, 0.0001)
 
 
+func test_glow_shader_material_is_assigned() -> void:
+	var model := PuzzleModel.from_level(LevelFactory.x_level())
+	var view := _view(0, model)
+	assert_object(view.material).is_instanceof(ShaderMaterial)
+	assert_that(view.get_shader_param(&"line_color")).is_equal(Palette.DENDRITE)
+
+
+func test_tension_look_follows_the_ratio() -> void:
+	var model := _tension_model()
+	var view := _view(0, model)
+	assert_float(view.get_shader_param(&"tremble_px")).is_equal(0.0)
+	assert_float(view.get_shader_param(&"flicker")).is_equal(0.0)
+	model.grab(1)
+	# 280 of max 300 from rest 100 -> ratio 0.9, inside the warning zone.
+	model.drag_to(Vector2(380, 500))
+	assert_float(view.get_shader_param(&"core_width_px")).is_equal_approx(view.get_line_width(), 0.0001)
+	assert_float(view.get_shader_param(&"tremble_px")).is_equal_approx(VisualTuning.tension_tremble(0.9), 0.001)
+	assert_float(view.get_shader_param(&"flicker")).is_equal_approx(VisualTuning.tension_flicker(0.9), 0.001)
+	assert_that(view.get_shader_param(&"line_color")).is_equal(Palette.TENSION)
+
+
+func test_crossing_warmth_calms_smoothly_after_resolution() -> void:
+	var saved := GameState.reduced_motion
+	GameState.reduced_motion = false
+	var model := PuzzleModel.from_level(LevelFactory.x_level())
+	var view := _view(0, model)
+	assert_float(view.get_highlight_amount()).is_equal(1.0)
+	model.grab(1)
+	model.drag_to(Vector2(300, 180))
+	view._process(0.05)
+	assert_float(view.get_highlight_amount()).is_between(0.01, 0.99)
+	view._process(5.0)
+	assert_float(view.get_highlight_amount()).is_equal(0.0)
+	GameState.reduced_motion = true
+	model.drag_to(Vector2(500, 500))
+	view._process(0.01)
+	# Reduced motion: no fade, the warmth snaps.
+	assert_float(view.get_highlight_amount()).is_equal(1.0)
+	assert_float(view.get_shader_param(&"motion")).is_equal(0.0)
+	GameState.reduced_motion = saved
+
+
 func test_broken_tension_dendrite_is_hidden() -> void:
 	var model := _tension_model()
 	var view := _view(0, model)

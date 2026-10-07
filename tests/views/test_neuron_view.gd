@@ -70,6 +70,56 @@ func test_fixed_neuron_uses_fixed_color() -> void:
 	assert_that(view.get_fill_color()).is_equal(Palette.NEURON_FIXED)
 
 
+func test_glow_shader_material_is_assigned() -> void:
+	var model := PuzzleModel.from_level(LevelFactory.x_level())
+	var view := _view(0, model)
+	assert_object(view.material).is_instanceof(ShaderMaterial)
+	assert_float(view.get_shader_param(&"radius_px")).is_equal(view.get_radius())
+	var other := _view(1, model)
+	assert_float(view.get_shader_param(&"phase")).is_not_equal(other.get_shader_param(&"phase"))
+
+
+func test_reduced_motion_stops_shader_motion() -> void:
+	var saved := GameState.reduced_motion
+	var model := PuzzleModel.from_level(LevelFactory.x_level())
+	var view := _view(0, model)
+	GameState.reduced_motion = false
+	view._process(0.016)
+	assert_float(view.get_shader_param(&"motion")).is_equal(1.0)
+	GameState.reduced_motion = true
+	view._process(0.016)
+	assert_float(view.get_shader_param(&"motion")).is_equal(0.0)
+	GameState.reduced_motion = saved
+
+
+func test_crossing_glow_fades_in_and_calms_smoothly() -> void:
+	var saved := GameState.reduced_motion
+	GameState.reduced_motion = false
+	var model := PuzzleModel.from_level(LevelFactory.x_level())
+	var view := _view(0, model)
+	# Starts at full warmth (already crossing when built).
+	assert_float(view.get_highlight_amount()).is_equal(1.0)
+	model.grab(1)
+	model.drag_to(Vector2(300, 180))
+	view._process(0.05)
+	var mid := view.get_highlight_amount()
+	assert_float(mid).is_between(0.01, 0.99)
+	view._process(5.0)
+	assert_float(view.get_highlight_amount()).is_equal(0.0)
+	assert_float(view.get_shader_param(&"warm")).is_equal(0.0)
+	GameState.reduced_motion = saved
+
+
+func test_fixed_neuron_pulses_slower_and_deeper() -> void:
+	var level := LevelFactory.x_level()
+	level.neurons[0].fixed = true
+	var model := PuzzleModel.from_level(level)
+	var fixed := _view(0, model)
+	var normal := _view(1, model)
+	assert_float(fixed.get_shader_param(&"pulse_speed")).is_less(normal.get_shader_param(&"pulse_speed"))
+	assert_float(fixed.get_shader_param(&"pulse_depth")).is_greater(normal.get_shader_param(&"pulse_depth"))
+
+
 func test_blocked_signal_starts_a_contact_flash() -> void:
 	var model := PuzzleModel.from_level(LevelFactory.x_level())
 	var view := _view(0, model)
