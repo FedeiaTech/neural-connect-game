@@ -77,5 +77,54 @@ func test_restart_and_replay_buttons_emit_restart_pressed() -> void:
 	assert_int(_recorder.count(&"restart_pressed")).is_equal(2)
 
 
+func _pause_action() -> InputEventAction:
+	var event := InputEventAction.new()
+	event.action = &"pause"
+	event.pressed = true
+	return event
+
+
+func test_pause_action_requests_pause_then_resume() -> void:
+	_recorder.watch(_hud, [&"pause_requested", &"resume_pressed"])
+	_hud._unhandled_input(_pause_action())
+	assert_int(_recorder.count(&"pause_requested")).is_equal(1)
+	_hud.show_pause()
+	_hud._unhandled_input(_pause_action())
+	assert_int(_recorder.count(&"resume_pressed")).is_equal(1)
+	assert_int(_recorder.count(&"pause_requested")).is_equal(1)
+
+
+func test_pause_overlay_buttons_emit_intents() -> void:
+	_recorder.watch(_hud, [&"pause_requested", &"resume_pressed", &"mission_select_pressed"])
+	_hud.get_pause_button().pressed.emit()
+	_hud.show_pause()
+	assert_bool(_hud.is_pause_visible()).is_true()
+	_hud.get_resume_button().pressed.emit()
+	_hud.get_pause_restart_button().pressed.emit()
+	_hud.get_pause_mission_select_button().pressed.emit()
+	assert_int(_recorder.count(&"pause_requested")).is_equal(1)
+	assert_int(_recorder.count(&"resume_pressed")).is_equal(1)
+	assert_int(_recorder.count(&"restart_pressed")).is_equal(1)
+	assert_int(_recorder.count(&"mission_select_pressed")).is_equal(1)
+	_hud.hide_pause()
+	assert_bool(_hud.is_pause_visible()).is_false()
+
+
+func test_completion_offers_next_replay_and_mission_select() -> void:
+	_recorder.watch(_hud, [&"next_mission_pressed", &"mission_select_pressed"])
+	_hud.show_completion(LevelResult.create(4, 32.0, 6, 60.0))
+	assert_bool(_hud.get_next_button().visible).is_false()
+	_hud.set_next_mission_available(true)
+	assert_bool(_hud.get_next_button().visible).is_true()
+	_hud.get_next_button().pressed.emit()
+	_hud.get_mission_select_button().pressed.emit()
+	assert_int(_recorder.count(&"next_mission_pressed")).is_equal(1)
+	assert_int(_recorder.count(&"mission_select_pressed")).is_equal(1)
+
+
+func test_hud_runs_while_paused() -> void:
+	assert_int(_hud.process_mode).is_equal(Node.PROCESS_MODE_ALWAYS)
+
+
 func test_star_shape_has_ten_points() -> void:
 	assert_int(StarRow.star_points(Vector2.ZERO, 10.0).size()).is_equal(10)
