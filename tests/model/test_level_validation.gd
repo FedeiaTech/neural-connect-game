@@ -14,12 +14,24 @@ func _assert_has_error(errors: PackedStringArray, fragment: String) -> void:
 		"Expected an error containing '%s', got %s" % [fragment, errors]).is_true()
 
 
+## Two neurons under test plus a tangled X pair (neurons 10-13) in the lower area, so the
+## level starts with one crossing and only the errors under test are reported.
 func _two_neuron_level(p0: Vector2, p1: Vector2, dendrite: DendriteData = null) -> LevelData:
 	var neurons: Array[NeuronData] = [LevelFactory.neuron(0, p0), LevelFactory.neuron(1, p1)]
 	var dendrites: Array[DendriteData] = []
 	if dendrite != null:
 		dendrites.append(dendrite)
+	_add_tangle(neurons, dendrites)
 	return LevelFactory.level(neurons, dendrites)
+
+
+func _add_tangle(neurons: Array[NeuronData], dendrites: Array[DendriteData]) -> void:
+	neurons.append(LevelFactory.neuron(10, Vector2(100, 700), Vector2(100, 700)))
+	neurons.append(LevelFactory.neuron(11, Vector2(400, 900), Vector2(400, 700)))
+	neurons.append(LevelFactory.neuron(12, Vector2(400, 700), Vector2(100, 900)))
+	neurons.append(LevelFactory.neuron(13, Vector2(100, 900), Vector2(400, 900)))
+	dendrites.append(LevelFactory.edge(10, 11))
+	dendrites.append(LevelFactory.edge(12, 13))
 
 
 func test_valid_four_neuron_level_has_no_errors() -> void:
@@ -77,6 +89,16 @@ func test_solution_with_crossings() -> void:
 	level.neurons[1].solution_position = Vector2(500, 500)
 	level.neurons[3].solution_position = Vector2(500, 100)
 	_assert_has_error(PuzzleModel.validate_level(level), "Solution layout has 1 crossing")
+
+
+func test_start_layout_without_crossings_is_rejected() -> void:
+	var level := LevelFactory.x_level()
+	# Start already untangled: use the solution positions as start positions.
+	for neuron in level.neurons:
+		neuron.position = neuron.solution_position
+	var errors := PuzzleModel.validate_level(level)
+	_assert_has_error(errors, "Start layout has no crossings")
+	assert_int(errors.size()).is_equal(1)
 
 
 func test_start_position_outside_play_area() -> void:

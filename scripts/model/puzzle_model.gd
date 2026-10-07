@@ -80,7 +80,8 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 ## Covers: play area and radius, null entries, duplicate neuron ids, dendrites referencing
 ## missing neurons, self-loops, duplicate edges, tension limits, start and solution placement
 ## (inside the area, outside obstacles, no overlaps), fixed neurons moved in the solution,
-## and crossings in the reference solution. Never mutates the level.
+## a start layout without crossings (levels must start tangled) and crossings in the
+## reference solution. Never mutates the level.
 static func validate_level(level: LevelData) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if level == null:
@@ -140,6 +141,9 @@ static func validate_level(level: LevelData) -> PackedStringArray:
 			_validate_placement(level, neurons, use_solution, errors)
 
 	if structure_ok:
+		var start := PuzzleModel.from_level(level)
+		if start.get_crossing_count() == 0:
+			errors.append("Start layout has no crossings: a level must start tangled.")
 		var solution := PuzzleModel.from_level(level, true)
 		if solution.get_crossing_count() > 0:
 			errors.append("Solution layout has %d crossing(s) between dendrites %s." % [
@@ -436,9 +440,11 @@ func _find_crossings() -> Array:
 func _update_crossings(notify: bool) -> void:
 	var result := _find_crossings()
 	var edges: Array[int] = result[0]
-	_crossing_count = result[1]
-	if edges == _crossing_edges:
+	var count: int = result[1]
+	# The pair count can change while the set of crossing edges stays the same.
+	if edges == _crossing_edges and count == _crossing_count:
 		return
+	_crossing_count = count
 	_crossing_edges = edges
 	var involved: Dictionary[int, bool] = {}
 	for edge_id in edges:

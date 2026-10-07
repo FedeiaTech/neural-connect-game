@@ -2,6 +2,7 @@ extends GdUnitTestSuite
 ## T1.2: crossing detection on the pure model.
 
 const LevelFactory := preload("res://tests/model/level_factory.gd")
+const SignalRecorder := preload("res://tests/model/signal_recorder.gd")
 
 
 func test_from_level_copies_positions_and_edges() -> void:
@@ -81,3 +82,29 @@ func test_compute_crossings_counts_each_pair_once() -> void:
 	assert_int(model.get_crossing_count()).is_equal(2)
 	assert_array(model.compute_crossings()).is_equal([0, 1, 2])
 	assert_array(model.get_crossing_neurons()).is_equal([0, 1, 2, 3, 4, 5])
+
+
+## Edges 0, 1 and 2 cross each other pairwise (3 pairs). Moving neuron 4 untangles only the
+## 1x2 pair: the crossing edge set stays {0, 1, 2} but the pair count drops to 2.
+func test_crossings_changed_fires_when_only_pair_count_changes() -> void:
+	var neurons: Array[NeuronData] = [
+		LevelFactory.neuron(0, Vector2(100, 500)),
+		LevelFactory.neuron(1, Vector2(900, 500)),
+		LevelFactory.neuron(2, Vector2(300, 100)),
+		LevelFactory.neuron(3, Vector2(700, 900)),
+		LevelFactory.neuron(4, Vector2(700, 100)),
+		LevelFactory.neuron(5, Vector2(300, 900)),
+	]
+	var dendrites: Array[DendriteData] = [
+		LevelFactory.edge(0, 1), LevelFactory.edge(2, 3), LevelFactory.edge(4, 5),
+	]
+	var model := PuzzleModel.from_level(LevelFactory.level(neurons, dendrites))
+	assert_int(model.get_crossing_count()).is_equal(3)
+	var recorder := SignalRecorder.new()
+	recorder.watch(model, [&"crossings_changed"])
+	model.grab(4)
+	model.drag_to(Vector2(200, 300))
+	assert_array(model.get_crossing_edges()).is_equal([0, 1, 2])
+	assert_int(model.get_crossing_count()).is_equal(2)
+	assert_int(recorder.count(&"crossings_changed")).is_equal(1)
+	assert_array(recorder.last_args(&"crossings_changed")[0]).is_equal([0, 1, 2])
