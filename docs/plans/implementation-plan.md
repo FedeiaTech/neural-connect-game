@@ -12,7 +12,7 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
 
 ## Phase 1 — Pure model (no nodes, test-first)
 
-- [ ] **T1.1 LevelData resource** — play area polygon, obstacles, neurons, dendrites, reference solution, par values, mission/chapter ids, optional `story_text`.
+- [x] **T1.1 LevelData resource** — play area polygon, obstacles, neurons, dendrites, reference solution, par values, mission/chapter ids, optional `story_text`.
   Skills: `godot-prompter:resource-pattern`
 - [ ] **T1.2 Crossing detection** — segment intersection for edge pairs not sharing a neuron; emits `crossings_changed`.
   Skills: `godot-prompter:math-essentials`, `godot-prompter:godot-testing`
