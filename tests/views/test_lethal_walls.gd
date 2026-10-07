@@ -75,7 +75,7 @@ func test_wall_glows_stronger_as_the_grabbed_neuron_approaches() -> void:
 	model.drag_to(Vector2(1000.0 - 28.0 - 10.0, 300))
 	for i in 20:
 		walls._process(0.05)
-	assert_float(walls.get_glow()).is_greater(calm + 0.5)
+	assert_float(walls.get_glow()).is_greater(calm + 0.3)
 	assert_vector(walls.get_hotspot()).is_equal_approx(Vector2(1000, 300), Vector2(0.5, 0.5))
 	assert_int(walls.get_crackle_count()).is_greater(0)
 

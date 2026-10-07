@@ -1,0 +1,265 @@
+[gd_resource type="Resource" script_class="LevelData" format=3]
+
+[ext_resource type="Script" path="res://scripts/model/level_data.gd" id="1_level"]
+[ext_resource type="Script" path="res://scripts/model/neuron_data.gd" id="2_neuron"]
+[ext_resource type="Script" path="res://scripts/model/dendrite_data.gd" id="3_dendrite"]
+
+[sub_resource type="Resource" id="Neuron_0"]
+script = ExtResource("2_neuron")
+id = 0
+position = Vector2(1493, 410)
+solution_position = Vector2(580, 310)
+
+[sub_resource type="Resource" id="Neuron_1"]
+script = ExtResource("2_neuron")
+id = 1
+position = Vector2(880, 380)
+solution_position = Vector2(805, 440)
+
+[sub_resource type="Resource" id="Neuron_2"]
+script = ExtResource("2_neuron")
+id = 2
+position = Vector2(720, 745)
+solution_position = Vector2(805, 700)
+
+[sub_resource type="Resource" id="Neuron_3"]
+script = ExtResource("2_neuron")
+id = 3
+position = Vector2(1260, 444)
+solution_position = Vector2(580, 830)
+
+[sub_resource type="Resource" id="Neuron_4"]
+script = ExtResource("2_neuron")
+id = 4
+position = Vector2(1600, 520)
+solution_position = Vector2(355, 700)
+
+[sub_resource type="Resource" id="Neuron_5"]
+script = ExtResource("2_neuron")
+id = 5
+position = Vector2(1260, 840)
+solution_position = Vector2(355, 440)
+
+[sub_resource type="Resource" id="Neuron_6"]
+script = ExtResource("2_neuron")
+id = 6
+position = Vector2(280, 560)
+solution_position = Vector2(1340, 310)
+
+[sub_resource type="Resource" id="Neuron_7"]
+script = ExtResource("2_neuron")
+id = 7
+position = Vector2(600, 500)
+solution_position = Vector2(1115, 440)
+
+[sub_resource type="Resource" id="Neuron_8"]
+script = ExtResource("2_neuron")
+id = 8
+position = Vector2(480, 690)
+solution_position = Vector2(1115, 700)
+
+[sub_resource type="Resource" id="Neuron_9"]
+script = ExtResource("2_neuron")
+id = 9
+position = Vector2(700, 640)
+solution_position = Vector2(1340, 830)
+
+[sub_resource type="Resource" id="Neuron_10"]
+script = ExtResource("2_neuron")
+id = 10
+position = Vector2(1565, 700)
+solution_position = Vector2(1565, 700)
+fixed = true
+
+[sub_resource type="Resource" id="Neuron_11"]
+script = ExtResource("2_neuron")
+id = 11
+position = Vector2(560, 860)
+solution_position = Vector2(1565, 440)
+
+[sub_resource type="Resource" id="Neuron_12"]
+script = ExtResource("2_neuron")
+id = 12
+position = Vector2(960, 250)
+solution_position = Vector2(960, 250)
+fixed = true
+
+[sub_resource type="Resource" id="Neuron_13"]
+script = ExtResource("2_neuron")
+id = 13
+position = Vector2(960, 890)
+solution_position = Vector2(960, 890)
+fixed = true
+
+[sub_resource type="Resource" id="Neuron_14"]
+script = ExtResource("2_neuron")
+id = 14
+position = Vector2(330, 900)
+solution_position = Vector2(330, 900)
+kind = 1
+reach = 180.0
+required_links = 1
+
+[sub_resource type="Resource" id="Neuron_15"]
+script = ExtResource("2_neuron")
+id = 15
+position = Vector2(1450, 200)
+solution_position = Vector2(1450, 200)
+kind = 1
+reach = 140.0
+required_links = 1
+
+[sub_resource type="Resource" id="Dendrite_0"]
+script = ExtResource("3_dendrite")
+a = 0
+b = 1
+
+[sub_resource type="Resource" id="Dendrite_1"]
+script = ExtResource("3_dendrite")
+a = 1
+b = 2
+
+[sub_resource type="Resource" id="Dendrite_2"]
+script = ExtResource("3_dendrite")
+a = 2
+b = 3
+
+[sub_resource type="Resource" id="Dendrite_3"]
+script = ExtResource("3_dendrite")
+a = 3
+b = 4
+
+[sub_resource type="Resource" id="Dendrite_4"]
+script = ExtResource("3_dendrite")
+a = 4
+b = 5
+
+[sub_resource type="Resource" id="Dendrite_5"]
+script = ExtResource("3_dendrite")
+a = 5
+b = 0
+
+[sub_resource type="Resource" id="Dendrite_6"]
+script = ExtResource("3_dendrite")
+a = 6
+b = 7
+
+[sub_resource type="Resource" id="Dendrite_7"]
+script = ExtResource("3_dendrite")
+a = 7
+b = 8
+
+[sub_resource type="Resource" id="Dendrite_8"]
+script = ExtResource("3_dendrite")
+a = 8
+b = 9
+
+[sub_resource type="Resource" id="Dendrite_9"]
+script = ExtResource("3_dendrite")
+a = 9
+b = 10
+
+[sub_resource type="Resource" id="Dendrite_10"]
+script = ExtResource("3_dendrite")
+a = 10
+b = 11
+
+[sub_resource type="Resource" id="Dendrite_11"]
+script = ExtResource("3_dendrite")
+a = 11
+b = 6
+
+[sub_resource type="Resource" id="Dendrite_12"]
+script = ExtResource("3_dendrite")
+a = 1
+b = 7
+kind = 1
+max_length = 380.0
+rest_length = 250.0
+
+[sub_resource type="Resource" id="Dendrite_13"]
+script = ExtResource("3_dendrite")
+a = 2
+b = 8
+kind = 1
+max_length = 380.0
+rest_length = 250.0
+
+[sub_resource type="Resource" id="Dendrite_14"]
+script = ExtResource("3_dendrite")
+a = 12
+b = 0
+
+[sub_resource type="Resource" id="Dendrite_15"]
+script = ExtResource("3_dendrite")
+a = 12
+b = 1
+
+[sub_resource type="Resource" id="Dendrite_16"]
+script = ExtResource("3_dendrite")
+a = 12
+b = 6
+
+[sub_resource type="Resource" id="Dendrite_17"]
+script = ExtResource("3_dendrite")
+a = 12
+b = 7
+
+[sub_resource type="Resource" id="Dendrite_18"]
+script = ExtResource("3_dendrite")
+a = 13
+b = 2
+
+[sub_resource type="Resource" id="Dendrite_19"]
+script = ExtResource("3_dendrite")
+a = 13
+b = 3
+
+[sub_resource type="Resource" id="Dendrite_20"]
+script = ExtResource("3_dendrite")
+a = 13
+b = 8
+
+[sub_resource type="Resource" id="Dendrite_21"]
+script = ExtResource("3_dendrite")
+a = 13
+b = 9
+kind = 1
+max_length = 440.0
+rest_length = 300.0
+
+[sub_resource type="Resource" id="Dendrite_22"]
+script = ExtResource("3_dendrite")
+a = 5
+b = 1
+
+[sub_resource type="Resource" id="Dendrite_23"]
+script = ExtResource("3_dendrite")
+a = 4
+b = 2
+
+[sub_resource type="Resource" id="Dendrite_24"]
+script = ExtResource("3_dendrite")
+a = 11
+b = 7
+
+[sub_resource type="Resource" id="Dendrite_25"]
+script = ExtResource("3_dendrite")
+a = 10
+b = 8
+
+[resource]
+script = ExtResource("1_level")
+mission_id = &"m30"
+mission_name = "MISSION_M30_NAME"
+chapter_id = 7
+story_text = "MISSION_M30_STORY"
+play_area = PackedVector2Array(260, 120, 1660, 120, 1760, 220, 1760, 920, 1660, 1020, 260, 1020, 160, 920, 160, 220)
+obstacles = Array[PackedVector2Array]([PackedVector2Array(900, 500, 1020, 500, 1020, 640, 900, 640)])
+neuron_radius = 28.0
+show_crossing_feedback = true
+lethal_obstacles = PackedInt32Array(0)
+neurons = Array[ExtResource("2_neuron")]([SubResource("Neuron_0"), SubResource("Neuron_1"), SubResource("Neuron_2"), SubResource("Neuron_3"), SubResource("Neuron_4"), SubResource("Neuron_5"), SubResource("Neuron_6"), SubResource("Neuron_7"), SubResource("Neuron_8"), SubResource("Neuron_9"), SubResource("Neuron_10"), SubResource("Neuron_11"), SubResource("Neuron_12"), SubResource("Neuron_13"), SubResource("Neuron_14"), SubResource("Neuron_15")])
+dendrites = Array[ExtResource("3_dendrite")]([SubResource("Dendrite_0"), SubResource("Dendrite_1"), SubResource("Dendrite_2"), SubResource("Dendrite_3"), SubResource("Dendrite_4"), SubResource("Dendrite_5"), SubResource("Dendrite_6"), SubResource("Dendrite_7"), SubResource("Dendrite_8"), SubResource("Dendrite_9"), SubResource("Dendrite_10"), SubResource("Dendrite_11"), SubResource("Dendrite_12"), SubResource("Dendrite_13"), SubResource("Dendrite_14"), SubResource("Dendrite_15"), SubResource("Dendrite_16"), SubResource("Dendrite_17"), SubResource("Dendrite_18"), SubResource("Dendrite_19"), SubResource("Dendrite_20"), SubResource("Dendrite_21"), SubResource("Dendrite_22"), SubResource("Dendrite_23"), SubResource("Dendrite_24"), SubResource("Dendrite_25")])
+par_moves = 22
+par_time = 270.0

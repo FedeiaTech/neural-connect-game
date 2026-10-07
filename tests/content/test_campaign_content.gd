@@ -7,13 +7,23 @@ const SolutionPlanner := preload("res://tests/content/solution_planner.gd")
 const Csv := preload("res://tests/localization/translation_table.gd")
 const CAMPAIGN_PATH := "res://data/campaign.tres"
 const LEVELS_DIR := "res://data/levels"
-const CHAPTER_COUNT := 5
+const CHAPTER_COUNT := 7
 ## Chapter ids by mechanic (SDD 7.1).
 const CHAPTER_BASICS := 1
 const CHAPTER_SHAPES := 2
 const CHAPTER_FIXED := 3
 const CHAPTER_TENSION := 4
-const CHAPTER_COMBINED := 5
+const CHAPTER_LETHAL := 5
+const CHAPTER_RECEPTORS := 6
+const CHAPTER_COMBINED := 7
+## Chapters that introduce a new mechanic may restart with smaller networks (T7.4).
+const INTRO_CHAPTERS: Array[int] = [CHAPTER_LETHAL, CHAPTER_RECEPTORS]
+const MIN_MISSIONS := 30
+## Difficulty curve (T7.4): a mission may start with at most this many crossings more than the
+## hardest of the three missions before it, and the first mission of a new-mechanic chapter
+## starts gently.
+const MAX_CROSSING_SPIKE := 14
+const MAX_INTRO_CROSSINGS := 6
 const MIN_PAR_TIME := 45.0
 const MAX_PAR_TIME := 300.0
 ## A tension dendrite is "close to its limit" at this fraction of max_length.
@@ -52,7 +62,7 @@ func _fail(message: String) -> void:
 	assert_bool(false).override_failure_message(message).is_true()
 
 
-func test_campaign_has_the_five_chapters_in_order() -> void:
+func test_campaign_has_the_seven_chapters_in_order() -> void:
 	var chapters := _campaign().chapters
 	assert_int(chapters.size()).is_equal(CHAPTER_COUNT)
 	for i in chapters.size():
@@ -71,7 +81,7 @@ func test_campaign_has_the_five_chapters_in_order() -> void:
 
 func test_campaign_order_matches_file_numbering() -> void:
 	var levels := _levels()
-	assert_int(levels.size()).is_greater_equal(18)
+	assert_int(levels.size()).is_greater_equal(MIN_MISSIONS)
 	var seen: Dictionary[StringName, bool] = {}
 	for i in levels.size():
 		var level := levels[i]
@@ -141,19 +151,55 @@ func test_starts_are_meaningfully_tangled() -> void:
 			"%s: %d start crossings < %d" % [level.mission_id, crossings, minimum]).is_greater_equal(minimum)
 
 
+## Mean network size grows chapter by chapter. A chapter that introduces a new mechanic
+## (Live Wires, Synapses) may restart smaller, but never below Shaped Minds, and the final
+## Convergence chapter holds the largest networks.
 func test_neuron_count_grows_chapter_by_chapter() -> void:
 	var previous_mean := 0.0
+	var means: Dictionary[int, float] = {}
 	for chapter in _campaign().chapters:
 		var total := 0
 		for level in chapter.missions:
 			total += level.neurons.size()
 		var mean := float(total) / chapter.missions.size()
+		means[chapter.chapter_id] = mean
+		var floor_mean := previous_mean
+		if INTRO_CHAPTERS.has(chapter.chapter_id) and not INTRO_CHAPTERS.has(chapter.chapter_id - 1):
+			floor_mean = means[CHAPTER_SHAPES]
 		assert_float(mean).override_failure_message(
-			"chapter %d mean %.2f < previous %.2f" % [chapter.chapter_id, mean, previous_mean]) \
-			.is_greater_equal(previous_mean)
+			"chapter %d mean %.2f < %.2f" % [chapter.chapter_id, mean, floor_mean]).is_greater_equal(floor_mean)
 		previous_mean = mean
+	for chapter_id: int in means:
+		assert_float(means[CHAPTER_COMBINED]).is_greater_equal(means[chapter_id])
 	for level in _levels():
-		assert_int(level.neurons.size()).override_failure_message(String(level.mission_id)).is_between(4, 14)
+		assert_int(level.neurons.size()).override_failure_message(String(level.mission_id)).is_between(4, 16)
+
+
+## T7.4 difficulty curve: no sudden spikes in the start tangle, gentle chapter intros for new
+## mechanics, and the most tangled start in the final chapter.
+func test_difficulty_curve_has_no_spikes() -> void:
+	var levels := _levels()
+	var crossings: Array[int] = []
+	var hardest := 0
+	var hardest_chapter := 0
+	for i in levels.size():
+		var count := PuzzleModel.from_level(levels[i]).get_crossing_count()
+		crossings.append(count)
+		if i > 0:
+			var recent := 0
+			for k in range(maxi(0, i - 3), i):
+				recent = maxi(recent, crossings[k])
+			assert_int(count).override_failure_message("%s: %d start crossings spike after %d" % [
+				levels[i].mission_id, count, recent]).is_less_equal(recent + MAX_CROSSING_SPIKE)
+		if count >= hardest:
+			hardest = count
+			hardest_chapter = levels[i].chapter_id
+	for chapter in _campaign().chapters:
+		if INTRO_CHAPTERS.has(chapter.chapter_id):
+			var first := chapter.missions[0]
+			assert_int(PuzzleModel.from_level(first).get_crossing_count()).override_failure_message(
+				"%s opens a new mechanic too tangled" % first.mission_id).is_less_equal(MAX_INTRO_CROSSINGS)
+	assert_int(hardest_chapter).is_equal(CHAPTER_COMBINED)
 
 
 func test_each_chapter_teaches_its_mechanic() -> void:
@@ -162,6 +208,11 @@ func test_each_chapter_teaches_its_mechanic() -> void:
 		var shaped := level.play_area.size() != 4 or not level.obstacles.is_empty()
 		var fixed := _fixed_count(level)
 		var near_limit := _near_limit_tension_count(level)
+		var lethal := level.lethal_edges.size() + level.lethal_obstacles.size()
+		var receptors := _receptor_count(level)
+		if level.chapter_id < CHAPTER_LETHAL:
+			assert_int(lethal + receptors).override_failure_message(
+				"%s: lethal walls and receptors come later" % id).is_equal(0)
 		match level.chapter_id:
 			CHAPTER_BASICS:
 				assert_bool(shaped or fixed > 0 or _tension_count(level) > 0).override_failure_message(
@@ -173,9 +224,32 @@ func test_each_chapter_teaches_its_mechanic() -> void:
 			CHAPTER_TENSION:
 				assert_int(near_limit).override_failure_message(
 					"%s: needs a tension dendrite close to its limit" % id).is_greater_equal(1)
+			CHAPTER_LETHAL:
+				assert_int(lethal).override_failure_message("%s: needs lethal walls" % id).is_greater_equal(1)
+				assert_int(receptors).override_failure_message("%s: receptors come next chapter" % id).is_equal(0)
+			CHAPTER_RECEPTORS:
+				assert_int(receptors).override_failure_message("%s: needs receptors" % id).is_greater_equal(1)
+				assert_int(lethal).override_failure_message("%s: no lethal walls yet" % id).is_equal(0)
 			CHAPTER_COMBINED:
-				var mechanics := int(shaped) + int(fixed > 0) + int(near_limit > 0)
-				assert_int(mechanics).override_failure_message("%s: combines mechanics" % id).is_greater_equal(2)
+				var mechanics := int(shaped) + int(fixed > 0) + int(near_limit > 0) + int(lethal > 0) \
+					+ int(receptors > 0)
+				assert_int(mechanics).override_failure_message("%s: combines mechanics" % id).is_greater_equal(3)
+				assert_int(lethal + receptors).override_failure_message(
+					"%s: uses the new mechanics" % id).is_greater_equal(1)
+
+
+## Synapses: the receptors start without their links and the new mechanic grows on itself
+## (a two-link receptor appears in the chapter).
+func test_receptor_missions_start_unlinked() -> void:
+	var two_link := false
+	for level in _levels():
+		var model := PuzzleModel.from_level(level)
+		for receptor_id in model.get_receptor_ids():
+			assert_bool(model.is_receptor_satisfied(receptor_id)).override_failure_message(
+				"%s: receptor %d starts linked" % [level.mission_id, receptor_id]).is_false()
+			if level.chapter_id == CHAPTER_RECEPTORS and model.get_required_links(receptor_id) == 2:
+				two_link = true
+	assert_bool(two_link).is_true()
 
 
 ## Readability: solution neurons at least 3 radii apart, and no dendrite running through or
@@ -256,6 +330,14 @@ func _fixed_count(level: LevelData) -> int:
 	var count := 0
 	for neuron in level.neurons:
 		if neuron.fixed:
+			count += 1
+	return count
+
+
+func _receptor_count(level: LevelData) -> int:
+	var count := 0
+	for neuron in level.neurons:
+		if neuron.is_receptor():
 			count += 1
 	return count
 

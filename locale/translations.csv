@@ -39,8 +39,12 @@ CHAPTER_3_TITLE,Anchored,Anclados
 CHAPTER_3_SUBTITLE,Some memories will not move. Build the network around the red anchors.,Algunos recuerdos no se mueven. Construye la red alrededor de los anclajes rojos.
 CHAPTER_4_TITLE,Tension,Tensión
 CHAPTER_4_SUBTITLE,Strained bonds glow green. Pull them too far apart and they snap.,"Los enlaces tensos brillan en verde. Si los separas demasiado, se rompen."
-CHAPTER_5_TITLE,Convergence,Convergencia
-CHAPTER_5_SUBTITLE,"Walls, anchors and fragile bonds. Everything the network has learned, at once.","Muros, anclajes y enlaces frágiles. Todo lo que la red ha aprendido, a la vez."
+CHAPTER_5_TITLE,Live Wires,Cables vivos
+CHAPTER_5_SUBTITLE,Violet walls carry raw current. Touch one and the neuron burns out.,"Los muros violetas llevan corriente pura. Si una neurona los toca, se quema."
+CHAPTER_6_TITLE,Synapses,Sinapsis
+CHAPTER_6_SUBTITLE,Cyan receptors reach for partners. Feed every one of them without a single crossing.,Los receptores cian buscan compañeras. Satisface a cada uno sin un solo cruce.
+CHAPTER_7_TITLE,Convergence,Convergencia
+CHAPTER_7_SUBTITLE,"Walls, anchors, fragile bonds, live wires and hungry receptors. Everything the network has learned, at once.","Muros, anclajes, enlaces frágiles, cables vivos y receptores ávidos. Todo lo que la red ha aprendido, a la vez."
 MISSION_M01_NAME,First Spark,Primera chispa
 MISSION_M01_STORY,"In the dark, a first spark is looking for a way through.
 Untangle the threads so the signal can pass.","En la oscuridad, una primera chispa busca un camino.
@@ -80,15 +84,39 @@ Los hilos verdes se rompen si sus neuronas se alejan demasiado."
 MISSION_M16_NAME,Elastic Bond,Enlace elástico
 MISSION_M17_NAME,Tight Weave,Trama ajustada
 MISSION_M17_STORY,"Pairs that must stay close, tangled with pairs that must not touch.
-Move them together.","Parejas que deben ir juntas, enredadas con otras que no deben tocarse.
-Muévelas a la vez."
+Move them together. Somewhere ahead, the walls begin to hum.","Parejas que deben ir juntas, enredadas con otras que no deben tocarse.
+Muévelas a la vez. Más adelante, los muros empiezan a zumbar."
 MISSION_M18_NAME,Breaking Point,Punto de ruptura
-MISSION_M19_NAME,Converging Paths,Caminos convergentes
-MISSION_M19_STORY,"Walls, anchors and fragile threads meet in one network.
-Everything it has learned is tested here.","Muros, anclajes e hilos frágiles se unen en una sola red.
+MISSION_M19_NAME,Live Wire,Cable vivo
+MISSION_M19_STORY,"Violet walls carry raw current: touch one and the neuron burns out.
+Feel the hum grow as you get closer, and keep your distance.","Los muros violetas llevan corriente pura: si una neurona los toca, se quema.
+Siente cómo crece el zumbido al acercarte y mantén la distancia."
+MISSION_M20_NAME,Arc Flash,Arco eléctrico
+MISSION_M21_NAME,Short Circuit,Cortocircuito
+MISSION_M21_STORY,"The live wire folds into the heart of the field.
+Beyond it, cyan cells reach out, waiting for an answer.","El cable vivo se pliega hacia el centro del campo.
+Más allá, células cian se extienden esperando una respuesta."
+MISSION_M22_NAME,First Synapse,Primera sinapsis
+MISSION_M22_STORY,"A cyan receptor cannot move, but it can reach.
+Bring a neuron into its halo and a new link will grow.","Un receptor cian no puede moverse, pero sí alcanzar.
+Lleva una neurona a su halo y crecerá un nuevo enlace."
+MISSION_M23_NAME,Twin Receptors,Receptores gemelos
+MISSION_M24_NAME,Double Bond,Doble enlace
+MISSION_M24_STORY,"Some receptors are hungrier: their dots show how many links they need.
+New links count as dendrites, so they must not cross either.","Algunos receptores necesitan más: sus puntos muestran cuántos enlaces piden.
+Los enlaces nuevos cuentan como dendritas, así que tampoco deben cruzarse."
+MISSION_M25_NAME,Synaptic Strain,Tensión sináptica
+MISSION_M26_NAME,Converging Paths,Caminos convergentes
+MISSION_M26_STORY,"Walls, anchors, live wires and fragile threads meet in one network.
+Everything it has learned is tested here.","Muros, anclajes, cables vivos e hilos frágiles se unen en una sola red.
 Aquí se pone a prueba todo lo que ha aprendido."
-MISSION_M20_NAME,Neural Storm,Tormenta neuronal
-MISSION_M21_NAME,Awakening,Despertar
-MISSION_M21_STORY,"Two hemispheres, one mind.
-Untangle them and the network finally wakes.","Dos hemisferios, una mente.
-Desenrédalos y la red por fin despertará."
+MISSION_M27_NAME,Live Synapse,Sinapsis viva
+MISSION_M28_NAME,Neural Storm,Tormenta neuronal
+MISSION_M28_STORY,"The storm closes in: live walls on every slant, bonds stretched thin.
+Hold the hub steady and let the pairs fold home.","La tormenta se cierra: muros vivos en cada diagonal, enlaces al límite.
+Mantén firme el centro y deja que las parejas vuelvan a su lugar."
+MISSION_M29_NAME,Charged Core,Núcleo cargado
+MISSION_M30_NAME,Awakening,Despertar
+MISSION_M30_STORY,"Two hemispheres, one mind, a live core and two receptors waiting.
+Untangle them all and the network finally wakes.","Dos hemisferios, una mente, un núcleo vivo y dos receptores esperando.
+Desenrédalos todos y la red por fin despertará."

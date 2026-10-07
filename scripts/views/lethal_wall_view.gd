@@ -15,7 +15,7 @@ const CRACKLE_JITTER := 3.0
 const CRACKLE_JITTER_DANGER := 7.0
 ## Glow 0..1 eases toward the proximity at this rate (per second).
 const GLOW_RATE := 6.0
-const BASE_GLOW := 0.25
+const BASE_GLOW := 0.45
 
 var _model: PuzzleModel
 var _segments := PackedVector2Array()
@@ -116,12 +116,12 @@ func _draw() -> void:
 	for i in range(0, _segments.size() - 1, 2):
 		var a := _segments[i]
 		var b := _segments[i + 1]
-		draw_line(a, b, Color(Palette.LETHAL, 0.07 + 0.12 * glow), 34.0 + 20.0 * glow)
-		draw_line(a, b, Color(Palette.LETHAL, 0.18 + 0.3 * glow), 12.0)
-		draw_line(a, b, Color(Palette.LETHAL_CRACKLE, 0.25 + 0.45 * glow), 2.5, true)
+		draw_line(a, b, Color(Palette.LETHAL, 0.08 + 0.14 * glow), 34.0 + 20.0 * glow)
+		draw_line(a, b, Color(Palette.LETHAL, 0.22 + 0.3 * glow), 12.0)
+		draw_line(a, b, Color(Palette.LETHAL_CRACKLE, 0.35 + 0.45 * glow), 3.0, true)
 	for bolt in _crackles:
-		draw_polyline(bolt, Color(Palette.LETHAL_CRACKLE, 0.3 + 0.4 * glow), 3.0)
-		draw_polyline(bolt, Color(1.0, 0.9, 1.0, 0.4 + 0.5 * glow), 1.2, true)
+		draw_polyline(bolt, Color(Palette.LETHAL_CRACKLE, 0.45 + 0.45 * glow), 3.5)
+		draw_polyline(bolt, Color(1.0, 0.9, 1.0, 0.55 + 0.45 * glow), 1.4, true)
 	if _hotspot != Vector2.INF and _danger > 0.0:
 		var flicker := 1.0 if not VisualTuning.is_motion_enabled() else 0.8 + 0.2 * sin(_time * 41.0)
 		for k in 3:

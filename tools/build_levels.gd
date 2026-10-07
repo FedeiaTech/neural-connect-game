@@ -7,6 +7,7 @@ extends SceneTree
 ## Run from the project root (PowerShell):
 ##   godot --headless --path . -s res://tools/build_levels.gd            # build and report
 ##   godot --headless --path . -s res://tools/build_levels.gd -- --check # report only
+##   godot --headless --path . -s res://tools/build_levels.gd -- --only=m19,m20 # report some
 ## Exit code 1 when any mission is invalid or the planner cannot solve it.
 ## (-s scripts cannot use autoloads; this one only needs global classes.)
 
@@ -21,13 +22,21 @@ const MIN_START_CLEARANCE := 40.0
 
 func _init() -> void:
 	var check_only := OS.get_cmdline_user_args().has("--check")
+	# --only=m19,m20: report just these missions (implies --check).
+	var only := PackedStringArray()
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--only="):
+			only = arg.trim_prefix("--only=").split(",")
+			check_only = true
 	var ok := true
 	var levels: Array[LevelData] = []
 	var rows := PackedStringArray([
-		"| id | name | ch | neurons | dendrites | fixed | tension | start crossings | planned moves | par_moves | par_time | story | min spacing | edge clearance start / solution |",
-		"|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+		"| id | name | ch | neurons | dendrites | fixed | tension | lethal | receptors | start crossings | planned moves | par_moves | par_time | story | min spacing | edge clearance start / solution |",
+		"|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
 	])
 	for spec in Specs.missions():
+		if not only.is_empty() and not only.has(spec["id"]):
+			continue
 		var level := build_level(spec)
 		var errors := PuzzleModel.validate_level(level)
 		var moves := -1
@@ -74,21 +83,28 @@ static func build_level(spec: Dictionary) -> LevelData:
 	level.obstacles = obstacles
 	level.neuron_radius = RADIUS
 	level.par_time = spec["par_time"]
+	level.lethal_edges = PackedInt32Array(spec.get("lethal_edges", []))
+	level.lethal_obstacles = PackedInt32Array(spec.get("lethal_obstacles", []))
 	var solution: PackedVector2Array = spec["sol"]
 	var fixed: Array = spec.get("fixed", [])
+	var receptors: Dictionary = spec.get("receptors", {})
 	var neurons: Array[NeuronData] = []
 	for id in solution.size():
 		var neuron := NeuronData.new()
 		neuron.id = id
 		neuron.solution_position = solution[id]
 		neuron.fixed = fixed.has(id)
-		if neuron.fixed:
+		if receptors.has(id):
+			neuron.kind = NeuronData.Kind.RECEPTOR
+			neuron.reach = receptors[id][0]
+			neuron.required_links = receptors[id][1]
+		if neuron.fixed or neuron.is_receptor():
 			neuron.position = solution[id]
 		elif spec.has("start"):
 			neuron.position = spec["start"][id]
 		else:
 			neuron.position = solution[spec["perm"][id]] + spec["offset"]
-		if not neuron.fixed:
+		if not neuron.fixed and not neuron.is_receptor():
 			neuron.position += spec.get("nudge", {}).get(id, Vector2.ZERO)
 		neurons.append(neuron)
 	level.neurons = neurons
@@ -126,6 +142,10 @@ static func level_text(level: LevelData) -> String:
 		lines.append("solution_position = %s" % _vector(neuron.solution_position))
 		if neuron.fixed:
 			lines.append("fixed = true")
+		if neuron.is_receptor():
+			lines.append("kind = %d" % neuron.kind)
+			lines.append("reach = %s" % _float(neuron.reach))
+			lines.append("required_links = %d" % neuron.required_links)
 		lines.append("")
 		neuron_refs.append('SubResource("Neuron_%d")' % i)
 	var dendrite_refs := PackedStringArray()
@@ -155,6 +175,10 @@ static func level_text(level: LevelData) -> String:
 	lines.append("obstacles = Array[PackedVector2Array]([%s])" % ", ".join(obstacles))
 	lines.append("neuron_radius = %s" % _float(level.neuron_radius))
 	lines.append("show_crossing_feedback = true")
+	if not level.lethal_edges.is_empty():
+		lines.append("lethal_edges = PackedInt32Array(%s)" % _ints(level.lethal_edges))
+	if not level.lethal_obstacles.is_empty():
+		lines.append("lethal_obstacles = PackedInt32Array(%s)" % _ints(level.lethal_obstacles))
 	lines.append('neurons = Array[ExtResource("2_neuron")]([%s])' % ", ".join(neuron_refs))
 	lines.append('dendrites = Array[ExtResource("3_dendrite")]([%s])' % ", ".join(dendrite_refs))
 	lines.append("par_moves = %d" % level.par_moves)
@@ -208,9 +232,16 @@ static func _row(level: LevelData, moves: int) -> String:
 	for i in level.neurons.size():
 		for j in range(i + 1, level.neurons.size()):
 			spacing = minf(spacing, level.neurons[i].solution_position.distance_to(level.neurons[j].solution_position))
-	return "| %s | %s | %d | %d | %d | %d | %d | %d | %d | %d | %d | %s | %d | %d / %d |" % [
+	var receptors := PackedStringArray()
+	for neuron in level.neurons:
+		if neuron.is_receptor():
+			receptors.append("%dx%d" % [int(neuron.reach), neuron.required_links])
+	var lethal := "%d+%d" % [level.lethal_edges.size(), level.lethal_obstacles.size()] \
+		if level.lethal_edges.size() + level.lethal_obstacles.size() > 0 else ""
+	return "| %s | %s | %d | %d | %d | %d | %d | %s | %s | %d | %d | %d | %d | %s | %d | %d / %d |" % [
 		level.mission_id, level.mission_name, level.chapter_id, level.neurons.size(),
-		level.dendrites.size(), fixed, tension, PuzzleModel.from_level(level).get_crossing_count(),
+		level.dendrites.size(), fixed, tension, lethal, " ".join(receptors),
+		PuzzleModel.from_level(level).get_crossing_count(),
 		moves, level.par_moves, int(level.par_time), "yes" if not level.story_text.is_empty() else "",
 		int(spacing), int(edge_clearance(level, false)), int(edge_clearance(level, true))]
 
@@ -274,6 +305,13 @@ static func _packed(points: PackedVector2Array) -> String:
 		values.append(_number(point.x))
 		values.append(_number(point.y))
 	return "PackedVector2Array(%s)" % ", ".join(values)
+
+
+static func _ints(values: PackedInt32Array) -> String:
+	var parts := PackedStringArray()
+	for value in values:
+		parts.append(str(value))
+	return ", ".join(parts)
 
 
 static func _string(text: String) -> String:
