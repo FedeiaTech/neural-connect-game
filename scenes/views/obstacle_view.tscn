@@ -2,5 +2,9 @@
 
 [ext_resource type="Script" path="res://scripts/views/obstacle_view.gd" id="1_script"]
 
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_add"]
+blend_mode = 1
+
 [node name="ObstacleView" type="Node2D"]
+material = SubResource("CanvasItemMaterial_add")
 script = ExtResource("1_script")

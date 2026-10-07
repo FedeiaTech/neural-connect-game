@@ -38,10 +38,10 @@ const MAX_FLICKER := 0.55
 
 # --- Membrane (boundary and obstacles) -------------------------------------------
 const MEMBRANE_SPACING := 12.0
-const BOUNDARY_AMPLITUDE := 3.5
+const BOUNDARY_AMPLITUDE := 2.8
 const OBSTACLE_AMPLITUDE := 1.5
-const MEMBRANE_WAVELENGTH_A := 420.0
-const MEMBRANE_WAVELENGTH_B := 170.0
+const MEMBRANE_WAVELENGTH_A := 680.0
+const MEMBRANE_WAVELENGTH_B := 310.0
 const MEMBRANE_SPEED_A := 0.55
 const MEMBRANE_SPEED_B := 0.9
 const MEMBRANE_BREATH_SPEED := 0.45

@@ -1,30 +1,18 @@
 class_name ObstacleView
-extends Node2D
-## Draws one obstacle polygon as a thick white outline (SDD 5.3). Static: obstacles never move.
+extends MembraneView
+## One obstacle polygon (SDD 5.3): thick white outline drawn as a calmer membrane than the
+## boundary (smaller undulation, softer glow). Obstacles never move; with a model it ripples
+## where a neuron touches it.
 
 const LINE_WIDTH := 5.0
 
-var _outline := PackedVector2Array()
+
+func _init() -> void:
+	_amplitude = VisualTuning.OBSTACLE_AMPLITUDE
+	_line_width = LINE_WIDTH
+	_color = Palette.OBSTACLE
+	_glow_scale = 0.7
 
 
-func setup(polygon: PackedVector2Array) -> void:
-	_outline = OutlineUtils.closed(polygon)
-	queue_redraw()
-
-
-## Closed outline (first point repeated at the end).
-func get_outline() -> PackedVector2Array:
-	return _outline.duplicate()
-
-
-func get_line_width() -> float:
-	return LINE_WIDTH
-
-
-func _draw() -> void:
-	_draw_obstacle()
-
-
-func _draw_obstacle() -> void:
-	if _outline.size() >= 2:
-		draw_polyline(_outline, Palette.OBSTACLE, LINE_WIDTH, true)
+func setup(polygon: PackedVector2Array, model: PuzzleModel = null) -> void:
+	_setup_membrane(polygon, model)

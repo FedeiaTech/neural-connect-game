@@ -166,7 +166,7 @@ func _build_views() -> void:
 	for polygon in _model.get_obstacles():
 		var obstacle: ObstacleView = ObstacleScene.instantiate()
 		obstacles_root.add_child(obstacle)
-		obstacle.setup(polygon)
+		obstacle.setup(polygon, _model)
 	for edge_id in _model.get_edge_count():
 		var dendrite: DendriteView = DendriteScene.instantiate()
 		dendrites_root.add_child(dendrite)
