@@ -26,7 +26,10 @@ Decisions already made (all details in `docs/SDD.md`, do not re-ask):
 Run tests: `./run_tests.ps1` (gdUnit4 v6.2.1 in `addons/gdUnit4`, tests in `tests/`, files `test_*.gd`
 extending `GdUnitTestSuite`). Godot binary on PATH: `godot` (4.7.2). Task tracking: `odd/tasks/`.
 
-Conventions: code, comments, identifiers and UI text in English. Conversation with the user in Spanish (Rioplatense).
+Post-MVP (Phase 6): progress reset (Settings + per mission) and en/es localization via `locale/translations.csv`
+(semantic keys; content `.tres` store keys). New UI text must be a CSV key with both `en` and `es` (neutral Spanish).
+
+Conventions: code, comments, identifiers and source strings in English. Conversation with the user in Spanish (Rioplatense).
 Use commits as conventional commits, no AI attribution. The user wanted to be told before implementation starts (they were switching model).
 
 ## GodotPrompter
