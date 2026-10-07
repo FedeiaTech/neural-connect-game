@@ -50,4 +50,8 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `84c69e1` (see mvp-founda
 - `PuzzleModel` extends `RefCounted`; no Node references in `scripts/model/`.
 - Next: Phase 2 (T2.1 views driven by model signals). Native review not run by this writer.
 
+- Review: assessed medium, `slice_budget_reached` (1626 lines, range `84c69e1..471da49`); user granted;
+  lens review-reliability → approved, acknowledged (lineage review-d99b3cab21485c35, authority burned).
+  Advisory follow-ups moved to `odd/tasks/playable-core.md` T1.7. Reviewed boundary → `471da49`.
+
 Engram mirror: pending (engram MCP unavailable this session).
