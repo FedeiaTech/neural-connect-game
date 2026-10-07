@@ -17,6 +17,10 @@
 [ext_resource type="Resource" path="res://data/levels/m12.tres" id="15_m12"]
 [ext_resource type="Resource" path="res://data/levels/m13.tres" id="16_m13"]
 [ext_resource type="Resource" path="res://data/levels/m14.tres" id="17_m14"]
+[ext_resource type="Resource" path="res://data/levels/m15.tres" id="18_m15"]
+[ext_resource type="Resource" path="res://data/levels/m16.tres" id="19_m16"]
+[ext_resource type="Resource" path="res://data/levels/m17.tres" id="20_m17"]
+[ext_resource type="Resource" path="res://data/levels/m18.tres" id="21_m18"]
 
 [sub_resource type="Resource" id="Chapter_1"]
 script = ExtResource("2_chapter")
@@ -39,6 +43,13 @@ title = "Anchored"
 subtitle = "Some memories will not move. Build the network around the red anchors."
 missions = Array[ExtResource("3_level")]([ExtResource("14_m11"), ExtResource("15_m12"), ExtResource("16_m13"), ExtResource("17_m14")])
 
+[sub_resource type="Resource" id="Chapter_4"]
+script = ExtResource("2_chapter")
+chapter_id = 4
+title = "Tension"
+subtitle = "Strained bonds glow green. Pull them too far apart and they snap."
+missions = Array[ExtResource("3_level")]([ExtResource("18_m15"), ExtResource("19_m16"), ExtResource("20_m17"), ExtResource("21_m18")])
+
 [resource]
 script = ExtResource("1_campaign")
-chapters = Array[ExtResource("2_chapter")]([SubResource("Chapter_1"), SubResource("Chapter_2"), SubResource("Chapter_3")])
+chapters = Array[ExtResource("2_chapter")]([SubResource("Chapter_1"), SubResource("Chapter_2"), SubResource("Chapter_3"), SubResource("Chapter_4")])
