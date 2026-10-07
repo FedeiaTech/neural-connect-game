@@ -6,7 +6,8 @@ dendrites (straight segments) do not cross. Design: `docs/SDD.md`. Plan: `docs/p
 ## Handoff (read first)
 
 Status (2026-10-07): **MVP implemented** on branch `feat/mvp-foundation` — phases 0–5 of
-`docs/plans/implementation-plan.md` done (21 missions, 337 tests). Per-feature evidence in `odd/tasks/*.md`.
+`docs/plans/implementation-plan.md` done; Phases 6–7 add reset, en/es, crossing sparks, lethal walls and
+receptor neurons (30 missions in 7 chapters, 457 tests, save format v2 with id migration). Per-feature evidence in `odd/tasks/*.md`.
 Next step: human playtest (pars, grab radius, difficulty curve); retune via `tools/level_specs.gd` +
 `godot --headless --path . -s res://tools/build_levels.gd`. Not pushed; no remote configured.
 
