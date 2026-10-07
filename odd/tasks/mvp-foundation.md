@@ -30,6 +30,11 @@ Branch: `feat/mvp-foundation` (base `main` @ 7c2ef1a). Delivery strategy: ask-on
 - T0.2: gdUnit4 v6.2.1 (GitHub tag) extracted to `addons/gdUnit4`, plugin enabled. `./run_tests.ps1` →
   2 test cases, 0 errors, 0 failures, exit 0.
 
+- Review: range `main..f449e64` assessed high (vendored addon); user granted review, START refused with
+  `lens_context_budget_exceeded` (31k vendored lines). Vendored addon commit `84c69e1` is excluded from review;
+  boundary moved to `84c69e1`. Own changes `84c69e1..f449e64`: medium, `under_budget` (68 lines) — pending in slice.
+  T0.1 commit `23ecdf2` remains unreviewed (folded behind the vendored commit).
+
 ## Next step
 
 Phase 1 (T1.1–T1.6) — new feature doc `odd/tasks/puzzle-model.md`.
