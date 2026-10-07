@@ -44,7 +44,7 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `84c69e1` (see mvp-founda
 
 - Route: every task delegated direct (single bounded writer), test-first with RED observed before GREEN.
 - Commits (one per task): T1.1 `20ae5cc`, T1.2 `b780bc7`, T1.3 `38768d4`, T1.4 `61df38f`,
-  T1.5 `f885a49`, T1.6 see `git log` (feat(model): add level validation helper).
+  T1.5 `f885a49`, T1.6 `af9c343`.
 - Final checks: `./run_tests.ps1` exit 0, 85 test cases, 0 errors/failures/orphans;
   `godot --headless --path . --import` exit 0, no SCRIPT ERROR or warnings.
 - `PuzzleModel` extends `RefCounted`; no Node references in `scripts/model/`.
