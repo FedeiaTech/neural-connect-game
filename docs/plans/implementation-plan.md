@@ -67,9 +67,12 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
 
 ## Phase 5 — Content
 
-- [ ] **T5.1 Hand-design missions** — chapter 1: basics (4 neurons) → multi-dendrite; chapter 2: shapes and obstacles; chapter 3: red fixed neurons; chapter 4: tension dendrites; combinations. Story text every 2–3 missions. Generous par values, tuned later.
+- [x] **T5.1 Hand-design missions** — chapter 1: basics (4 neurons) → multi-dendrite; chapter 2: shapes and obstacles; chapter 3: red fixed neurons; chapter 4: tension dendrites; combinations. Story text every 2–3 missions. Generous par values, tuned later.
   Skills: `godot-prompter:resource-pattern`
-- [ ] **T5.2 Playtest and tune** — par values, grab radius, difficulty curve.
+  (21 missions in 5 chapters, specs in `tools/level_specs.gd`, built by `tools/build_levels.gd`; see `odd/tasks/campaign-content.md`)
+- [x] **T5.2 Playtest and tune** — par values, grab radius, difficulty curve.
+  Automated tuning checks done (`tests/content/`: solvability replayed on the real model, pars, difficulty curve, readability).
+  Pending: human playtest of pars, grab radius and the difficulty curve.
 
 ## Open items (SDD section 10)
 
