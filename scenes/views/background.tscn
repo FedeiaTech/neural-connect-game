@@ -1,0 +1,74 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/views/background_view.gd" id="1_script"]
+[ext_resource type="Shader" path="res://assets/shaders/background_depth.gdshader" id="2_depth"]
+[ext_resource type="Shader" path="res://assets/shaders/vignette.gdshader" id="3_vignette"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_depth"]
+shader = ExtResource("2_depth")
+
+[sub_resource type="Gradient" id="Gradient_spore"]
+offsets = PackedFloat32Array(0, 0.35, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.45, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_spore"]
+gradient = SubResource("Gradient_spore")
+width = 32
+height = 32
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="Gradient" id="Gradient_fade"]
+offsets = PackedFloat32Array(0, 0.2, 0.8, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_add"]
+blend_mode = 1
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
+shader = ExtResource("3_vignette")
+
+[node name="Background" type="CanvasLayer"]
+layer = -10
+script = ExtResource("1_script")
+
+[node name="Base" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_depth")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Spores" type="CPUParticles2D" parent="."]
+material = SubResource("CanvasItemMaterial_add")
+amount = 40
+lifetime = 22.0
+preprocess = 22.0
+randomness = 1.0
+texture = SubResource("GradientTexture2D_spore")
+emission_shape = 3
+emission_rect_extents = Vector2(960, 540)
+direction = Vector2(0, -1)
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 3.0
+initial_velocity_max = 11.0
+angular_velocity_min = -8.0
+angular_velocity_max = 8.0
+scale_amount_min = 0.12
+scale_amount_max = 0.42
+color = Color(0.8, 0.92, 1, 0.16)
+color_ramp = SubResource("Gradient_fade")
+
+[node name="Vignette" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_vignette")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

@@ -5,11 +5,12 @@
 [ext_resource type="Script" path="res://scripts/level/input_controller.gd" id="3_input"]
 [ext_resource type="Script" path="res://scripts/level/level_controller.gd" id="4_controller"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="5_hud"]
+[ext_resource type="PackedScene" path="res://scenes/views/background.tscn" id="6_background"]
 
 [node name="Level" type="Node2D"]
 script = ExtResource("1_level")
 
-[node name="Background" type="Node2D" parent="."]
+[node name="Background" parent="." instance=ExtResource("6_background")]
 
 [node name="Playfield" type="Node2D" parent="."]
 
