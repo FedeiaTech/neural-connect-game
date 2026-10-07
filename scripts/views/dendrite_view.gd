@@ -3,7 +3,8 @@ extends Node2D
 ## Draws one dendrite as a straight glowing line between its neurons (SDD 2, 3, 4, 5.4).
 ## NORMAL: white. TENSION: light green, thinning from WIDTH to MIN_TENSION_WIDTH as the
 ## tension ratio goes 0 -> 1, trembling and flickering near the limit, hidden once broken.
-## Crossing involvement fades in a warm pulsing glow that calms smoothly when resolved.
+## Crossing involvement (T7.1) never recolors: the dendrite keeps its identity color and fades in
+## a dash / crackle modulation (shader `crossing`) that calms smoothly when resolved.
 ## The look (core, glow, travelling electrical pulse, tremble, completion wave) lives in
 ## assets/shaders/dendrite.gdshader; this script only feeds it parameters.
 ##
@@ -85,10 +86,8 @@ func get_line_width() -> float:
 	return WIDTH
 
 
-## Logical color (crossing color while highlighted). The shader eases towards it.
+## Identity color, also while crossing (T7.1).
 func get_line_color() -> Color:
-	if _highlighted:
-		return Palette.CROSSING
 	return get_base_color()
 
 
@@ -96,7 +95,7 @@ func get_base_color() -> Color:
 	return Palette.TENSION if _tension else Palette.DENDRITE
 
 
-## Crossing warmth currently shown, 0..1 (eases towards is_highlighted()).
+## Crossing modulation currently shown, 0..1 (eases towards is_highlighted()).
 func get_highlight_amount() -> float:
 	return _highlight_amount
 
@@ -170,7 +169,6 @@ func _draw_dendrite(from: Vector2, to: Vector2, width: float) -> void:
 func _configure_material() -> void:
 	var m := _shader_material
 	m.set_shader_parameter(&"line_color", get_base_color())
-	m.set_shader_parameter(&"warm_color", Palette.CROSSING)
 	m.set_shader_parameter(&"glow_strength", VisualTuning.DENDRITE_GLOW_STRENGTH)
 	m.set_shader_parameter(&"phase", VisualTuning.phase_for(edge_id + 101) / TAU * VisualTuning.PULSE_INTERVAL)
 	m.set_shader_parameter(&"pulse_interval", VisualTuning.PULSE_INTERVAL)
@@ -191,7 +189,7 @@ func _apply_tension_params() -> void:
 ## clean; T4.7).
 func _update_dynamic_params(motion: float) -> void:
 	_set_param(&"motion", motion)
-	_set_param(&"warm", _highlight_amount)
+	_set_param(&"crossing", _highlight_amount)
 	_set_param(&"wave_pos", _wave_pos)
 	_set_param(&"wave_strength", _wave_strength)
 

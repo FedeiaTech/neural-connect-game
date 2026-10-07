@@ -14,6 +14,23 @@ static func segments_cross(a1: Vector2, a2: Vector2, b1: Vector2, b2: Vector2) -
 	return _collinear_overlap(a1, a2, b1, b2)
 
 
+## Where segments a1-a2 and b1-b2 cross (same rule as segments_cross): the intersection point,
+## or the midpoint of the shared part for collinear overlaps. null when they do not cross.
+static func crossing_point(a1: Vector2, a2: Vector2, b1: Vector2, b2: Vector2) -> Variant:
+	var hit: Variant = Geometry2D.segment_intersects_segment(a1, a2, b1, b2)
+	if hit != null:
+		return hit
+	if not _collinear_overlap(a1, a2, b1, b2):
+		return null
+	var direction := a2 - a1
+	var unit := direction / direction.length()
+	var t1 := unit.dot(b1 - a1)
+	var t2 := unit.dot(b2 - a1)
+	var low := maxf(0.0, minf(t1, t2))
+	var high := minf(direction.length(), maxf(t1, t2))
+	return a1 + unit * (low + high) * 0.5
+
+
 ## Shortest distance from point to the outline (edges) of a closed polygon.
 static func distance_to_outline(point: Vector2, polygon: PackedVector2Array) -> float:
 	var best := INF
@@ -24,6 +41,11 @@ static func distance_to_outline(point: Vector2, polygon: PackedVector2Array) -> 
 		var closest := Geometry2D.get_closest_point_to_segment(point, from, to)
 		best = minf(best, point.distance_to(closest))
 	return best
+
+
+## Shortest distance from point to segment a-b.
+static func distance_to_segment(point: Vector2, a: Vector2, b: Vector2) -> float:
+	return point.distance_to(Geometry2D.get_closest_point_to_segment(point, a, b))
 
 
 ## True when the whole circle lies inside the polygon (touching the outline is allowed).

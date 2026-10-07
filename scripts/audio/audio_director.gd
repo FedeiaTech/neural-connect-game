@@ -9,7 +9,9 @@ extends Node
 ##   InputController: grab_started -> grab; grab_ended -> release (and the tension tone stops).
 ##   PuzzleModel (rebound on every rebuild via LevelController.model_built): neuron_blocked ->
 ##     blocked (throttled); crossings_changed with fewer crossings -> chime; tension_changed ->
-##     tension tone whose pitch and volume follow the highest tension ratio; edge_broke -> snap.
+##     tension tone whose pitch and volume follow the highest tension ratio; edge_broke -> snap;
+##     crossing_points_changed -> buzz loop while crossings exist (volume follows the count,
+##     capped; fades out when resolved).
 ##   LevelController.level_completed -> complete. Hud.star_revealed(i) -> star, pitched up per star.
 ## The ambient drone loops on the Music bus from start; everything else uses the SFX bus. Both
 ## buses come from res://default_bus_layout.tres and feed Master (the settings volume).
@@ -39,6 +41,12 @@ const TENSION_PITCH_MAX := 2.0
 const TENSION_MIN_DB := -30.0
 const TENSION_MAX_DB := -9.0
 const STAR_PITCHES: Array[float] = [1.0, 1.122, 1.26]
+## Crossing buzz (T7.1): BUZZ_MIN_DB with one crossing, rising to BUZZ_MAX_DB at BUZZ_FULL_COUNT.
+const BUZZ_MIN_DB := -27.0
+const BUZZ_MAX_DB := -18.0
+const BUZZ_FULL_COUNT := 6
+const BUZZ_FADE_IN := 0.35
+const BUZZ_FADE_OUT := 0.6
 const BLOCKED_COOLDOWN := 0.12
 const CHIME_COOLDOWN := 0.25
 const HOVER_COOLDOWN := 0.04
@@ -58,6 +66,9 @@ var _sounds_ready := false
 var _build_task := -1
 var _built: Dictionary = {}
 var _ambient_on := false
+var _buzz_on := false
+var _buzz_target_db := SILENT_DB
+var _buzz_tween: Tween
 ## False under --headless: the Dummy audio driver never mixes, so a started playback would never
 ## be released (reported as leaked at exit). Logic, signals and parameters still run.
 var _can_output := DisplayServer.get_name() != "headless"
@@ -76,6 +87,14 @@ static func is_tension_audible(ratio: float) -> bool:
 static func tension_volume_db(ratio: float) -> float:
 	var t := clampf((ratio - TENSION_AUDIBLE_START) / (1.0 - TENSION_AUDIBLE_START), 0.0, 1.0)
 	return lerpf(TENSION_MIN_DB, TENSION_MAX_DB, t)
+
+
+## Buzz volume for a number of crossing pairs: silent at 0, then a gentle capped rise.
+static func buzz_volume_db(count: int) -> float:
+	if count <= 0:
+		return SILENT_DB
+	var t := clampf(float(count - 1) / (BUZZ_FULL_COUNT - 1), 0.0, 1.0)
+	return lerpf(BUZZ_MIN_DB, BUZZ_MAX_DB, t)
 
 
 static func star_pitch(index: int) -> float:
@@ -106,6 +125,10 @@ func _exit_tree() -> void:
 	_wait_for_build()
 	if _ambient_tween != null:
 		_ambient_tween.kill()
+	if _buzz_tween != null:
+		_buzz_tween.kill()
+	_buzz_on = false
+	_buzz_target_db = SILENT_DB
 	for player: AudioStreamPlayer in _players.values():
 		player.stop()
 	_tension_on = false
@@ -139,6 +162,15 @@ func is_tension_playing() -> bool:
 
 func is_ambient_playing() -> bool:
 	return _ambient_on
+
+
+## True while crossings exist (the loop may still be fading in).
+func is_buzz_playing() -> bool:
+	return _buzz_on
+
+
+func get_buzz_target_db() -> float:
+	return _buzz_target_db
 
 
 ## True right after bind_ui(), while hover sounds are still muted.
@@ -255,8 +287,10 @@ func _bind_buttons(node: Node) -> void:
 func _bind_model(model: PuzzleModel) -> void:
 	_stop_tension()
 	_crossing_count = model.get_crossing_edges().size()
+	_set_buzz(model.get_crossing_count())
 	model.neuron_blocked.connect(_on_neuron_blocked)
 	model.crossings_changed.connect(_on_crossings_changed)
+	model.crossing_points_changed.connect(_on_crossing_points_changed)
 	model.tension_changed.connect(_on_tension_changed)
 	model.edge_broke.connect(_on_edge_broke)
 
@@ -291,6 +325,41 @@ func _on_crossings_changed(crossing_edges: Array[int], _involved: Array[int]) ->
 	if count < _crossing_count and _cooled_down(&"chime", CHIME_COOLDOWN):
 		play(&"chime")
 	_crossing_count = count
+
+
+func _on_crossing_points_changed(points: PackedVector2Array) -> void:
+	_set_buzz(points.size())
+
+
+## Fades the buzz loop towards the volume for count crossings; stops it once faded out.
+func _set_buzz(count: int) -> void:
+	var target := buzz_volume_db(count)
+	if target == _buzz_target_db:
+		return
+	_buzz_target_db = target
+	var player: AudioStreamPlayer = _players.get(&"buzz")
+	if player == null:
+		return
+	if _buzz_tween != null:
+		_buzz_tween.kill()
+		_buzz_tween = null
+	if count > 0 and not _buzz_on:
+		_buzz_on = true
+		_ensure_stream(&"buzz")
+		player.volume_db = SILENT_DB
+		_start(player)
+	elif count <= 0:
+		_buzz_on = false
+	if not is_inside_tree():
+		player.volume_db = target
+		if not _buzz_on:
+			player.stop()
+		return
+	_buzz_tween = create_tween()
+	_buzz_tween.tween_property(player, ^"volume_db", target, BUZZ_FADE_IN if _buzz_on else BUZZ_FADE_OUT) \
+		.set_trans(Tween.TRANS_SINE)
+	if not _buzz_on:
+		_buzz_tween.tween_callback(player.stop)
 
 
 func _on_tension_changed(edge_id: int, ratio: float) -> void:

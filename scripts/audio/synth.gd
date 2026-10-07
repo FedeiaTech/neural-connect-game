@@ -111,6 +111,24 @@ static func loop_tone(freq: float, seconds: float, harmonics: Array = [1.0], tre
 	return samples
 
 
+## Electric crackle (seamless loop of seconds length): count tiny decaying noise ticks at seeded
+## random times, each fully inside the loop so the end meets the start in silence.
+static func crackle(seconds: float, count: int, seed: int, rate := MIX_RATE) -> PackedFloat32Array:
+	var total := roundi(seconds * rate)
+	var samples := PackedFloat32Array()
+	samples.resize(total)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed
+	var tick := roundi(0.012 * rate)
+	for k in count:
+		var start := rng.randi_range(0, maxi(total - tick - 1, 0))
+		var gain := rng.randf_range(0.3, 1.0)
+		for i in tick:
+			var envelope := exp(-float(i) / (tick * 0.22))
+			samples[start + i] += rng.randf_range(-1.0, 1.0) * gain * envelope
+	return samples
+
+
 ## Ambient drone (seamless loop): a low A with a fifth, a slightly detuned octave that beats
 ## slowly, and a faint upper fifth that swells twice per loop. All frequencies are multiples of
 ## 1 / seconds (0.125 Hz for 8 s), so the end meets the start.

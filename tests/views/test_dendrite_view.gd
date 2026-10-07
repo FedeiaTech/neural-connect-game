@@ -40,16 +40,38 @@ func test_endpoint_follows_moved_neuron() -> void:
 	assert_that(view.get_endpoints()).is_equal(PackedVector2Array([Vector2(100, 100), Vector2(450, 200)]))
 
 
-func test_crossing_dendrite_is_highlighted() -> void:
+## T7.1: a crossing dendrite keeps its identity color; the crossing shows as a flicker / dash
+## modulation (shader `crossing`) and spark markers, never as a recolor.
+func test_crossing_dendrite_is_highlighted_without_recoloring() -> void:
 	var model := PuzzleModel.from_level(LevelFactory.x_level())
 	var view := _view(0, model)
 	assert_bool(view.is_highlighted()).is_true()
-	assert_that(view.get_line_color()).is_equal(Palette.CROSSING)
+	assert_that(view.get_line_color()).is_equal(Palette.DENDRITE)
+	assert_that(view.get_shader_param(&"line_color")).is_equal(Palette.DENDRITE)
+	assert_float(view.get_shader_param(&"crossing")).is_equal(1.0)
 	# Pull neuron 1 to the same side of edge 2-3 as neuron 0: one move untangles the X.
 	model.grab(1)
 	model.drag_to(Vector2(300, 180))
 	assert_bool(view.is_highlighted()).is_false()
 	assert_that(view.get_line_color()).is_equal(Palette.DENDRITE)
+
+
+func test_crossing_tension_dendrite_stays_green() -> void:
+	# Tension edge 0-1 crossed by normal edge 2-3.
+	var neurons: Array[NeuronData] = [
+		LevelFactory.neuron(0, Vector2(100, 300)),
+		LevelFactory.neuron(1, Vector2(300, 300)),
+		LevelFactory.neuron(2, Vector2(200, 100)),
+		LevelFactory.neuron(3, Vector2(200, 500)),
+	]
+	var dendrites: Array[DendriteData] = [
+		LevelFactory.tension_edge(0, 1, 150.0, 400.0), LevelFactory.edge(2, 3),
+	]
+	var model := PuzzleModel.from_level(LevelFactory.level(neurons, dendrites))
+	var view := _view(0, model)
+	assert_bool(view.is_highlighted()).is_true()
+	assert_that(view.get_line_color()).is_equal(Palette.TENSION)
+	assert_that(view.get_shader_param(&"line_color")).is_equal(Palette.TENSION)
 
 
 func test_no_highlight_when_feedback_is_off() -> void:

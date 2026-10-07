@@ -154,6 +154,26 @@ func test_resolved_crossing_chimes() -> void:
 	assert_bool(_played().has(&"chime")).is_true()
 
 
+## T7.1: soft electric buzz while crossings exist, louder with more crossings (capped).
+func test_buzz_volume_rises_gently_with_the_crossing_count() -> void:
+	assert_float(AudioDirector.buzz_volume_db(0)).is_equal(AudioDirector.SILENT_DB)
+	assert_float(AudioDirector.buzz_volume_db(1)).is_equal_approx(AudioDirector.BUZZ_MIN_DB, 0.0001)
+	assert_float(AudioDirector.buzz_volume_db(3)).is_greater(AudioDirector.buzz_volume_db(1))
+	assert_float(AudioDirector.buzz_volume_db(50)).is_equal_approx(AudioDirector.BUZZ_MAX_DB, 0.0001)
+
+
+func test_buzz_loops_while_crossings_exist_and_fades_when_resolved() -> void:
+	var level := _level()
+	var model := level.get_controller().get_model()
+	# m01 starts tangled.
+	assert_bool(_director.is_buzz_playing()).is_true()
+	model.crossing_points_changed.emit(PackedVector2Array([Vector2.ONE, Vector2.ZERO, Vector2.ONE]))
+	assert_float(_director.get_buzz_target_db()).is_equal_approx(AudioDirector.buzz_volume_db(3), 0.0001)
+	model.crossing_points_changed.emit(PackedVector2Array())
+	assert_bool(_director.is_buzz_playing()).is_false()
+	assert_float(_director.get_buzz_target_db()).is_equal(AudioDirector.SILENT_DB)
+
+
 func test_completion_chord_and_star_pings() -> void:
 	var level := _level()
 	level.get_controller().level_completed.emit(LevelResult.create(4, 20.0, 6, 60.0))

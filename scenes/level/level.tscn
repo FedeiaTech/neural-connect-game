@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="5_hud"]
 [ext_resource type="PackedScene" path="res://scenes/views/background.tscn" id="6_background"]
 [ext_resource type="Script" path="res://scripts/views/level_fx.gd" id="7_fx"]
+[ext_resource type="Script" path="res://scripts/views/crossing_sparks_view.gd" id="8_sparks"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_add"]
 blend_mode = 1
@@ -24,6 +25,10 @@ script = ExtResource("1_level")
 
 [node name="Dendrites" type="Node2D" parent="Playfield"]
 
+[node name="Sparks" type="Node2D" parent="Playfield"]
+material = SubResource("CanvasItemMaterial_add")
+script = ExtResource("8_sparks")
+
 [node name="Neurons" type="Node2D" parent="Playfield"]
 
 [node name="Fx" type="Node2D" parent="Playfield" node_paths=PackedStringArray("shake_target")]
@@ -35,7 +40,7 @@ shake_target = NodePath("../..")
 script = ExtResource("3_input")
 playfield = NodePath("../Playfield")
 
-[node name="LevelController" type="Node" parent="." node_paths=PackedStringArray("playfield", "boundary", "obstacles_root", "dendrites_root", "neurons_root", "input_controller", "fx")]
+[node name="LevelController" type="Node" parent="." node_paths=PackedStringArray("playfield", "boundary", "obstacles_root", "dendrites_root", "neurons_root", "input_controller", "fx", "sparks")]
 script = ExtResource("4_controller")
 playfield = NodePath("../Playfield")
 boundary = NodePath("../Playfield/Boundary")
@@ -44,5 +49,6 @@ dendrites_root = NodePath("../Playfield/Dendrites")
 neurons_root = NodePath("../Playfield/Neurons")
 input_controller = NodePath("../InputController")
 fx = NodePath("../Playfield/Fx")
+sparks = NodePath("../Playfield/Sparks")
 
 [node name="HUD" parent="." instance=ExtResource("5_hud")]

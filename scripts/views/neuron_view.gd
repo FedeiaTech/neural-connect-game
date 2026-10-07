@@ -3,8 +3,9 @@ extends Node2D
 ## Draws one neuron (SDD 3, 4, 5.4): a white soma (red when fixed) with a soft glow halo, a
 ## gentle idle pulse with a per-neuron phase and an organic wobbling outline with short dendrite
 ## stubs, all in assets/shaders/neuron.gdshader on a single quad. Grabbing brightens and
-## scales it up (tween); crossing involvement adds a warm flicker that fades in and calms
-## smoothly; a contact ring flashes when the model blocks it.
+## scales it up (tween); crossing involvement adds a dashed, crackling amber ring around the
+## unchanged soma (T7.1) that fades in and calms smoothly; a contact ring flashes when the model
+## blocks it.
 ##
 ## Wiring: setup() connects this view to the model signals it needs (neuron_moved,
 ## crossings_changed, neuron_blocked) and filters them by id. The grabbed state is not a model
@@ -154,7 +155,8 @@ func _configure_material() -> void:
 	var m := _shader_material
 	m.set_shader_parameter(&"core_color", Palette.NEURON_FIXED if _fixed else Palette.NEURON)
 	m.set_shader_parameter(&"glow_color", Palette.NEURON_FIXED_GLOW if _fixed else Palette.NEURON_GLOW)
-	m.set_shader_parameter(&"warm_color", Palette.CROSSING)
+	m.set_shader_parameter(&"ring_color", Palette.CROSSING)
+	m.set_shader_parameter(&"overload_color", Palette.OVERLOAD_FLASH)
 	m.set_shader_parameter(&"half_size_px", _quad_half_size())
 	m.set_shader_parameter(&"glow_strength", VisualTuning.NEURON_GLOW_STRENGTH)
 	m.set_shader_parameter(&"pulse_speed",
@@ -173,7 +175,7 @@ func _configure_material() -> void:
 func _update_dynamic_params(motion: float) -> void:
 	_set_param(&"motion", motion)
 	_set_param(&"radius_px", lerpf(_radius, _radius * GRAB_SCALE, _grab_amount))
-	_set_param(&"warm", _highlight_amount)
+	_set_param(&"crossing", _highlight_amount)
 	_set_param(&"contact", _contact_flash / CONTACT_FLASH_TIME)
 	var brightness := lerpf(1.0, VisualTuning.GRAB_BRIGHTNESS, _grab_amount)
 	_set_param(&"brightness", brightness + _wave_boost * (VisualTuning.WAVE_BRIGHTNESS - 1.0))

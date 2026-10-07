@@ -9,6 +9,9 @@ extends RefCounted
 signal neuron_moved(id: int, pos: Vector2)
 signal neuron_blocked(id: int, contact: Vector2)
 signal crossings_changed(crossing_edges: Array[int], involved_neurons: Array[int])
+## Separate from crossings_changed (whose payload stays as is for existing listeners): emitted
+## whenever any crossing point moves, appears or disappears (see get_crossing_points()).
+signal crossing_points_changed(points: PackedVector2Array)
 signal tension_changed(edge_id: int, ratio: float)
 signal edge_broke(edge_id: int)
 signal solved()
@@ -32,6 +35,7 @@ var _obstacles: Array[PackedVector2Array] = []
 var _crossing_edges: Array[int] = []
 var _crossing_neurons: Array[int] = []
 var _crossing_count := 0
+var _crossing_points := PackedVector2Array()
 
 ## TENSION edges only: edge id -> Vector2(rest_length, max_length).
 var _tension_limits: Dictionary[int, Vector2] = {}
@@ -359,6 +363,12 @@ func get_crossing_count() -> int:
 	return _crossing_count
 
 
+## Exact crossing positions, one per crossing pair (count == get_crossing_count()), in pair
+## order. A collinear overlap is marked at the midpoint of the shared part.
+func get_crossing_points() -> PackedVector2Array:
+	return _crossing_points.duplicate()
+
+
 ## Recomputes crossings from current positions. Pure query: no state change, no signal.
 func compute_crossings() -> Array[int]:
 	return _find_crossings()[0]
@@ -415,10 +425,12 @@ func _bisect_contact(id: int, start: Vector2, target: Vector2, valid_t: float, i
 	return low
 
 
-## Returns [crossing_edges: Array[int] (sorted), pair_count: int]. O(E^2).
+## Returns [crossing_edges: Array[int] (sorted), pair_count: int, points: PackedVector2Array
+## (one per pair, in pair order)]. O(E^2).
 func _find_crossings() -> Array:
 	var flagged: Dictionary[int, bool] = {}
 	var pairs := 0
+	var points := PackedVector2Array()
 	for i in _edges.size():
 		var e1 := _edges[i]
 		var a1 := _positions[e1.x]
@@ -427,30 +439,36 @@ func _find_crossings() -> Array:
 			var e2 := _edges[j]
 			if e2.x == e1.x or e2.x == e1.y or e2.y == e1.x or e2.y == e1.y:
 				continue
-			if GeometryUtils.segments_cross(a1, a2, _positions[e2.x], _positions[e2.y]):
+			var point: Variant = GeometryUtils.crossing_point(a1, a2, _positions[e2.x], _positions[e2.y])
+			if point != null:
 				flagged[i] = true
 				flagged[j] = true
 				pairs += 1
+				points.append(point)
 	var edges: Array[int] = []
 	edges.assign(flagged.keys())
 	edges.sort()
-	return [edges, pairs]
+	return [edges, pairs, points]
 
 
 func _update_crossings(notify: bool) -> void:
 	var result := _find_crossings()
 	var edges: Array[int] = result[0]
 	var count: int = result[1]
+	var points: PackedVector2Array = result[2]
+	var points_changed := points != _crossing_points
+	_crossing_points = points
 	# The pair count can change while the set of crossing edges stays the same.
-	if edges == _crossing_edges and count == _crossing_count:
-		return
-	_crossing_count = count
-	_crossing_edges = edges
-	var involved: Dictionary[int, bool] = {}
-	for edge_id in edges:
-		involved[_edges[edge_id].x] = true
-		involved[_edges[edge_id].y] = true
-	_crossing_neurons.assign(involved.keys())
-	_crossing_neurons.sort()
-	if notify:
-		crossings_changed.emit(get_crossing_edges(), get_crossing_neurons())
+	if edges != _crossing_edges or count != _crossing_count:
+		_crossing_count = count
+		_crossing_edges = edges
+		var involved: Dictionary[int, bool] = {}
+		for edge_id in edges:
+			involved[_edges[edge_id].x] = true
+			involved[_edges[edge_id].y] = true
+		_crossing_neurons.assign(involved.keys())
+		_crossing_neurons.sort()
+		if notify:
+			crossings_changed.emit(get_crossing_edges(), get_crossing_neurons())
+	if notify and points_changed:
+		crossing_points_changed.emit(get_crossing_points())

@@ -37,6 +37,8 @@ const ObstacleScene := preload("res://scenes/views/obstacle_view.tscn")
 @export var input_controller: InputController
 ## Optional one-off effects layer (break flash, completion wave).
 @export var fx: LevelFx
+## Optional crossing spark markers (T7.1).
+@export var sparks: CrossingSparksView
 
 var _level: LevelData
 var _model: PuzzleModel
@@ -193,6 +195,8 @@ func _build_views() -> void:
 		neurons_root.add_child(neuron)
 		neuron.setup(id, _model, feedback)
 		_neuron_views[id] = neuron
+	if sparks != null:
+		sparks.setup(_model, feedback)
 	if fx != null:
 		fx.setup(_model, _neuron_views, _dendrite_views, membranes)
 

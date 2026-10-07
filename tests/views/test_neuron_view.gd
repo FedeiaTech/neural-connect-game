@@ -106,8 +106,22 @@ func test_crossing_glow_fades_in_and_calms_smoothly() -> void:
 	assert_float(mid).is_between(0.01, 0.99)
 	view._process(5.0)
 	assert_float(view.get_highlight_amount()).is_equal(0.0)
-	assert_float(view.get_shader_param(&"warm")).is_equal(0.0)
+	assert_float(view.get_shader_param(&"crossing")).is_equal(0.0)
 	GameState.reduced_motion = saved
+
+
+## T7.1: crossing shows as a flickering spark ring; the soma keeps its own color and the ring
+## color can never be read as a red fixed neuron.
+func test_crossing_ring_keeps_the_soma_color_and_is_not_fixed_red() -> void:
+	var model := PuzzleModel.from_level(LevelFactory.x_level())
+	var view := _view(0, model)
+	assert_bool(view.is_highlighted()).is_true()
+	assert_that(view.get_shader_param(&"core_color")).is_equal(Palette.NEURON)
+	var ring: Color = view.get_shader_param(&"ring_color")
+	assert_that(ring).is_equal(Palette.CROSSING)
+	# Hue far from the fixed red (more than 30 degrees around the color wheel).
+	var hue_gap := absf(ring.h - Palette.NEURON_FIXED.h)
+	assert_float(minf(hue_gap, 1.0 - hue_gap)).is_greater(30.0 / 360.0)
 
 
 func test_fixed_neuron_pulses_slower_and_deeper() -> void:
