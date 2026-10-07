@@ -107,6 +107,11 @@ receptors since Phase 7) and the beauty comes from light, motion and sound.
   have a slower, heavier pulse.
 - **Dendrites:** thin glowing lines with a faint electrical pulse traveling along them.
   Aesthetic is isolated from logic (see 8.1) so it can later switch to curved/organic branches.
+- **Line smoothing:** every line is antialiased. Dendrite cores feather over about one screen
+  pixel (fwidth-based AA in the shader); thin lines, arcs and circles use Godot's antialiased
+  draw calls; wide glows (membranes, lethal walls, receptor links) are soft bands that fade to
+  zero at their edges with mitered corners (`SoftLine`), and spark-marker glows are one radial
+  gradient sprite. 2D MSAA is not used: Godot 4.7 reports it unsupported on GL Compatibility.
 - **Tension dendrites:** light green, thinning and trembling as they near the limit, with a
   rising warning flicker; the break plays a snap flash and particle burst.
 - **Crossing feedback:** involved normal dendrites fade to red (tension stays green, links

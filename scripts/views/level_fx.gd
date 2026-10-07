@@ -142,9 +142,9 @@ func _draw() -> void:
 func _draw_overload_flash(center: Vector2, t: float) -> void:
 	var fade := 1.0 - t
 	var color := Palette.OVERLOAD_FLASH
-	draw_circle(center, 30.0 + 40.0 * t, Color(1.0, 1.0, 1.0, 0.8 * fade * fade))
+	draw_circle(center, 30.0 + 40.0 * t, Color(1.0, 1.0, 1.0, 0.8 * fade * fade), true, -1.0, true)
 	for i in 3:
-		draw_circle(center, (60.0 + 220.0 * t) * (1.0 + i * 0.5), Color(color, 0.16 * fade / (i + 1)))
+		draw_circle(center, (60.0 + 220.0 * t) * (1.0 + i * 0.5), Color(color, 0.16 * fade / (i + 1)), true, -1.0, true)
 	draw_arc(center, 40.0 + 260.0 * t, 0.0, TAU, 48, Color(Palette.LETHAL_CRACKLE, 0.7 * fade), 4.0 * fade + 1.0, true)
 
 
@@ -152,12 +152,12 @@ func _draw_overload_flash(center: Vector2, t: float) -> void:
 func _draw_break_flash(a: Vector2, b: Vector2, t: float) -> void:
 	var fade := 1.0 - t
 	var color := Palette.BREAK_FLASH
-	draw_line(a, b, Color(color, 0.25 * fade), 22.0 * fade + 2.0)
+	draw_line(a, b, Color(color, 0.25 * fade), 22.0 * fade + 2.0, true)
 	draw_line(a, b, Color(color, 0.9 * fade), 4.0 * fade + 1.0, true)
 	var center := (a + b) * 0.5
 	for i in 3:
 		var radius := (18.0 + 70.0 * t) * (1.0 + i * 0.6)
-		draw_circle(center, radius, Color(color, 0.18 * fade / (i + 1)))
+		draw_circle(center, radius, Color(color, 0.18 * fade / (i + 1)), true, -1.0, true)
 
 
 func _on_neuron_moved(id: int, _pos: Vector2) -> void:

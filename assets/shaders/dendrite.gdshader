@@ -46,7 +46,10 @@ void fragment() {
 	float x = UV.x * length_px;
 	float d = abs(UV.y - 0.5) * 2.0 * half_width_px;
 	float hw = core_width_px * 0.5;
-	float core = 1.0 - smoothstep(hw - 0.6, hw + 0.9, d);
+	// Smooth edge: feather the core over about one screen pixel (fwidth of the px distance),
+	// with a small floor so very thin tension lines still read as a soft line, never jagged.
+	float aa = max(fwidth(d), 0.001) * 0.75 + 0.3;
+	float core = 1.0 - smoothstep(hw - aa, hw + aa, d);
 	float sigma = hw * 2.0 + 3.0;
 	float glow = exp(-(d * d) / (2.0 * sigma * sigma));
 

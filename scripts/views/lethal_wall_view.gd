@@ -19,6 +19,8 @@ const BASE_GLOW := 0.45
 
 var _model: PuzzleModel
 var _segments := PackedVector2Array()
+## Segments joined into polylines where they share endpoints (soft glow with mitered corners).
+var _chains: Array[PackedVector2Array] = []
 var _proximity: Dictionary[int, float] = {}
 var _danger := 0.0
 var _glow := BASE_GLOW
@@ -36,6 +38,7 @@ func _init() -> void:
 func setup(model: PuzzleModel) -> void:
 	_model = model
 	_segments = model.get_lethal_segments()
+	_chains = chain_segments(_segments)
 	_proximity.clear()
 	_danger = 0.0
 	_glow = BASE_GLOW
@@ -63,6 +66,32 @@ func get_hotspot() -> Vector2:
 
 func get_crackle_count() -> int:
 	return _crackles.size()
+
+
+## Joins segment pairs (a0, b0, a1, b1, ...) into polylines: a pair continues the current chain
+## when it starts where the chain ends. A chain that returns to its start is closed (its last
+## point equals its first).
+static func chain_segments(segments: PackedVector2Array) -> Array[PackedVector2Array]:
+	var chains: Array[PackedVector2Array] = []
+	for i in range(0, segments.size() - 1, 2):
+		var a := segments[i]
+		var b := segments[i + 1]
+		if not chains.is_empty():
+			var last := chains[chains.size() - 1]
+			if last[last.size() - 1].is_equal_approx(a):
+				last.append(b)
+				chains[chains.size() - 1] = last
+				continue
+		chains.append(PackedVector2Array([a, b]))
+	# A closed loop split at index 0 (e.g. the last edge of a polygon listed first).
+	if chains.size() > 1:
+		var first := chains[0]
+		var tail := chains[chains.size() - 1]
+		if tail[tail.size() - 1].is_equal_approx(first[0]):
+			tail.append_array(first.slice(1))
+			chains[chains.size() - 1] = tail
+			chains.remove_at(0)
+	return chains
 
 
 func _process(delta: float) -> void:
@@ -113,20 +142,23 @@ func _bolt(a: Vector2, b: Vector2, length: float, jitter: float) -> PackedVector
 
 func _draw() -> void:
 	var glow := _glow
+	# Soft glow bands (fade to zero at the edges) for all segments in one draw call, then the
+	# thin antialiased cores.
+	var band := SoftLine.Band.new()
+	for chain in _chains:
+		band.add(chain, Color(Palette.LETHAL, 0.3 + 0.45 * glow), 21.0 + 10.0 * glow)
+		band.add(chain, Color(Palette.LETHAL, 0.5 + 0.5 * glow), 8.0)
+	band.draw(self)
 	for i in range(0, _segments.size() - 1, 2):
-		var a := _segments[i]
-		var b := _segments[i + 1]
-		draw_line(a, b, Color(Palette.LETHAL, 0.08 + 0.14 * glow), 34.0 + 20.0 * glow)
-		draw_line(a, b, Color(Palette.LETHAL, 0.22 + 0.3 * glow), 12.0)
-		draw_line(a, b, Color(Palette.LETHAL_CRACKLE, 0.35 + 0.45 * glow), 3.0, true)
+		draw_line(_segments[i], _segments[i + 1], Color(Palette.LETHAL_CRACKLE, 0.35 + 0.45 * glow), 3.0, true)
 	for bolt in _crackles:
-		draw_polyline(bolt, Color(Palette.LETHAL_CRACKLE, 0.45 + 0.45 * glow), 3.5)
+		draw_polyline(bolt, Color(Palette.LETHAL_CRACKLE, 0.45 + 0.45 * glow), 3.5, true)
 		draw_polyline(bolt, Color(1.0, 0.9, 1.0, 0.55 + 0.45 * glow), 1.4, true)
 	if _hotspot != Vector2.INF and _danger > 0.0:
 		var flicker := 1.0 if not VisualTuning.is_motion_enabled() else 0.8 + 0.2 * sin(_time * 41.0)
 		for k in 3:
 			draw_circle(_hotspot, (14.0 + 18.0 * k) * (0.6 + _danger),
-				Color(Palette.LETHAL_CRACKLE, 0.22 * _danger * flicker / (k + 1)))
+				Color(Palette.LETHAL_CRACKLE, 0.22 * _danger * flicker / (k + 1)), true, -1.0, true)
 
 
 func _on_proximity_changed(id: int, proximity: float) -> void:

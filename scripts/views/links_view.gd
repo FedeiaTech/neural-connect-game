@@ -147,15 +147,16 @@ func _draw() -> void:
 			flicker = 0.35
 		var boost := _wave_boost(pair, a, b)
 		var width := get_width(pair)
-		draw_line(a, end, Color(Palette.RECEPTOR_GLOW, (0.12 + 0.25 * boost) * flicker), width * 4.0 + 6.0)
+		SoftLine.draw_band(self, PackedVector2Array([a, end]),
+			Color(Palette.RECEPTOR_GLOW, (0.3 + 0.55 * boost) * flicker), width * 2.2 + 4.0)
 		draw_line(a, end, Color(Palette.LINK, minf(1.0, (0.9 + boost) * flicker)), width, true)
 		if link["grow"] < 1.0:
-			draw_circle(end, 4.0, Color(Palette.LINK, 0.9))
+			draw_circle(end, 4.0, Color(Palette.LINK, 0.9), true, -1.0, true)
 	for broken in _breaking:
 		_draw_breaking(broken, motion)
 	for flash in _flashes:
 		var t: float = flash["age"] / FLASH_TIME
-		draw_circle(flash["pos"], 16.0 + 40.0 * t, Color(Palette.RECEPTOR_GLOW, 0.4 * (1.0 - t)))
+		draw_circle(flash["pos"], 16.0 + 40.0 * t, Color(Palette.RECEPTOR_GLOW, 0.4 * (1.0 - t)), true, -1.0, true)
 		draw_arc(flash["pos"], 30.0 + 30.0 * t, 0.0, TAU, 32, Color(Palette.LINK, 0.6 * (1.0 - t)), 2.0, true)
 	for spark in _sparks:
 		var fade: float = 1.0 - spark["age"] / 0.35

@@ -111,8 +111,12 @@ func _draw_membrane() -> void:
 	var glow := 1.0 + _exhale * 1.5
 	var wide := Palette.MEMBRANE_GLOW_WIDE
 	var near := Palette.MEMBRANE_GLOW
-	draw_polyline(points, Color(wide, wide.a * glow * _glow_scale), _line_width * 6.0)
-	draw_polyline(points, Color(near, near.a * glow * _glow_scale), _line_width * 2.6)
+	# Soft bands fade to zero at their edges (smooth, no hard glow edges); the profile peaks
+	# higher than the old flat alpha so the overall glow stays about the same.
+	var band := SoftLine.Band.new()
+	band.add(points, Color(wide, wide.a * glow * _glow_scale * 2.6), _line_width * 3.4)
+	band.add(points, Color(near, near.a * glow * _glow_scale * 2.6), _line_width * 1.5)
+	band.draw(self)
 	if _uniform_color or _point_colors.size() != points.size():
 		draw_polyline(points, _color, _line_width, true)
 	else:

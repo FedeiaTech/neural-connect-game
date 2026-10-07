@@ -76,7 +76,7 @@ func _draw() -> void:
 	var pulse := 0.5 + 0.5 * sin(_time * HALO_PULSE_SPEED) * motion
 	var calm := 0.55 if not is_searching() else 1.0
 	var halo := get_halo_radius()
-	draw_arc(Vector2.ZERO, halo, 0.0, TAU, 96, Color(Palette.RECEPTOR_GLOW, (0.04 + 0.04 * pulse) * calm), 14.0)
+	draw_arc(Vector2.ZERO, halo, 0.0, TAU, 96, Color(Palette.RECEPTOR_GLOW, (0.04 + 0.04 * pulse) * calm), 14.0, true)
 	draw_arc(Vector2.ZERO, halo, 0.0, TAU, 96, Color(Palette.RECEPTOR, (0.16 + 0.14 * pulse) * calm), 2.0, true)
 	if is_searching():
 		_draw_stub(motion)
@@ -93,9 +93,9 @@ func _draw_stub(motion: float) -> void:
 		var u := float(k) / 4.0
 		var sway := sin(_time * 5.0 + u * 4.0) * 3.0 * u * motion
 		points.append(direction * (_radius * 0.9 + length * u) + side * sway)
-	draw_polyline(points, Color(Palette.RECEPTOR_GLOW, 0.3), 5.0)
+	draw_polyline(points, Color(Palette.RECEPTOR_GLOW, 0.3), 5.0, true)
 	draw_polyline(points, Color(Palette.LINK, 0.9), 2.0, true)
-	draw_circle(points[points.size() - 1], 2.5, Color(Palette.LINK, 0.9))
+	draw_circle(points[points.size() - 1], 2.5, Color(Palette.LINK, 0.9), true, -1.0, true)
 
 
 func _draw_dots() -> void:
@@ -104,8 +104,8 @@ func _draw_dots() -> void:
 	for i in states.size():
 		var center := Vector2(start + DOT_GAP * i, -_radius - DOT_DISTANCE)
 		if states[i]:
-			draw_circle(center, DOT_RADIUS + 3.0, Color(Palette.RECEPTOR_GLOW, 0.3))
-			draw_circle(center, DOT_RADIUS, Palette.LINK)
+			draw_circle(center, DOT_RADIUS + 3.0, Color(Palette.RECEPTOR_GLOW, 0.3), true, -1.0, true)
+			draw_circle(center, DOT_RADIUS, Palette.LINK, true, -1.0, true)
 		else:
 			draw_arc(center, DOT_RADIUS, 0.0, TAU, 20, Color(Palette.LINK, 0.75), 1.5, true)
 
