@@ -104,11 +104,14 @@ func _draw_number(center: Vector2, color: Color) -> void:
 
 
 func _draw_stars(center: Vector2, alpha: float) -> void:
+	# Glows first, shapes after: keeps textured and untextured draws batched.
+	for i in stars:
+		GlowTexture.draw(self, center + Vector2((i - 1) * STAR_SPACING, 0.0), STAR_RADIUS * 2.2,
+			Color(GLOW_COLOR, 0.45 * alpha))
 	for i in StarRow.MAX_STARS:
 		var star_center := center + Vector2((i - 1) * STAR_SPACING, 0.0)
 		var points := StarRow.star_points(star_center, STAR_RADIUS)
 		if i < stars:
-			GlowTexture.draw(self, star_center, STAR_RADIUS * 2.2, Color(GLOW_COLOR, 0.45 * alpha))
 			draw_colored_polygon(points, Color(1.0, 1.0, 1.0, alpha))
 		else:
 			points.append(points[0])

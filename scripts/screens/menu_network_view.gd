@@ -71,22 +71,25 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+## Drawn in three passes by primitive kind (lines, glow sprites, cores) so the canvas batches
+## them into a few draw calls instead of alternating textured and untextured commands.
 func _draw() -> void:
 	var positions := _network.get_positions()
 	var time := _network.get_time()
 	var edges := _network.get_edges()
-	for e in edges.size():
-		var edge := edges[e]
-		var a := positions[edge.x]
-		var b := positions[edge.y]
+	for edge in edges:
 		var heat := maxf(_network.get_brightness(edge.x), _network.get_brightness(edge.y))
-		draw_line(a, b, EDGE_COLOR.lerp(EDGE_HOT_COLOR, heat), 1.4 + heat, true)
-		var u := (fposmod(time + float(e) * 0.73, PULSE_CYCLE)) / PULSE_TRAVEL
-		if u <= 1.0 and VisualTuning.is_motion_enabled():
-			var fade := sin(u * PI)
-			GlowTexture.draw(self, a.lerp(b, u), PULSE_RADIUS, Color(NEURON_COLOR, 0.55 * fade))
+		draw_line(positions[edge.x], positions[edge.y], EDGE_COLOR.lerp(EDGE_HOT_COLOR, heat), 1.4 + heat, true)
+	if VisualTuning.is_motion_enabled():
+		for e in edges.size():
+			var u := (fposmod(time + float(e) * 0.73, PULSE_CYCLE)) / PULSE_TRAVEL
+			if u <= 1.0:
+				var edge := edges[e]
+				GlowTexture.draw(self, positions[edge.x].lerp(positions[edge.y], u), PULSE_RADIUS,
+					Color(NEURON_COLOR, 0.55 * sin(u * PI)))
 	for i in positions.size():
 		var glow := _network.get_brightness(i)
-		var p := positions[i]
-		GlowTexture.draw(self, p, GLOW_RADIUS * (1.0 + glow * 0.8), Color(NEURON_COLOR, 0.3 + 0.5 * glow))
-		draw_circle(p, CORE_RADIUS * (1.0 + glow * 0.5), Color(NEURON_COLOR, 0.55 + 0.45 * glow))
+		GlowTexture.draw(self, positions[i], GLOW_RADIUS * (1.0 + glow * 0.8), Color(NEURON_COLOR, 0.3 + 0.5 * glow))
+	for i in positions.size():
+		var glow := _network.get_brightness(i)
+		draw_circle(positions[i], CORE_RADIUS * (1.0 + glow * 0.5), Color(NEURON_COLOR, 0.55 + 0.45 * glow))

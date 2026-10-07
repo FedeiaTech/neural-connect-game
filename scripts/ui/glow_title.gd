@@ -98,13 +98,15 @@ func _draw() -> void:
 	if VisualTuning.is_motion_enabled() and is_revealed():
 		var t := _elapsed - reveal_duration(text.length())
 		pulse = 1.0 + PULSE_DEPTH * sin(t * PULSE_SPEED - PI * 0.5)
+	# Layer by layer (not letter by letter): each outline size lives in its own glyph cache
+	# texture, so this order lets the canvas batch every layer into one draw call.
+	for layer: Array in GLOW_LAYERS:
+		for i in text.length():
+			var alpha := letter_alpha(i, _elapsed)
+			if alpha > 0.0:
+				draw_char_outline(font, origin + Vector2(_offsets[i], 0.0), text[i], font_size, layer[0],
+					Color(GLOW_COLOR, layer[1] * alpha * pulse))
 	for i in text.length():
 		var alpha := letter_alpha(i, _elapsed)
-		if alpha <= 0.0:
-			continue
-		var character := text[i]
-		var pos := origin + Vector2(_offsets[i], 0.0)
-		for layer: Array in GLOW_LAYERS:
-			draw_char_outline(font, pos, character, font_size, layer[0],
-				Color(GLOW_COLOR, layer[1] * alpha * pulse))
-		draw_char(font, pos, character, font_size, Color(1, 1, 1, alpha))
+		if alpha > 0.0:
+			draw_char(font, origin + Vector2(_offsets[i], 0.0), text[i], font_size, Color(1, 1, 1, alpha))

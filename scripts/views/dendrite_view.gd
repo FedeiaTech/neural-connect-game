@@ -34,6 +34,8 @@ var _wave_pos := -1.0
 var _wave_strength := 0.0
 var _wave_tween: Tween
 var _shader_material := ShaderMaterial.new()
+## Last value pushed per dynamic shader parameter.
+var _param_cache: Dictionary[StringName, float] = {}
 
 
 func _init() -> void:
@@ -185,12 +187,20 @@ func _apply_tension_params() -> void:
 	m.set_shader_parameter(&"flicker", VisualTuning.tension_flicker(_ratio) if _tension else 0.0)
 
 
+## Called every frame: only pushes values that changed (an idle dendrite keeps its material
+## clean; T4.7).
 func _update_dynamic_params(motion: float) -> void:
-	var m := _shader_material
-	m.set_shader_parameter(&"motion", motion)
-	m.set_shader_parameter(&"warm", _highlight_amount)
-	m.set_shader_parameter(&"wave_pos", _wave_pos)
-	m.set_shader_parameter(&"wave_strength", _wave_strength)
+	_set_param(&"motion", motion)
+	_set_param(&"warm", _highlight_amount)
+	_set_param(&"wave_pos", _wave_pos)
+	_set_param(&"wave_strength", _wave_strength)
+
+
+func _set_param(param: StringName, value: float) -> void:
+	if _param_cache.get(param, NAN) == value:
+		return
+	_param_cache[param] = value
+	_shader_material.set_shader_parameter(param, value)
 
 
 func _on_neuron_moved(id: int, pos: Vector2) -> void:

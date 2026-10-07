@@ -5,8 +5,12 @@ extends Node
 ##   godot --path . res://tests/visual/capture_screens.tscn -- <screen> <out.png> [frames] [reduced]
 ## screen: main_menu, settings, mission_select, summary (m02 completion panel), pause (m02).
 ## Uses a temporary save (m01 completed with 2 stars) so the real progress is never touched.
-## Optional 4th argument "reduced" captures with reduced motion.
+## Optional 4th argument: "reduced" captures with reduced motion; "perf" turns vsync off and logs
+## Performance monitors over 5 s (after a warm-up) before capturing.
 
+const PerfProbe := preload("res://tests/visual/perf_probe.gd")
+const PERF_WARMUP_FRAMES := 60
+const PERF_SECONDS := 5.0
 const MainMenuScene := preload("res://scenes/screens/main_menu.tscn")
 const SettingsScene := preload("res://scenes/screens/settings_screen.tscn")
 const MissionSelectScene := preload("res://scenes/screens/mission_select.tscn")
@@ -19,6 +23,8 @@ var _screen := "main_menu"
 var _out := "user://capture_screen.png"
 var _saved_reduced_motion := false
 var _level: Level
+var _perf := false
+var _probe: PerfProbe
 
 
 func _ready() -> void:
@@ -34,6 +40,10 @@ func _ready() -> void:
 	GameState.save_path = TEMP_SAVE
 	GameState.load_game()
 	GameState.reduced_motion = args.size() > 3 and args[3] == "reduced"
+	_perf = args.size() > 3 and args[3] == "perf"
+	if _perf:
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		_target = 1_000_000
 	GameState.record_result(&"m01", LevelResult.create(5, 40.0, 4, 30.0))
 	match _screen:
 		"settings":
@@ -60,6 +70,15 @@ func _process(_delta: float) -> void:
 			_level.set_next_mission_available(true)
 		else:
 			_level.pause()
+	if _perf:
+		if _frames == PERF_WARMUP_FRAMES:
+			_probe = PerfProbe.new()
+			_probe.start()
+		elif _probe != null:
+			_probe.sample()
+			if _probe.elapsed() >= PERF_SECONDS:
+				print(_probe.report(_screen))
+				_target = _frames
 	if _frames == _target:
 		var image := get_viewport().get_texture().get_image()
 		var error := image.save_png(_out)

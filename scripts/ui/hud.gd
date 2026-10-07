@@ -53,6 +53,7 @@ const PANEL_IN_SCALE := 0.94
 
 var _summary_tween: Tween
 var _sweep_tween: Tween
+var _shown_seconds := -1
 
 
 func _ready() -> void:
@@ -88,7 +89,12 @@ func set_moves(count: int) -> void:
 	_moves_label.text = "Moves %d" % count
 
 
+## Called every frame while playing: only reformats when the shown second changes.
 func set_time(seconds: float) -> void:
+	var whole := floori(maxf(seconds, 0.0))
+	if whole == _shown_seconds:
+		return
+	_shown_seconds = whole
 	_time_label.text = format_time(seconds)
 
 

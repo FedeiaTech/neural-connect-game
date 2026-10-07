@@ -63,6 +63,14 @@ func light(index: int) -> void:
 	star_revealed.emit(index)
 
 
+## Pop strength 0..1 of star index (1 when just lit, easing to 0 over POP_TIME).
+func _pop(index: int) -> float:
+	if _pop_age[index] < 0.0:
+		return 0.0
+	var t := _pop_age[index] / POP_TIME
+	return (1.0 - t) * (1.0 - t)
+
+
 func _process(delta: float) -> void:
 	var popping := false
 	for i in MAX_STARS:
@@ -80,15 +88,15 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var spacing := size.x / MAX_STARS
 	var radius := minf(spacing, size.y) * 0.4
+	# Glow sprites first, then the shapes (batches textured and untextured draws).
+	for i in _lit:
+		var pop := _pop(i)
+		GlowTexture.draw(self, Vector2(spacing * (i + 0.5), size.y * 0.5), radius * (1.9 + pop * 1.6),
+			Color(GLOW_COLOR, 0.4 + 0.5 * pop))
 	for i in MAX_STARS:
 		var center := Vector2(spacing * (i + 0.5), size.y * 0.5)
 		if i < _lit:
-			var pop := 0.0
-			if _pop_age[i] >= 0.0:
-				var t := _pop_age[i] / POP_TIME
-				pop = (1.0 - t) * (1.0 - t)
-			GlowTexture.draw(self, center, radius * (1.9 + pop * 1.6), Color(GLOW_COLOR, 0.4 + 0.5 * pop))
-			draw_colored_polygon(star_points(center, radius * (1.0 + POP_SCALE * pop)), FILLED_COLOR)
+			draw_colored_polygon(star_points(center, radius * (1.0 + POP_SCALE * _pop(i))), FILLED_COLOR)
 		else:
 			var points := star_points(center, radius)
 			points.append(points[0])

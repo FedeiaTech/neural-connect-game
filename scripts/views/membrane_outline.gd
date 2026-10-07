@@ -16,6 +16,8 @@ var _normals := PackedVector2Array()
 ## Arc length position of each point.
 var _arc := PackedFloat32Array()
 var _perimeter := 0.0
+## Reused output of displaced().
+var _buffer := PackedVector2Array()
 var _cycles_a := 1
 var _cycles_b := 1
 ## x = arc position, y = start time.
@@ -91,9 +93,13 @@ func has_ripples(now: float) -> bool:
 
 
 ## Closed outline (first point repeated) displaced along the normals at time now.
+## Reuses one internal buffer (no per-frame allocation while the caller only reads the result
+## and lets it go before the next call; packed arrays are copy-on-write).
 func displaced(now: float, amplitude: float, motion: float, exhale: float) -> PackedVector2Array:
-	var points := PackedVector2Array()
-	points.resize(_base.size() + 1)
+	var points := _buffer
+	_buffer = PackedVector2Array()
+	if points.size() != _base.size() + 1:
+		points.resize(_base.size() + 1)
 	for i in _base.size():
 		var offset := 0.0
 		if motion > 0.0:
@@ -104,6 +110,7 @@ func displaced(now: float, amplitude: float, motion: float, exhale: float) -> Pa
 		points[i] = _base[i] + _normals[i] * offset
 	if not _base.is_empty():
 		points[_base.size()] = points[0]
+	_buffer = points
 	return points
 
 

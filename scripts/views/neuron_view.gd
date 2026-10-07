@@ -32,6 +32,8 @@ var _wave_boost := 0.0
 var _grab_tween: Tween
 var _wave_tween: Tween
 var _shader_material := ShaderMaterial.new()
+## Last value pushed per dynamic shader parameter.
+var _param_cache: Dictionary[StringName, float] = {}
 
 
 func _init() -> void:
@@ -166,14 +168,22 @@ func _configure_material() -> void:
 	_update_dynamic_params(VisualTuning.motion_scale())
 
 
+## Called every frame: only pushes values that changed, so an idle neuron does not dirty its
+## material (each push re-uploads the material's uniforms; T4.7).
 func _update_dynamic_params(motion: float) -> void:
-	var m := _shader_material
-	m.set_shader_parameter(&"motion", motion)
-	m.set_shader_parameter(&"radius_px", lerpf(_radius, _radius * GRAB_SCALE, _grab_amount))
-	m.set_shader_parameter(&"warm", _highlight_amount)
-	m.set_shader_parameter(&"contact", _contact_flash / CONTACT_FLASH_TIME)
+	_set_param(&"motion", motion)
+	_set_param(&"radius_px", lerpf(_radius, _radius * GRAB_SCALE, _grab_amount))
+	_set_param(&"warm", _highlight_amount)
+	_set_param(&"contact", _contact_flash / CONTACT_FLASH_TIME)
 	var brightness := lerpf(1.0, VisualTuning.GRAB_BRIGHTNESS, _grab_amount)
-	m.set_shader_parameter(&"brightness", brightness + _wave_boost * (VisualTuning.WAVE_BRIGHTNESS - 1.0))
+	_set_param(&"brightness", brightness + _wave_boost * (VisualTuning.WAVE_BRIGHTNESS - 1.0))
+
+
+func _set_param(param: StringName, value: float) -> void:
+	if _param_cache.get(param, NAN) == value:
+		return
+	_param_cache[param] = value
+	_shader_material.set_shader_parameter(param, value)
 
 
 func _animate_grab(target: float) -> void:

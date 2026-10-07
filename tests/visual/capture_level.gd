@@ -4,9 +4,14 @@ extends Node
 ## and to eyeball the look. Run the scene (not with -s, so the GameState autoload exists):
 ##   godot --path . res://tests/visual/capture_level.tscn -- <mission_id> <out.png> [frames] [mode]
 ## mode: play (default), grab (first neuron grabbed), wave (completion wave), break (tension
-## break), reduced (play with reduced motion), glow (WorldEnvironment glow experiment).
+## break), reduced (play with reduced motion), glow (WorldEnvironment glow experiment),
+## perf (idle level, vsync off: logs Performance monitors over PERF_SECONDS, then captures),
+## perf_drag (same while a neuron is dragged in circles every frame).
 
 const LevelScene := preload("res://scenes/level/level.tscn")
+const PerfProbe := preload("res://tests/visual/perf_probe.gd")
+const PERF_WARMUP_FRAMES := 60
+const PERF_SECONDS := 5.0
 
 var _frames := 0
 var _target := 90
@@ -14,6 +19,9 @@ var _mode := "play"
 var _out := "user://capture.png"
 var _level: Level
 var _saved_reduced_motion := false
+var _probe: PerfProbe
+var _drag_id := -1
+var _drag_center := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -29,6 +37,10 @@ func _ready() -> void:
 	GameState.reduced_motion = _mode == "reduced"
 	if _mode == "glow":
 		_add_environment_glow()
+	elif _mode == "glow_alt":
+		_add_environment_glow(true)
+	if _mode.begins_with("perf"):
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	_level = LevelScene.instantiate()
 	add_child(_level)
 	_level.load_level(GameState.get_level(mission))
@@ -38,21 +50,57 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_frames += 1
+	if _mode.begins_with("perf"):
+		_process_perf()
+		return
 	if _frames == _target / 2:
 		_trigger()
 	if _frames == _target:
-		var image := get_viewport().get_texture().get_image()
-		var error := image.save_png(_out)
-		print("capture_level: saved %s (%s)" % [_out, error_string(error)])
-		GameState.reduced_motion = _saved_reduced_motion
-		get_tree().quit()
+		_capture_and_quit()
+
+
+func _process_perf() -> void:
+	if _mode == "perf_drag":
+		_drag_step()
+	if _frames == PERF_WARMUP_FRAMES:
+		_probe = PerfProbe.new()
+		_probe.start()
+	elif _probe != null:
+		_probe.sample()
+		if _probe.elapsed() >= PERF_SECONDS:
+			print(_probe.report("%s %s" % [_mode, GameState.current_mission]))
+			_capture_and_quit()
+
+
+## Drags the first movable neuron around a small circle (the model resolves collisions).
+func _drag_step() -> void:
+	var model := _level.get_controller().get_model()
+	if _drag_id < 0:
+		for id in model.get_neuron_ids():
+			if not model.is_fixed(id):
+				_drag_id = id
+				break
+		_drag_center = model.get_neuron_position(_drag_id)
+		model.grab(_drag_id)
+	var angle := _frames * 0.05
+	model.drag_to(_drag_center + Vector2(cos(angle), sin(angle)) * 90.0)
+
+
+func _capture_and_quit() -> void:
+	var image := get_viewport().get_texture().get_image()
+	var error := image.save_png(_out)
+	print("capture_level: saved %s (%s)" % [_out, error_string(error)])
+	GameState.reduced_motion = _saved_reduced_motion
+	get_tree().quit()
 
 
 ## Experiment for T4.4/T4.7: screen-wide WorldEnvironment glow over the 2D canvas.
 ## Result 2026-10-07 (Godot 4.7.2, GL Compatibility, Intel UHD 600 / OpenGL 3.3): the whole
 ## background turns into a checkerboard artifact, so the game does not use it and relies on
-## additive / premultiplied blending in its shaders instead. Re-check on other GPUs in T4.7.
-func _add_environment_glow() -> void:
+## additive / premultiplied blending in its shaders instead. Re-checked in T4.7 (see
+## odd/tasks/aesthetics.md) with this setup and an alternative one (glow_alt: additive blend,
+## only the two finest levels, threshold 1.0, no bloom): both show the artifact, still not used.
+func _add_environment_glow(alternative := false) -> void:
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_CANVAS
 	environment.glow_enabled = true
@@ -61,6 +109,12 @@ func _add_environment_glow() -> void:
 	environment.glow_bloom = 0.15
 	environment.glow_hdr_threshold = 0.7
 	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	if alternative:
+		environment.glow_bloom = 0.0
+		environment.glow_hdr_threshold = 1.0
+		environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
+		for level in 7:
+			environment.set_glow_level(level, 1.0 if level < 2 else 0.0)
 	var world := WorldEnvironment.new()
 	world.environment = environment
 	add_child(world)

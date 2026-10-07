@@ -127,32 +127,37 @@ func _relayout() -> void:
 	queue_redraw()
 
 
+## Lines first, glow sprites last, so the canvas batches them (few draw calls).
 func _draw() -> void:
 	if _points.is_empty():
 		return
 	var first := _points[0]
 	var last := _points[_points.size() - 1]
-	_draw_dendrite(Vector2(0.0, first.y + 30.0), first, Segment.DIM if _nodes[0].state == MissionNode.State.LOCKED else Segment.OPEN, -1)
-	_draw_dendrite(last, Vector2(size.x, last.y - 30.0), Segment.DIM, -1)
+	var entry := Vector2(0.0, first.y + 30.0)
+	_draw_dendrite(entry, first, Segment.DIM if _nodes[0].state == MissionNode.State.LOCKED else Segment.OPEN)
+	_draw_dendrite(last, Vector2(size.x, last.y - 30.0), Segment.DIM)
 	for i in range(1, _points.size()):
-		_draw_dendrite(_points[i - 1], _points[i], segment_state(_nodes[i - 1].state, _nodes[i].state), i)
+		_draw_dendrite(_points[i - 1], _points[i], segment_state(_nodes[i - 1].state, _nodes[i].state))
+	var from := entry if _pulse_index <= 0 else _points[_pulse_index - 1]
 	if is_pulsing():
-		var from := Vector2(0.0, first.y + 30.0) if _pulse_index == 0 else _points[_pulse_index - 1]
+		draw_line(from, from.lerp(_points[_pulse_index], _pulse_t), Color(GLOW_COLOR, 0.6), 4.0, true)
+	if VisualTuning.is_motion_enabled():
+		for i in range(1, _points.size()):
+			if segment_state(_nodes[i - 1].state, _nodes[i].state) == Segment.LIT:
+				var u := fposmod(_time + i * 1.1, AMBIENT_CYCLE) / AMBIENT_TRAVEL
+				if u <= 1.0:
+					GlowTexture.draw(self, _points[i - 1].lerp(_points[i], u), 14.0, Color(1, 1, 1, 0.7 * sin(u * PI)))
+	if is_pulsing():
 		var to := _points[_pulse_index]
-		draw_line(from, from.lerp(to, _pulse_t), Color(GLOW_COLOR, 0.6), 4.0, true)
 		GlowTexture.draw(self, from.lerp(to, _pulse_t), 30.0, Color(1, 1, 1, 0.9))
 		GlowTexture.draw(self, to, 70.0 * _pulse_t, Color(GLOW_COLOR, 0.5 * _pulse_t))
 
 
-func _draw_dendrite(a: Vector2, b: Vector2, segment: Segment, index: int) -> void:
+func _draw_dendrite(a: Vector2, b: Vector2, segment: Segment) -> void:
 	var color := SEGMENT_COLORS[segment]
 	if segment != Segment.DIM:
 		draw_line(a, b, Color(GLOW_COLOR, color.a * 0.18), 12.0, true)
 	draw_line(a, b, color, 2.0 if segment == Segment.DIM else 3.0, true)
-	if segment == Segment.LIT and VisualTuning.is_motion_enabled():
-		var u := fposmod(_time + index * 1.1, AMBIENT_CYCLE) / AMBIENT_TRAVEL
-		if u <= 1.0:
-			GlowTexture.draw(self, a.lerp(b, u), 14.0, Color(1, 1, 1, 0.7 * sin(u * PI)))
 
 
 func _has_lit_segment() -> bool:
