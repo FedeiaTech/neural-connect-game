@@ -57,6 +57,10 @@ pause={
 
 pointing/emulate_mouse_from_touch=true
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://locale/translations.en.translation", "res://locale/translations.es.translation")
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

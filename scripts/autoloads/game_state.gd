@@ -5,12 +5,14 @@ extends Node
 ## Save: one versioned JSON file (default user://progress.json) holding progress AND settings:
 ##   {"version": 1,
 ##    "progress": {"missions": {"m01": {"completed": true, "stars": 3, "moves": 5, "time": 31.2}}},
-##    "settings": {"master_volume": 1.0, "reduced_motion": false}}
+##    "settings": {"master_volume": 1.0, "reduced_motion": false, "language": "en"}}
 ## A missing or corrupt file means fresh progress and default settings, never a crash; a corrupt
 ## file is moved to <save_path>.bak first. Unknown fields (newer saves) survive a save.
 ## Unlock rule (SDD 7.1, chapter rules undecided -> linear): the first campaign mission is always
 ## unlocked; any other mission is unlocked once the mission before it in campaign order (across
 ## chapters) is completed.
+## Language (T6.2): "en" or "es", applied with TranslationServer.set_locale(). A missing or
+## unsupported saved value falls back to the OS locale (Spanish OS -> "es", anything else -> "en").
 
 signal current_mission_changed(mission_id: StringName)
 signal progress_changed()
@@ -20,6 +22,8 @@ const SAVE_VERSION := 1
 const DEFAULT_SAVE_PATH := "user://progress.json"
 const DEFAULT_CAMPAIGN: Campaign = preload("res://data/campaign.tres")
 const MASTER_BUS := 0
+## Supported UI languages (locale/translations.csv columns). The first one is the fallback.
+const LANGUAGES: Array[String] = ["en", "es"]
 
 ## Injectable for tests so they never touch the real save.
 var save_path := DEFAULT_SAVE_PATH
@@ -28,6 +32,8 @@ var progress := Progress.new()
 ## Linear 0..1.
 var master_volume := 1.0
 var reduced_motion := false
+## One of LANGUAGES.
+var language := "en"
 ## Data read by the last load_game(); save_game() merges into it to keep unknown fields.
 var _loaded_data := {}
 
@@ -58,6 +64,9 @@ func load_game() -> void:
 	master_volume = clampf(float(volume), 0.0, 1.0) if (volume is float or volume is int) else 1.0
 	var motion: Variant = settings.get("reduced_motion", false)
 	reduced_motion = motion if motion is bool else false
+	var saved_language: Variant = settings.get("language")
+	language = saved_language if saved_language is String and LANGUAGES.has(saved_language) \
+		else default_language_for(OS.get_locale_language())
 	apply_settings()
 	progress_changed.emit()
 	settings_changed.emit()
@@ -69,7 +78,7 @@ func save_game() -> Error:
 	var known := {
 		"version": SAVE_VERSION,
 		"progress": progress.to_dict(),
-		"settings": {"master_volume": master_volume, "reduced_motion": reduced_motion},
+		"settings": {"master_volume": master_volume, "reduced_motion": reduced_motion, "language": language},
 	}
 	return SaveFile.write_json(save_path, merge_save_data(_loaded_data, known))
 
@@ -164,8 +173,26 @@ func set_reduced_motion(value: bool) -> void:
 	settings_changed.emit()
 
 
-## Pushes the settings to the engine (master bus volume).
+## Spanish when the OS language is Spanish, English otherwise.
+static func default_language_for(os_language: String) -> String:
+	return os_language if LANGUAGES.has(os_language) else LANGUAGES[0]
+
+
+## Switches the UI language live (every visible text follows) and saves. Unsupported codes are
+## ignored.
+func set_language(code: String) -> void:
+	if not LANGUAGES.has(code):
+		push_warning("GameState: unsupported language '%s' ignored." % code)
+		return
+	language = code
+	apply_settings()
+	save_game()
+	settings_changed.emit()
+
+
+## Pushes the settings to the engine (master bus volume, UI locale).
 func apply_settings() -> void:
+	TranslationServer.set_locale(language)
 	AudioServer.set_bus_mute(MASTER_BUS, master_volume <= 0.0)
 	AudioServer.set_bus_volume_db(MASTER_BUS, linear_to_db(maxf(master_volume, 0.0001)))
 

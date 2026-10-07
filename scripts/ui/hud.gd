@@ -11,6 +11,9 @@ extends CanvasLayer
 ## (star_revealed(index) announces each, e.g. for a sound), moves and time count up and a light
 ## wave sweeps across the screen. Reduced motion shows the final state at once (every star is
 ## still announced). Buttons are GlowButtons; labels have a soft glow outline.
+## T6.2: texts are translation keys. Static ones (buttons, titles) and the mission title and story
+## (LevelData stores keys) translate automatically; formatted ones (moves, summary stats, tooltips)
+## are rebuilt on NOTIFICATION_TRANSLATION_CHANGED, so a live locale switch updates everything.
 
 signal restart_pressed()
 signal story_dismissed()
@@ -54,6 +57,9 @@ const PANEL_IN_SCALE := 0.94
 var _summary_tween: Tween
 var _sweep_tween: Tween
 var _shown_seconds := -1
+var _moves := 0
+## Last summary stats shown: [moves, seconds, progress] (empty before the first summary).
+var _stats: Array = []
 
 
 func _ready() -> void:
@@ -73,6 +79,20 @@ func _ready() -> void:
 	_pause_overlay.hide()
 	set_moves(0)
 	set_time(0.0)
+	_apply_tooltips()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
+		set_moves(_moves)
+		if not _stats.is_empty():
+			_apply_count(_stats[2], _stats[0], _stats[1])
+		_apply_tooltips()
+
+
+## Text of key in the current locale (usable from static functions).
+static func text_for(key: StringName) -> String:
+	return String(TranslationServer.translate(key))
 
 
 ## "mm:ss"; minutes keep counting past 59.
@@ -81,12 +101,14 @@ static func format_time(seconds: float) -> String:
 	return "%02d:%02d" % [floori(total / 60.0), total % 60]
 
 
+## title may be a translation key (LevelData.mission_name); the label translates it.
 func set_mission_title(title: String) -> void:
 	_mission_label.text = title
 
 
 func set_moves(count: int) -> void:
-	_moves_label.text = "Moves %d" % count
+	_moves = count
+	_moves_label.text = text_for(&"HUD_MOVES") % count
 
 
 ## Called every frame while playing: only reformats when the shown second changes.
@@ -98,6 +120,7 @@ func set_time(seconds: float) -> void:
 	_time_label.text = format_time(seconds)
 
 
+## text may be a translation key (LevelData.story_text); the label translates it.
 func show_story(text: String) -> void:
 	_story_label.text = text
 	_story_overlay.show()
@@ -118,7 +141,8 @@ static func star_reveal_times(count: int) -> PackedFloat32Array:
 ## Summary stats with moves and time scaled by progress (0..1) for the count-up.
 static func stats_text(moves: int, seconds: float, progress: float) -> String:
 	var t := clampf(progress, 0.0, 1.0)
-	return "Moves %d    Time %s" % [roundi(moves * t), format_time(seconds * t)]
+	return "%s    %s" % [text_for(&"HUD_MOVES") % roundi(moves * t),
+		text_for(&"HUD_TIME") % format_time(seconds * t)]
 
 
 func show_completion(result: LevelResult) -> void:
@@ -276,7 +300,13 @@ func _mark_handled() -> void:
 
 
 func _apply_count(progress: float, moves: int, seconds: float) -> void:
+	_stats = [moves, seconds, progress]
 	_stats_label.text = stats_text(moves, seconds, progress)
+
+
+func _apply_tooltips() -> void:
+	_restart_button.tooltip_text = tr(&"HUD_RESTART_TOOLTIP")
+	_pause_button.tooltip_text = tr(&"HUD_PAUSE_TOOLTIP")
 
 
 func _play_sweep() -> void:

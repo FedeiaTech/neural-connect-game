@@ -10,11 +10,15 @@ const M02_PATH := "res://data/levels/m02.tres"
 
 var _level: Level
 var _saved_reduced_motion := false
+## Text assertions are in English whatever the OS language (T6.2).
+var _saved_locale := ""
 
 
 ## Reduced motion: the completion summary shows at once (the delayed path is covered by
 ## tests/level/test_level_fx.gd).
 func before_test() -> void:
+	_saved_locale = TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
 	_saved_reduced_motion = GameState.reduced_motion
 	GameState.reduced_motion = true
 	_level = auto_free(LevelScene.instantiate())
@@ -22,6 +26,7 @@ func before_test() -> void:
 
 
 func after_test() -> void:
+	TranslationServer.set_locale(_saved_locale)
 	GameState.reduced_motion = _saved_reduced_motion
 	# Never leave the tree paused for the next test.
 	get_tree().paused = false

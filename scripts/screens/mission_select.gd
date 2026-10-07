@@ -11,6 +11,8 @@ extends Control
 ## button in the header (Delete on a focused completed mission or a right-click on it asks
 ## directly). An inline confirmation follows (Cancel has focus, ui_cancel closes it); confirming
 ## calls GameState.reset_mission() and rebuilds the map.
+## T6.2: names, subtitles and "Locked" are translation keys shown by auto-translating Labels;
+## the formatted texts (chapter headings, reset button and question) follow a live locale switch.
 
 signal mission_selected(mission_id: StringName)
 signal back_pressed()
@@ -40,6 +42,11 @@ func _ready() -> void:
 	_cancel_button.pressed.connect(_cancel_reset)
 	_build()
 	_focus_first_playable()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
+		_apply_reset_texts()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -104,7 +111,7 @@ func request_mission_reset(mission_id: StringName) -> void:
 		return
 	_set_reset_target(mission_id)
 	_reset_button.hide()
-	_confirm_label.text = "Reset the record of mission %d?" % GameState.campaign.get_mission_number(mission_id)
+	_apply_reset_texts()
 	_confirm_row.show()
 	_cancel_button.grab_focus()
 
@@ -155,7 +162,7 @@ func _add_mission(map: MissionMap, level: LevelData, campaign: Campaign) -> void
 	node.mouse_entered.connect(_on_mission_hovered.bind(id))
 	node.gui_input.connect(_on_mission_gui_input.bind(id))
 	var locked := state == MissionNode.State.LOCKED
-	map.add_mission(node, "Locked" if locked else level.mission_name, locked)
+	map.add_mission(node, "MISSIONS_LOCKED" if locked else level.mission_name, locked)
 	_nodes[id] = node
 	_maps[id] = map
 
@@ -194,8 +201,15 @@ func _on_mission_gui_input(event: InputEvent, mission_id: StringName) -> void:
 
 func _set_reset_target(mission_id: StringName) -> void:
 	_reset_target = mission_id
-	_reset_button.text = "Reset record: mission %d" % GameState.campaign.get_mission_number(mission_id)
+	_apply_reset_texts()
 	_reset_button.visible = not is_mission_reset_pending()
+
+
+## Reset button and question name the target mission by its number.
+func _apply_reset_texts() -> void:
+	var number := GameState.campaign.get_mission_number(_reset_target) if _reset_target != &"" else 0
+	_reset_button.text = tr(&"MISSIONS_RESET_RECORD") % number
+	_confirm_label.text = tr(&"MISSIONS_RESET_CONFIRM") % number
 
 
 func _on_reset_button_pressed() -> void:

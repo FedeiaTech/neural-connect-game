@@ -17,7 +17,12 @@ Branch: `feat/mvp-foundation`. Slice base: `ed085e3`.
   - Mission select: hovering/focusing a completed mission shows a header button "Reset record: mission N"; Delete on a focused completed mission or right-click asks directly; inline confirm; the map is rebuilt (nodes freed at once, no orphans).
   - In-level restart: HUD Restart/Pause buttons got tooltips naming the keys (R, Esc); R action and pause-menu Restart unchanged.
   - Evidence: RED observed for `tests/campaign/test_progress_reset.gd` (missing `erase`/`clear`/`reset_*`), then GREEN; `tests/ui/test_reset_ui.gd` written before the UI but first run after it (not a strict RED). Full suite 357/357, 0 orphans.
-- [ ] **T6.2 Localization infrastructure** — translation CSV, keys in all UI, language setting persisted, live switch.
+- [x] **T6.2 Localization infrastructure** — translation CSV, keys in all UI, language setting persisted, live switch.
+  - `locale/translations.csv` (`keys,en,es`, semantic UPPER_SNAKE keys: `MENU_*`, `COMMON_*`, `SETTINGS_*`, `MISSIONS_*`, `HUD_*`, `SUMMARY_*`, `PAUSE_*`), registered in `project.godot` `internationalization/locale/translations`.
+  - Translation files: the CSV importer writes `locale/translations.{en,es}.translation` next to the CSV (not under `.godot/`); those are the resources the project setting loads at runtime, so they are committed with `translations.csv.import`. Re-import is byte-identical (hash checked).
+  - Scenes hold keys; Labels/Buttons auto-translate. Formatted texts are built with `tr()` and rebuilt on `NOTIFICATION_TRANSLATION_CHANGED`: HUD moves/summary stats/tooltips, chapter headings ("Chapter %d: %s"), mission tooltips, mission-select reset texts. `GlowTitle` draws `atr(text)` and re-measures on the notification. The game name "Neural Connect" stays untranslated.
+  - `GameState.language` ("en"/"es") saved under `settings.language`; missing/invalid -> `default_language_for(OS.get_locale_language())` (es -> es, else en). The resolved value is written on the next save. `set_language()` applies `TranslationServer.set_locale` live and saves. Settings has an OptionButton "English"/"Español" (auto-translate disabled).
+  - Tests: the sandbox and text-asserting suites force `en` and restore the locale. `tests/localization/test_localization.gd` covers table completeness, placeholders, registration, every scene text being a key, default/persistence/invalid language, live switch of GlowTitle, HUD and chapter headings. RED observed (parse errors: missing `default_language_for`, `get_language_selector`); GREEN 370/370.
 - [ ] **T6.3 Content translation** — mission names, chapters, story texts in en/es.
 - [ ] **T6.4 Docs** — SDD + plan updated.
 

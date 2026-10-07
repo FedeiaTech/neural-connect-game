@@ -9,13 +9,18 @@ const HudScene := preload("res://scenes/ui/hud.tscn")
 var _hud: Hud
 var _recorder: SignalRecorder
 var _saved_reduced_motion := false
+## Text assertions are in English whatever the OS language (T6.2).
+var _saved_locale := ""
 
 
 func after_test() -> void:
+	TranslationServer.set_locale(_saved_locale)
 	GameState.reduced_motion = _saved_reduced_motion
 
 
 func before_test() -> void:
+	_saved_locale = TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
 	_saved_reduced_motion = GameState.reduced_motion
 	GameState.reduced_motion = true
 	_hud = auto_free(HudScene.instantiate())

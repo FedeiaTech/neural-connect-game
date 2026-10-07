@@ -2,6 +2,8 @@ extends RefCounted
 ## Points the GameState autoload at a temp save file for one test and restores it afterwards,
 ## so flow/UI tests never read or write the real user://progress.json.
 ## reduced_motion is forced on (not saved) so screen transitions complete synchronously.
+## The language is forced to English (not saved) so text assertions do not depend on the OS;
+## exit() reloads the real save, which re-applies the player's language.
 
 const TEMP_PATH := "user://test_flow_progress.json"
 
@@ -14,6 +16,8 @@ func enter() -> void:
 	GameState.save_path = TEMP_PATH
 	GameState.load_game()
 	GameState.reduced_motion = true
+	GameState.language = "en"
+	GameState.apply_settings()
 
 
 func exit() -> void:

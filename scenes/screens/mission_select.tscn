@@ -43,14 +43,14 @@ theme_override_constants/separation = 24
 custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
 size_flags_vertical = 4
-text = "Back"
+text = "COMMON_BACK"
 script = ExtResource("3_button")
 
 [node name="Title" type="Control" parent="Margin/Column/Header"]
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("4_title")
-text = "Missions"
+text = "COMMON_MISSIONS"
 font_size = 56
 
 [node name="Spacer" type="Control" parent="Margin/Column/Header"]
@@ -64,7 +64,7 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_font_sizes/font_size = 22
-text = "Reset record"
+text = "MISSIONS_RESET_RECORD"
 script = ExtResource("3_button")
 
 [node name="ConfirmRow" type="HBoxContainer" parent="Margin/Column/Header"]
@@ -76,20 +76,20 @@ theme_override_constants/separation = 16
 [node name="ConfirmLabel" type="Label" parent="Margin/Column/Header/ConfirmRow"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "Reset this record?"
+text = "MISSIONS_RESET_CONFIRM"
 
 [node name="ConfirmButton" type="Button" parent="Margin/Column/Header/ConfirmRow"]
 custom_minimum_size = Vector2(130, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "Reset"
+text = "COMMON_RESET"
 script = ExtResource("3_button")
 
 [node name="CancelButton" type="Button" parent="Margin/Column/Header/ConfirmRow"]
 custom_minimum_size = Vector2(130, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "Cancel"
+text = "COMMON_CANCEL"
 script = ExtResource("3_button")
 
 [node name="Scroll" type="ScrollContainer" parent="Margin/Column"]

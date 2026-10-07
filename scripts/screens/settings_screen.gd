@@ -5,6 +5,8 @@ extends Control
 ## T4.5: shown on the shared Background inside a glowing panel, with a GlowTitle and GlowButton.
 ## T6.1: "Reset progress" swaps itself for an inline confirmation (Cancel has focus, ui_cancel
 ## closes it); confirming calls GameState.reset_progress() and shows a short feedback line.
+## T6.2: language selector (names shown in their own language, never translated); switching
+## calls GameState.set_language() and every visible text follows at once.
 
 signal back_pressed()
 
@@ -12,11 +14,15 @@ const PERCENT := 100.0
 const COLUMN := "Center/Panel/Column/"
 const RESET := COLUMN + "ResetBox/"
 const FEEDBACK_TIME := 2.5
+## GameState.LANGUAGES code -> name in that language.
+const LANGUAGE_NAMES := {"en": "English", "es": "Español"}
 
 @onready var _volume_slider: HSlider = get_node(COLUMN + "VolumeRow/VolumeSlider")
 @onready var _volume_value: Label = get_node(COLUMN + "VolumeRow/VolumeValue")
 @onready var _motion_toggle: CheckButton = get_node(COLUMN + "ReducedMotionToggle")
 @onready var _back_button: Button = get_node(COLUMN + "BackButton")
+@onready var _title: GlowTitle = get_node(COLUMN + "Title")
+@onready var _language_selector: OptionButton = get_node(COLUMN + "LanguageRow/LanguageSelector")
 @onready var _reset_button: Button = get_node(RESET + "ResetButton")
 @onready var _confirm_row: Control = get_node(RESET + "ConfirmRow")
 @onready var _confirm_button: Button = get_node(RESET + "ConfirmRow/ConfirmButton")
@@ -31,6 +37,8 @@ func _ready() -> void:
 	_volume_slider.value = GameState.master_volume
 	_motion_toggle.button_pressed = GameState.reduced_motion
 	_update_volume_label(_volume_slider.value)
+	_fill_languages()
+	_language_selector.item_selected.connect(_on_language_selected)
 	_volume_slider.value_changed.connect(_on_volume_changed)
 	_motion_toggle.toggled.connect(GameState.set_reduced_motion)
 	_back_button.pressed.connect(back_pressed.emit)
@@ -55,6 +63,14 @@ func get_volume_slider() -> HSlider:
 
 func get_reduced_motion_toggle() -> CheckButton:
 	return _motion_toggle
+
+
+func get_language_selector() -> OptionButton:
+	return _language_selector
+
+
+func get_title() -> GlowTitle:
+	return _title
 
 
 func get_back_button() -> Button:
@@ -88,6 +104,17 @@ func _on_volume_changed(value: float) -> void:
 
 func _update_volume_label(value: float) -> void:
 	_volume_value.text = "%d%%" % roundi(value * PERCENT)
+
+
+func _fill_languages() -> void:
+	for code in GameState.LANGUAGES:
+		_language_selector.add_item(LANGUAGE_NAMES.get(code, code))
+	_language_selector.select(maxi(GameState.LANGUAGES.find(GameState.language), 0))
+
+
+func _on_language_selected(index: int) -> void:
+	if index >= 0 and index < GameState.LANGUAGES.size():
+		GameState.set_language(GameState.LANGUAGES[index])
 
 
 func _ask_reset() -> void:

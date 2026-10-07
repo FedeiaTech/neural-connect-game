@@ -18,6 +18,8 @@ const GLOW_COLOR := Color(0.6, 0.82, 1.0)
 const NODE_SIZE := Vector2(140.0, 150.0)
 
 var mission_id: StringName = &""
+## Mission name as given to setup() (a translation key for campaign missions).
+var _name_key := ""
 var number := 0
 var state := State.LOCKED:
 	set(value):
@@ -49,11 +51,19 @@ func setup(p_mission_id: StringName, p_number: int, p_state: State, p_stars: int
 	number = p_number
 	state = p_state
 	stars = p_stars
-	tooltip_text = p_name if p_state != State.LOCKED else "Locked"
+	_name_key = p_name
+	_apply_tooltip()
+
+
+## Tooltip: the mission name (a translation key) or "Locked", translated.
+func _apply_tooltip() -> void:
+	tooltip_text = tr(_name_key) if state != State.LOCKED else tr(&"MISSIONS_LOCKED")
 
 
 func _notification(what: int) -> void:
 	match what:
+		NOTIFICATION_TRANSLATION_CHANGED:
+			_apply_tooltip()
 		NOTIFICATION_MOUSE_ENTER, NOTIFICATION_MOUSE_EXIT, NOTIFICATION_FOCUS_ENTER, \
 				NOTIFICATION_FOCUS_EXIT:
 			queue_redraw()

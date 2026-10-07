@@ -4,6 +4,8 @@ extends Control
 ## slow bioluminescent glow pulse. The glow is a few soft character outlines layered under the
 ## letters (draw_char_outline), drawn with an additive material, so no shader or image is needed.
 ## Reduced motion: fully visible at once and no pulse (static glow).
+## T6.2: `text` may be a translation key; the translated text (atr) is drawn and re-measured on
+## a live locale switch.
 
 const LETTER_DELAY := 0.07
 const LETTER_FADE := 0.45
@@ -23,6 +25,8 @@ const GLOW_LAYERS := [[36, 0.05], [22, 0.08], [12, 0.14], [5, 0.24]]
 		_measure()
 
 var _elapsed := 0.0
+## Translated text actually drawn.
+var _display := ""
 var _offsets := PackedFloat32Array()
 var _text_width := 0.0
 
@@ -47,17 +51,27 @@ func _init() -> void:
 func _ready() -> void:
 	_measure()
 	if not VisualTuning.is_motion_enabled():
-		_elapsed = reveal_duration(text.length())
+		_elapsed = reveal_duration(_display.length())
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_measure()
+
+
+## The text as drawn (translated when `text` is a key).
+func get_display_text() -> String:
+	return atr(text)
 
 
 ## Replays the letter reveal (instantly complete with reduced motion).
 func restart() -> void:
-	_elapsed = 0.0 if VisualTuning.is_motion_enabled() else reveal_duration(text.length())
+	_elapsed = 0.0 if VisualTuning.is_motion_enabled() else reveal_duration(_display.length())
 	queue_redraw()
 
 
 func is_revealed() -> bool:
-	return _elapsed >= reveal_duration(text.length())
+	return _elapsed >= reveal_duration(_display.length())
 
 
 ## Moves the animation clock forward (used by _process; public for tests).
@@ -72,41 +86,42 @@ func _process(delta: float) -> void:
 	if VisualTuning.is_motion_enabled():
 		advance(delta)
 	elif not is_revealed():
-		_elapsed = reveal_duration(text.length())
+		_elapsed = reveal_duration(_display.length())
 		queue_redraw()
 
 
 func _measure() -> void:
 	if not is_inside_tree():
 		return
+	_display = get_display_text()
 	var font := get_theme_default_font()
 	_offsets = PackedFloat32Array()
-	for i in text.length():
-		_offsets.append(font.get_string_size(text.substr(0, i), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
-	_text_width = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	for i in _display.length():
+		_offsets.append(font.get_string_size(_display.substr(0, i), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
+	_text_width = font.get_string_size(_display, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	custom_minimum_size = Vector2(_text_width + 80.0, font.get_height(font_size) + 40.0)
 	queue_redraw()
 
 
 func _draw() -> void:
-	if text.is_empty() or _offsets.size() != text.length():
+	if _display.is_empty() or _offsets.size() != _display.length():
 		return
 	var font := get_theme_default_font()
 	var baseline := (size.y + font.get_ascent(font_size) - font.get_descent(font_size)) * 0.5
 	var origin := Vector2((size.x - _text_width) * 0.5, baseline)
 	var pulse := 1.0
 	if VisualTuning.is_motion_enabled() and is_revealed():
-		var t := _elapsed - reveal_duration(text.length())
+		var t := _elapsed - reveal_duration(_display.length())
 		pulse = 1.0 + PULSE_DEPTH * sin(t * PULSE_SPEED - PI * 0.5)
 	# Layer by layer (not letter by letter): each outline size lives in its own glyph cache
 	# texture, so this order lets the canvas batch every layer into one draw call.
 	for layer: Array in GLOW_LAYERS:
-		for i in text.length():
+		for i in _display.length():
 			var alpha := letter_alpha(i, _elapsed)
 			if alpha > 0.0:
-				draw_char_outline(font, origin + Vector2(_offsets[i], 0.0), text[i], font_size, layer[0],
+				draw_char_outline(font, origin + Vector2(_offsets[i], 0.0), _display[i], font_size, layer[0],
 					Color(GLOW_COLOR, layer[1] * alpha * pulse))
-	for i in text.length():
+	for i in _display.length():
 		var alpha := letter_alpha(i, _elapsed)
 		if alpha > 0.0:
-			draw_char(font, origin + Vector2(_offsets[i], 0.0), text[i], font_size, Color(1, 1, 1, alpha))
+			draw_char(font, origin + Vector2(_offsets[i], 0.0), _display[i], font_size, Color(1, 1, 1, alpha))

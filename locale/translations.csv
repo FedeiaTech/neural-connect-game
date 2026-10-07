@@ -1,0 +1,33 @@
+keys,en,es
+MENU_SUBTITLE,Untangle the network. Let the signal through.,Desenreda la red. Deja pasar la señal.
+MENU_PLAY,Play,Jugar
+MENU_SETTINGS,Settings,Ajustes
+MENU_QUIT,Quit,Salir
+COMMON_BACK,Back,Volver
+COMMON_CANCEL,Cancel,Cancelar
+COMMON_RESET,Reset,Restablecer
+COMMON_MISSIONS,Missions,Misiones
+SETTINGS_TITLE,Settings,Ajustes
+SETTINGS_VOLUME,Master volume,Volumen general
+SETTINGS_REDUCED_MOTION,Reduced motion,Movimiento reducido
+SETTINGS_LANGUAGE,Language,Idioma
+SETTINGS_RESET_PROGRESS,Reset progress,Restablecer progreso
+SETTINGS_RESET_CONFIRM,Erase all mission progress?,¿Seguro? Se borrará todo el progreso.
+SETTINGS_RESET_DONE,Progress reset,Progreso restablecido
+MISSIONS_CHAPTER_HEADING,Chapter %d: %s,Capítulo %d: %s
+MISSIONS_LOCKED,Locked,Bloqueada
+MISSIONS_RESET_RECORD,Reset record: mission %d,Restablecer récord: misión %d
+MISSIONS_RESET_CONFIRM,Reset the record of mission %d?,¿Restablecer el récord de la misión %d?
+HUD_MOVES,Moves %d,Movimientos %d
+HUD_TIME,Time %s,Tiempo %s
+HUD_RESTART,Restart,Reiniciar
+HUD_RESTART_TOOLTIP,Restart the mission (R),Reiniciar la misión (R)
+HUD_PAUSE,Pause,Pausa
+HUD_PAUSE_TOOLTIP,Pause (Esc),Pausa (Esc)
+HUD_STORY_HINT,Click to begin,Haz clic para comenzar
+SUMMARY_TITLE,Network restored,Red restablecida
+SUMMARY_NEXT,Next mission,Siguiente misión
+SUMMARY_REPLAY,Replay,Repetir
+PAUSE_TITLE,Paused,En pausa
+PAUSE_RESUME,Resume,Continuar
+PAUSE_MISSION_SELECT,Mission select,Selección de misión

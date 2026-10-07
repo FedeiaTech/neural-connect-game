@@ -48,7 +48,6 @@ theme_override_colors/font_color = Color(0.92, 0.96, 1, 0.9)
 theme_override_colors/font_outline_color = Color(0.45, 0.72, 1, 0.16)
 theme_override_constants/outline_size = 10
 theme_override_font_sizes/font_size = 28
-text = "Moves 0"
 
 [node name="TimeLabel" type="Label" parent="TopBar/Row"]
 custom_minimum_size = Vector2(90, 0)
@@ -63,18 +62,16 @@ text = "00:00"
 custom_minimum_size = Vector2(140, 44)
 layout_mode = 2
 focus_mode = 0
-tooltip_text = "Restart the mission (R)"
 theme_override_font_sizes/font_size = 24
-text = "Restart"
+text = "HUD_RESTART"
 script = ExtResource("3_button")
 
 [node name="PauseButton" type="Button" parent="TopBar/Row"]
 custom_minimum_size = Vector2(140, 44)
 layout_mode = 2
 focus_mode = 0
-tooltip_text = "Pause (Esc)"
 theme_override_font_sizes/font_size = 24
-text = "Pause"
+text = "HUD_PAUSE"
 script = ExtResource("3_button")
 
 [node name="StoryOverlay" type="ColorRect" parent="."]
@@ -114,7 +111,7 @@ autowrap_mode = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(0.82, 0.91, 1, 0.5)
 theme_override_font_sizes/font_size = 22
-text = "Click to begin"
+text = "HUD_STORY_HINT"
 horizontal_alignment = 1
 
 [node name="CompletionOverlay" type="ColorRect" parent="."]
@@ -146,7 +143,7 @@ theme_override_constants/separation = 24
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("4_title")
-text = "Network restored"
+text = "SUMMARY_TITLE"
 font_size = 48
 
 [node name="Stars" type="Control" parent="CompletionOverlay/Center/Panel/Column"]
@@ -172,21 +169,21 @@ visible = false
 custom_minimum_size = Vector2(220, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "Next mission"
+text = "SUMMARY_NEXT"
 script = ExtResource("3_button")
 
 [node name="ReplayButton" type="Button" parent="CompletionOverlay/Center/Panel/Column/Buttons"]
 custom_minimum_size = Vector2(220, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "Replay"
+text = "SUMMARY_REPLAY"
 script = ExtResource("3_button")
 
 [node name="MissionSelectButton" type="Button" parent="CompletionOverlay/Center/Panel/Column/Buttons"]
 custom_minimum_size = Vector2(220, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "Missions"
+text = "COMMON_MISSIONS"
 script = ExtResource("3_button")
 
 [node name="Sweep" type="ColorRect" parent="CompletionOverlay"]
@@ -229,23 +226,23 @@ theme_override_constants/separation = 22
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("4_title")
-text = "Paused"
+text = "PAUSE_TITLE"
 font_size = 48
 
 [node name="ResumeButton" type="Button" parent="PauseOverlay/Center/Panel/Column"]
 custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
-text = "Resume"
+text = "PAUSE_RESUME"
 script = ExtResource("3_button")
 
 [node name="RestartButton" type="Button" parent="PauseOverlay/Center/Panel/Column"]
 custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
-text = "Restart"
+text = "HUD_RESTART"
 script = ExtResource("3_button")
 
 [node name="MissionSelectButton" type="Button" parent="PauseOverlay/Center/Panel/Column"]
 custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
-text = "Mission select"
+text = "PAUSE_MISSION_SELECT"
 script = ExtResource("3_button")

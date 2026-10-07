@@ -51,7 +51,7 @@ text = "Neural Connect"
 [node name="Subtitle" type="Label" parent="Center/Column"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.82, 0.91, 1, 0.62)
-text = "Untangle the network. Let the signal through."
+text = "MENU_SUBTITLE"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="Center/Column"]
@@ -63,19 +63,19 @@ mouse_filter = 2
 custom_minimum_size = Vector2(320, 64)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Play"
+text = "MENU_PLAY"
 script = ExtResource("5_button")
 
 [node name="SettingsButton" type="Button" parent="Center/Column"]
 custom_minimum_size = Vector2(320, 64)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Settings"
+text = "MENU_SETTINGS"
 script = ExtResource("5_button")
 
 [node name="QuitButton" type="Button" parent="Center/Column"]
 custom_minimum_size = Vector2(320, 64)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Quit"
+text = "MENU_QUIT"
 script = ExtResource("5_button")

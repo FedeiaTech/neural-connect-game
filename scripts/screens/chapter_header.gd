@@ -13,6 +13,8 @@ var _backdrop := ColorRect.new()
 var _title := Label.new()
 var _subtitle := Label.new()
 var _material := ShaderMaterial.new()
+var _chapter_id := 0
+var _title_key := ""
 
 
 ## Distinct, stable seed per chapter id.
@@ -49,9 +51,12 @@ func _init() -> void:
 	resized.connect(_on_resized)
 
 
-## Shows "Chapter <id>: <title>" and the subtitle over the chapter's backdrop.
+## Shows "Chapter <id>: <title>" and the subtitle over the chapter's backdrop. title and subtitle
+## may be translation keys (ChapterData stores keys); both follow a live locale switch.
 func setup(chapter_id: int, title: String, subtitle: String) -> void:
-	_title.text = "Chapter %d: %s" % [chapter_id, title]
+	_chapter_id = chapter_id
+	_title_key = title
+	_apply_title()
 	_subtitle.text = subtitle
 	_material.set_shader_parameter(&"seed", seed_for(chapter_id))
 	_material.set_shader_parameter(&"accent", accent_for(chapter_id))
@@ -60,6 +65,15 @@ func setup(chapter_id: int, title: String, subtitle: String) -> void:
 
 func get_title_text() -> String:
 	return _title.text
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_apply_title()
+
+
+func _apply_title() -> void:
+	_title.text = tr(&"MISSIONS_CHAPTER_HEADING") % [_chapter_id, tr(_title_key)]
 
 
 func get_backdrop() -> ColorRect:
