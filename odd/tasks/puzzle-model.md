@@ -15,7 +15,11 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `84c69e1` (see mvp-founda
   `test_puzzle_model_crossings.gd` 8/8, suite 24/24. `crossings_changed` emission is exercised by the
   drag tests (T1.3) since only a position change can trigger it.
   Decision: touching endpoints and collinear overlaps of edges with no shared neuron count as crossings.
-- [ ] **T1.3 Drag and collisions** — `grab/drag_to/release`, boundary/obstacles/neurons, fixed neurons.
+- [x] **T1.3 Drag and collisions** — `grab/drag_to/release`, boundary/obstacles/neurons, fixed neurons.
+  Evidence: RED (`grab` nonexistent) → GREEN `test_puzzle_model_drag.gd` 21/21, suite 45/45.
+  Decisions: path sub-stepped at radius*0.25 plus 16-step bisection for the contact point (no
+  tunneling; max corner clip ~0.2 px at r=28); `neuron_blocked` carries the neuron's stop center and
+  fires on every blocked `drag_to`; `grab` refuses while another neuron is grabbed (single pointer).
 - [ ] **T1.4 Tension dendrites** — `tension_changed`, `edge_broke`.
 - [ ] **T1.5 Win and moves** — `solved`, move count.
 - [ ] **T1.6 Level validation helper** — reference solution has zero crossings and valid placement.

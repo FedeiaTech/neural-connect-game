@@ -16,7 +16,7 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
   Skills: `godot-prompter:resource-pattern`
 - [x] **T1.2 Crossing detection** — segment intersection for edge pairs not sharing a neuron; emits `crossings_changed`.
   Skills: `godot-prompter:math-essentials`, `godot-prompter:godot-testing`
-- [ ] **T1.3 Drag and collisions** — `grab/drag_to/release`; boundary and obstacle clamping, neuron-vs-neuron stop at contact while staying grabbed; fixed (red) neurons ignored.
+- [x] **T1.3 Drag and collisions** — `grab/drag_to/release`; boundary and obstacle clamping, neuron-vs-neuron stop at contact while staying grabbed; fixed (red) neurons ignored.
   Skills: `godot-prompter:math-essentials`, `godot-prompter:godot-testing`
 - [ ] **T1.4 Tension dendrites** — ratio, `tension_changed`, `edge_broke`.
   Skills: `godot-prompter:math-essentials`, `godot-prompter:godot-testing`

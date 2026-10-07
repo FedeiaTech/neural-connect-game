@@ -14,6 +14,12 @@ signal edge_broke(edge_id: int)
 signal solved()
 
 const NO_NEURON := -1
+## Drag sub-step as a fraction of the neuron radius. A circle can clip a sharp corner between
+## two samples by at most radius * (1 - sqrt(1 - (STEP_FACTOR / 2)^2)), about 0.2 px at radius 28.
+const STEP_FACTOR := 0.25
+const MIN_STEP := 1.0
+## Binary search iterations to locate the contact point inside the blocked sub-step.
+const BISECT_ITERATIONS := 16
 
 var _ids: Array[int] = []
 var _positions: Dictionary[int, Vector2] = {}
@@ -26,6 +32,9 @@ var _obstacles: Array[PackedVector2Array] = []
 var _crossing_edges: Array[int] = []
 var _crossing_neurons: Array[int] = []
 var _crossing_count := 0
+
+var _grabbed_id := NO_NEURON
+var _moved_during_grab := false
 
 
 ## Builds a model from level data. The resource is copied, never mutated.
@@ -50,7 +59,79 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 	return model
 
 
+# --- Input -------------------------------------------------------------------
+
+## Grabs a neuron for dragging. Refused (false) for unknown or fixed neurons, or while
+## another neuron is grabbed (single pointer). Grabbing the already grabbed neuron is true.
+func grab(id: int) -> bool:
+	if not _positions.has(id) or _fixed[id]:
+		return false
+	if _grabbed_id != NO_NEURON:
+		return _grabbed_id == id
+	_grabbed_id = id
+	_moved_during_grab = false
+	return true
+
+
+## Moves the grabbed neuron along the straight path to target. If the path is blocked by the
+## play area outline, an obstacle or another neuron, the neuron stops at the last valid point
+## (no sliding, no pushing), stays grabbed and neuron_blocked(id, stop_position) is emitted on
+## every blocked call. Dendrites never block neurons.
+func drag_to(target: Vector2) -> void:
+	if _grabbed_id == NO_NEURON:
+		return
+	var id := _grabbed_id
+	var start := _positions[id]
+	if start == target:
+		return
+	var step := maxf(_radius * STEP_FACTOR, MIN_STEP)
+	var steps := maxi(ceili(start.distance_to(target) / step), 1)
+	var reached := target
+	var blocked := false
+	var last_valid_t := 0.0
+	for i in range(1, steps + 1):
+		var t := float(i) / steps
+		if not _is_free_position(id, start.lerp(target, t)):
+			reached = start.lerp(target, _bisect_contact(id, start, target, last_valid_t, t))
+			blocked = true
+			break
+		last_valid_t = t
+	if reached != start:
+		_positions[id] = reached
+		_moved_during_grab = true
+		neuron_moved.emit(id, reached)
+		_update_crossings(true)
+	if blocked:
+		neuron_blocked.emit(id, reached)
+
+
+## Ends the current drag.
+func release() -> void:
+	if _grabbed_id == NO_NEURON:
+		return
+	_grabbed_id = NO_NEURON
+	_moved_during_grab = false
+
+
+## Nearest neuron whose center is within grab_radius of point, or NO_NEURON.
+## Fixed neurons are returned too (views may react); grab() refuses them.
+func pick_neuron(point: Vector2, grab_radius: float) -> int:
+	var best_id := NO_NEURON
+	var best_distance := grab_radius
+	for id in _ids:
+		var distance := point.distance_to(_positions[id])
+		if distance <= best_distance:
+			if best_id == NO_NEURON or distance < best_distance:
+				best_id = id
+				best_distance = distance
+	return best_id
+
+
 # --- Queries -----------------------------------------------------------------
+
+func get_grabbed_id() -> int:
+	return _grabbed_id
+
 
 func get_neuron_ids() -> Array[int]:
 	return _ids.duplicate()
@@ -115,6 +196,31 @@ func compute_crossings() -> Array[int]:
 
 
 # --- Internals ---------------------------------------------------------------
+
+## True when neuron id may sit at center: inside the play area, outside obstacles and not
+## overlapping any other neuron (touching is allowed).
+func _is_free_position(id: int, center: Vector2) -> bool:
+	if not GeometryUtils.is_circle_in_playfield(center, _radius, _play_area, _obstacles):
+		return false
+	var min_distance := 2.0 * _radius - GeometryUtils.EPSILON
+	for other in _ids:
+		if other != id and center.distance_to(_positions[other]) < min_distance:
+			return false
+	return true
+
+
+## Largest t in [valid_t, invalid_t] (to bisection precision) where the neuron is free.
+func _bisect_contact(id: int, start: Vector2, target: Vector2, valid_t: float, invalid_t: float) -> float:
+	var low := valid_t
+	var high := invalid_t
+	for i in BISECT_ITERATIONS:
+		var mid := (low + high) * 0.5
+		if _is_free_position(id, start.lerp(target, mid)):
+			low = mid
+		else:
+			high = mid
+	return low
+
 
 ## Returns [crossing_edges: Array[int] (sorted), pair_count: int]. O(E^2).
 func _find_crossings() -> Array:
