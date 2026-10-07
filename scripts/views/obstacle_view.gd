@@ -2,9 +2,12 @@ class_name ObstacleView
 extends MembraneView
 ## One obstacle polygon (SDD 5.3): thick white outline drawn as a calmer membrane than the
 ## boundary (smaller undulation, softer glow). Obstacles never move; with a model it ripples
-## where a neuron touches it.
+## where a neuron touches it. A lethal obstacle (T7.2) is drawn violet; LethalWallView adds its
+## crackle on top.
 
 const LINE_WIDTH := 5.0
+
+var _lethal := false
 
 
 func _init() -> void:
@@ -14,5 +17,11 @@ func _init() -> void:
 	_glow_scale = 0.7
 
 
-func setup(polygon: PackedVector2Array, model: PuzzleModel = null) -> void:
+func setup(polygon: PackedVector2Array, model: PuzzleModel = null, lethal := false) -> void:
+	_lethal = lethal
+	_color = Palette.LETHAL if lethal else Palette.OBSTACLE
 	_setup_membrane(polygon, model)
+
+
+func is_lethal() -> bool:
+	return _lethal

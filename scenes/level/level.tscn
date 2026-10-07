@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/views/background.tscn" id="6_background"]
 [ext_resource type="Script" path="res://scripts/views/level_fx.gd" id="7_fx"]
 [ext_resource type="Script" path="res://scripts/views/crossing_sparks_view.gd" id="8_sparks"]
+[ext_resource type="Script" path="res://scripts/views/lethal_wall_view.gd" id="9_lethal"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_add"]
 blend_mode = 1
@@ -22,6 +23,10 @@ script = ExtResource("1_level")
 [node name="Boundary" parent="Playfield" instance=ExtResource("2_boundary")]
 
 [node name="Obstacles" type="Node2D" parent="Playfield"]
+
+[node name="LethalWalls" type="Node2D" parent="Playfield"]
+material = SubResource("CanvasItemMaterial_add")
+script = ExtResource("9_lethal")
 
 [node name="Dendrites" type="Node2D" parent="Playfield"]
 
@@ -40,7 +45,7 @@ shake_target = NodePath("../..")
 script = ExtResource("3_input")
 playfield = NodePath("../Playfield")
 
-[node name="LevelController" type="Node" parent="." node_paths=PackedStringArray("playfield", "boundary", "obstacles_root", "dendrites_root", "neurons_root", "input_controller", "fx", "sparks")]
+[node name="LevelController" type="Node" parent="." node_paths=PackedStringArray("playfield", "boundary", "obstacles_root", "dendrites_root", "neurons_root", "input_controller", "fx", "sparks", "lethal_walls")]
 script = ExtResource("4_controller")
 playfield = NodePath("../Playfield")
 boundary = NodePath("../Playfield/Boundary")
@@ -50,5 +55,6 @@ neurons_root = NodePath("../Playfield/Neurons")
 input_controller = NodePath("../InputController")
 fx = NodePath("../Playfield/Fx")
 sparks = NodePath("../Playfield/Sparks")
+lethal_walls = NodePath("../Playfield/LethalWalls")
 
 [node name="HUD" parent="." instance=ExtResource("5_hud")]

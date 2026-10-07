@@ -18,6 +18,13 @@ extends Resource
 ## Highlight crossing dendrites and their neurons while playing.
 @export var show_crossing_feedback: bool = true
 
+@export_group("Hazards")
+## Lethal play-area sides (T7.2) by edge index: edge i runs from play_area[i] to
+## play_area[(i + 1) % size]. A neuron touching one is destroyed (level lost).
+@export var lethal_edges: PackedInt32Array = PackedInt32Array()
+## Lethal obstacles by index in `obstacles`: their whole outline destroys on contact.
+@export var lethal_obstacles: PackedInt32Array = PackedInt32Array()
+
 @export_group("Graph")
 @export var neurons: Array[NeuronData] = []
 ## Edge id = index in this array.

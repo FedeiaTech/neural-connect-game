@@ -174,6 +174,38 @@ func test_buzz_loops_while_crossings_exist_and_fades_when_resolved() -> void:
 	assert_float(_director.get_buzz_target_db()).is_equal(AudioDirector.SILENT_DB)
 
 
+## T7.2: rising alarm with lethal-wall proximity; overload explosion.
+func test_alarm_rises_with_proximity() -> void:
+	assert_bool(AudioDirector.is_alarm_audible(0.0)).is_false()
+	assert_bool(AudioDirector.is_alarm_audible(0.5)).is_true()
+	assert_float(AudioDirector.alarm_pitch(1.0)).is_greater(AudioDirector.alarm_pitch(0.3))
+	assert_float(AudioDirector.alarm_volume_db(1.0)).is_equal_approx(AudioDirector.ALARM_MAX_DB, 0.0001)
+	assert_float(AudioDirector.alarm_volume_db(0.4)).is_less(AudioDirector.alarm_volume_db(0.9))
+
+
+func test_alarm_follows_the_proximity_and_stops_on_release() -> void:
+	var level := _level()
+	var model := level.get_controller().get_model()
+	model.hazard_proximity_changed.emit(0, 0.8)
+	assert_bool(_director.is_alarm_playing()).is_true()
+	assert_float(_director.get_player(&"alarm").pitch_scale) \
+		.is_equal_approx(AudioDirector.alarm_pitch(0.8), 0.0001)
+	model.hazard_proximity_changed.emit(0, 0.0)
+	assert_bool(_director.is_alarm_playing()).is_false()
+	model.hazard_proximity_changed.emit(0, 0.9)
+	level.get_input_controller().grab_ended.emit(0)
+	assert_bool(_director.is_alarm_playing()).is_false()
+
+
+func test_destroyed_neuron_explodes_and_silences_the_alarm() -> void:
+	var level := _level()
+	var model := level.get_controller().get_model()
+	model.hazard_proximity_changed.emit(0, 0.95)
+	model.neuron_destroyed.emit(0, Vector2.ZERO)
+	assert_bool(_played().has(&"explode")).is_true()
+	assert_bool(_director.is_alarm_playing()).is_false()
+
+
 func test_completion_chord_and_star_pings() -> void:
 	var level := _level()
 	level.get_controller().level_completed.emit(LevelResult.create(4, 20.0, 6, 60.0))

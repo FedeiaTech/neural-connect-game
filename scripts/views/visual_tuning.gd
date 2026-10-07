@@ -65,6 +65,14 @@ const BREAK_FLASH_TIME := 0.45
 const SHAKE_TIME := 0.3
 const SHAKE_STRENGTH := 9.0
 
+# --- Lethal walls (T7.2) ---------------------------------------------------------
+## Overload tremble before the explosion; the restart waits LevelController.DESTROY_RESTART_DELAY.
+const OVERLOAD_TIME := 0.35
+## Soma overload tint at full hazard proximity (warning while approaching a lethal wall).
+const HAZARD_OVERLOAD := 0.35
+const EXPLOSION_FLASH_TIME := 0.6
+const EXPLOSION_SHAKE_STRENGTH := 14.0
+
 const GOLDEN_ANGLE := 2.39996323
 
 

@@ -17,12 +17,24 @@ var _contact_distance := 0.0
 var _time := 0.0
 var _exhale := 0.0
 var _exhale_tween: Tween
+## Core color per drawn point (closed: last = first). Lethal edges (T7.2) are violet.
+var _point_colors := PackedColorArray()
+var _uniform_color := true
 
 
 ## polygon: open polygon from the model. model (optional): ripples on neuron_blocked.
-func _setup_membrane(polygon: PackedVector2Array, model: PuzzleModel) -> void:
+## lethal_edges: polygon edge indices drawn in the lethal color.
+func _setup_membrane(polygon: PackedVector2Array, model: PuzzleModel,
+		lethal_edges: Dictionary[int, bool] = {}) -> void:
 	_outline = OutlineUtils.closed(polygon)
 	_membrane.build(polygon)
+	_point_colors = PackedColorArray()
+	var edges := _membrane.get_edge_indices()
+	for i in edges.size():
+		_point_colors.append(Palette.LETHAL if lethal_edges.has(edges[i]) else _color)
+	if not _point_colors.is_empty():
+		_point_colors.append(_point_colors[0])
+	_uniform_color = lethal_edges.is_empty()
 	_time = 0.0
 	if model != null:
 		# The model reports the neuron center at contact: one radius away from the outline.
@@ -38,6 +50,25 @@ func get_outline() -> PackedVector2Array:
 
 func get_line_width() -> float:
 	return _line_width
+
+
+func get_color() -> Color:
+	return _color
+
+
+## Core color of every drawn outline point (closed).
+func get_point_colors() -> PackedColorArray:
+	return _point_colors.duplicate()
+
+
+## Core color of the outline point nearest to point.
+func get_color_at(point: Vector2) -> Color:
+	var base := _membrane.get_base_points()
+	var best := 0
+	for i in base.size():
+		if base[i].distance_squared_to(point) < base[best].distance_squared_to(point):
+			best = i
+	return _point_colors[best] if best < _point_colors.size() else _color
 
 
 func has_ripples() -> bool:
@@ -82,7 +113,10 @@ func _draw_membrane() -> void:
 	var near := Palette.MEMBRANE_GLOW
 	draw_polyline(points, Color(wide, wide.a * glow * _glow_scale), _line_width * 6.0)
 	draw_polyline(points, Color(near, near.a * glow * _glow_scale), _line_width * 2.6)
-	draw_polyline(points, _color, _line_width, true)
+	if _uniform_color or _point_colors.size() != points.size():
+		draw_polyline(points, _color, _line_width, true)
+	else:
+		draw_polyline_colors(points, _point_colors, _line_width, true)
 
 
 func _on_neuron_blocked(_id: int, contact: Vector2) -> void:

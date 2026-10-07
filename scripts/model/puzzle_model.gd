@@ -14,9 +14,19 @@ signal crossings_changed(crossing_edges: Array[int], involved_neurons: Array[int
 signal crossing_points_changed(points: PackedVector2Array)
 signal tension_changed(edge_id: int, ratio: float)
 signal edge_broke(edge_id: int)
+## T7.2: the grabbed neuron touched a lethal wall. It stopped at the contact position, contact
+## is the touched point on the wall, the grab is released and the model ignores all input.
+signal neuron_destroyed(id: int, contact: Vector2)
+## T7.2: lethal-wall proximity (0..1, see get_hazard_proximity) of a moved neuron changed.
+signal hazard_proximity_changed(id: int, proximity: float)
 signal solved()
 
 const NO_NEURON := -1
+## Proximity warning range, in neuron radii of surface gap to the nearest lethal wall.
+const HAZARD_WARNING_RADII := 2.0
+## Authoring rule: start and solution positions keep at least this surface gap (in radii)
+## from lethal walls.
+const LETHAL_SAFE_MARGIN_RADII := 0.75
 ## Drag sub-step as a fraction of the neuron radius. A circle can clip a sharp corner between
 ## two samples by at most radius * (1 - sqrt(1 - (STEP_FACTOR / 2)^2)), about 0.2 px at radius 28.
 const STEP_FACTOR := 0.25
@@ -44,6 +54,15 @@ var _tension_ratios: Dictionary[int, float] = {}
 var _tension_edges_by_neuron: Dictionary[int, Array] = {}
 var _broken := false
 
+## Lethal geometry (T7.2): valid play-area edge and obstacle indices, and every lethal segment
+## as consecutive point pairs (edges first, then obstacle outlines).
+var _lethal_edges: Dictionary[int, bool] = {}
+var _lethal_obstacles: Dictionary[int, bool] = {}
+var _lethal_segments := PackedVector2Array()
+var _destroyed_id := NO_NEURON
+## Last notified hazard proximity per neuron.
+var _proximity: Dictionary[int, float] = {}
+
 var _grabbed_id := NO_NEURON
 var _moved_during_grab := false
 var _move_count := 0
@@ -59,6 +78,13 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 	model._play_area = level.play_area.duplicate()
 	for obstacle: PackedVector2Array in level.obstacles:
 		model._obstacles.append(obstacle.duplicate())
+	for index in level.lethal_edges:
+		if index >= 0 and index < level.play_area.size():
+			model._lethal_edges[index] = true
+	for index in level.lethal_obstacles:
+		if index >= 0 and index < level.obstacles.size():
+			model._lethal_obstacles[index] = true
+	model._lethal_segments = lethal_segments_of(level)
 	for neuron: NeuronData in level.neurons:
 		model._ids.append(neuron.id)
 		model._positions[neuron.id] = neuron.solution_position if use_solution else neuron.position
@@ -77,6 +103,8 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 				model._tension_edges_by_neuron[neuron_id].append(edge_id)
 			model._tension_ratios[edge_id] = model._compute_tension_ratio(edge_id)
 	model._update_crossings(false)
+	for id in model._ids:
+		model._proximity[id] = model.get_hazard_proximity(id)
 	return model
 
 
@@ -140,9 +168,19 @@ static func validate_level(level: LevelData) -> PackedStringArray:
 		if dendrite.is_tension():
 			_validate_tension(i, dendrite, by_id, errors)
 
+	for index in level.lethal_edges:
+		if index < 0 or index >= level.play_area.size():
+			errors.append("Lethal edge %d does not exist (play area has %d edges)." % [
+				index, level.play_area.size()])
+	for index in level.lethal_obstacles:
+		if index < 0 or index >= level.obstacles.size():
+			errors.append("Lethal obstacle %d does not exist (%d obstacles)." % [index, level.obstacles.size()])
+
 	if area_ok and level.neuron_radius > 0.0:
+		var lethal := lethal_segments_of(level)
 		for use_solution in [false, true]:
 			_validate_placement(level, neurons, use_solution, errors)
+			_validate_lethal_margin(level, neurons, lethal, use_solution, errors)
 
 	if structure_ok:
 		var start := PuzzleModel.from_level(level)
@@ -176,6 +214,58 @@ static func _validate_tension(
 			edge_id, solution_length, dendrite.max_length])
 
 
+## Every lethal segment of a level as consecutive point pairs: lethal play-area edges first
+## (in index order of lethal_edges), then the outline of each lethal obstacle. Invalid indices
+## are skipped (validate_level reports them).
+static func lethal_segments_of(level: LevelData) -> PackedVector2Array:
+	var segments := PackedVector2Array()
+	var area := level.play_area
+	for index in level.lethal_edges:
+		if index >= 0 and index < area.size():
+			segments.append(area[index])
+			segments.append(area[(index + 1) % area.size()])
+	for index in level.lethal_obstacles:
+		if index >= 0 and index < level.obstacles.size():
+			var outline := level.obstacles[index]
+			for i in outline.size():
+				segments.append(outline[i])
+				segments.append(outline[(i + 1) % outline.size()])
+	return segments
+
+
+## Surface gap between a circle and the nearest lethal segment (INF without lethal geometry).
+static func lethal_gap(center: Vector2, radius: float, segments: PackedVector2Array) -> float:
+	var best := INF
+	for i in range(0, segments.size() - 1, 2):
+		best = minf(best, GeometryUtils.distance_to_segment(center, segments[i], segments[i + 1]))
+	return best - radius
+
+
+## Proximity 0..1 for a surface gap: 1 at contact, 0 at (or beyond) the warning distance.
+static func proximity_for_gap(gap: float, warning: float) -> float:
+	if is_inf(gap) or warning <= 0.0:
+		return 0.0
+	return clampf(1.0 - gap / warning, 0.0, 1.0)
+
+
+static func _validate_lethal_margin(
+	level: LevelData,
+	neurons: Array[NeuronData],
+	lethal: PackedVector2Array,
+	use_solution: bool,
+	errors: PackedStringArray,
+) -> void:
+	if lethal.is_empty():
+		return
+	var margin := LETHAL_SAFE_MARGIN_RADII * level.neuron_radius
+	for neuron in neurons:
+		var center := neuron.solution_position if use_solution else neuron.position
+		var gap := lethal_gap(center, level.neuron_radius, lethal)
+		if gap < margin:
+			errors.append("Neuron %d %s position is too close to a lethal wall (gap %.1f < %.1f)." % [
+				neuron.id, "solution" if use_solution else "start", gap, margin])
+
+
 static func _validate_placement(
 	level: LevelData,
 	neurons: Array[NeuronData],
@@ -203,7 +293,7 @@ static func _validate_placement(
 ## Grabs a neuron for dragging. Refused (false) for unknown or fixed neurons, or while
 ## another neuron is grabbed (single pointer). Grabbing the already grabbed neuron is true.
 func grab(id: int) -> bool:
-	if _broken or not _positions.has(id) or _fixed[id]:
+	if is_lost() or not _positions.has(id) or _fixed[id]:
 		return false
 	if _grabbed_id != NO_NEURON:
 		return _grabbed_id == id
@@ -218,8 +308,11 @@ func grab(id: int) -> bool:
 ## every blocked call. Dendrites never block neurons.
 ## If the move stretches a TENSION dendrite beyond max_length, edge_broke is emitted, the grab
 ## is released and the model ignores further input (the owner rebuilds it).
+## Lethal walls (T7.2): if the circle would touch a lethal segment first, the neuron stops at
+## the contact position, neuron_destroyed is emitted (instead of neuron_blocked) and the model
+## ignores further input as well.
 func drag_to(target: Vector2) -> void:
-	if _grabbed_id == NO_NEURON or _broken:
+	if _grabbed_id == NO_NEURON or is_lost():
 		return
 	var id := _grabbed_id
 	var start := _positions[id]
@@ -229,11 +322,16 @@ func drag_to(target: Vector2) -> void:
 	var steps := maxi(ceili(start.distance_to(target) / step), 1)
 	var reached := target
 	var blocked := false
+	var lethal_contact: Variant = null
 	var last_valid_t := 0.0
 	for i in range(1, steps + 1):
 		var t := float(i) / steps
-		if not _is_free_position(id, start.lerp(target, t)):
-			reached = start.lerp(target, _bisect_contact(id, start, target, last_valid_t, t))
+		if not _is_allowed_position(id, start.lerp(target, t)):
+			var bounds := _bisect_contact(id, start, target, last_valid_t, t)
+			reached = start.lerp(target, bounds.x)
+			var beyond := start.lerp(target, bounds.y)
+			if _touches_lethal(beyond):
+				lethal_contact = nearest_lethal_point(beyond)
 			blocked = true
 			break
 		last_valid_t = t
@@ -242,8 +340,12 @@ func drag_to(target: Vector2) -> void:
 		_moved_during_grab = true
 		neuron_moved.emit(id, reached)
 		_update_crossings(true)
-		_update_tension(id)
-	if blocked and not _broken:
+		_update_proximity(id)
+		if lethal_contact == null:
+			_update_tension(id)
+	if lethal_contact != null:
+		_destroy(id, lethal_contact)
+	elif blocked and not _broken:
 		neuron_blocked.emit(id, reached)
 
 
@@ -295,6 +397,47 @@ func is_solved() -> bool:
 ## True after a TENSION dendrite broke. The model then ignores all input.
 func is_broken() -> bool:
 	return _broken
+
+
+## True after a neuron touched a lethal wall (T7.2). The model then ignores all input.
+func is_destroyed() -> bool:
+	return _destroyed_id != NO_NEURON
+
+
+## The neuron destroyed by a lethal wall, or NO_NEURON.
+func get_destroyed_id() -> int:
+	return _destroyed_id
+
+
+## True once the level is lost (tension break or destroyed neuron): input is ignored.
+func is_lost() -> bool:
+	return _broken or is_destroyed()
+
+
+func has_lethal_geometry() -> bool:
+	return not _lethal_segments.is_empty()
+
+
+## Lethal segments as consecutive point pairs (see lethal_segments_of()).
+func get_lethal_segments() -> PackedVector2Array:
+	return _lethal_segments.duplicate()
+
+
+func is_lethal_edge(index: int) -> bool:
+	return _lethal_edges.has(index)
+
+
+func is_lethal_obstacle(index: int) -> bool:
+	return _lethal_obstacles.has(index)
+
+
+## 0..1 danger of a neuron: 0 while its surface is HAZARD_WARNING_RADII radii or more from every
+## lethal wall (or without lethal walls), rising linearly to 1 at contact.
+func get_hazard_proximity(id: int) -> float:
+	if _lethal_segments.is_empty() or not _positions.has(id):
+		return 0.0
+	return proximity_for_gap(lethal_gap(_positions[id], _radius, _lethal_segments),
+		HAZARD_WARNING_RADII * _radius)
 
 
 func is_tension_edge(edge_id: int) -> bool:
@@ -412,17 +555,57 @@ func _update_tension(moved_id: int) -> void:
 			return
 
 
-## Largest t in [valid_t, invalid_t] (to bisection precision) where the neuron is free.
-func _bisect_contact(id: int, start: Vector2, target: Vector2, valid_t: float, invalid_t: float) -> float:
+## Bracket (x = last allowed t, y = first refused t) of the contact inside [valid_t, invalid_t],
+## to bisection precision.
+func _bisect_contact(id: int, start: Vector2, target: Vector2, valid_t: float, invalid_t: float) -> Vector2:
 	var low := valid_t
 	var high := invalid_t
 	for i in BISECT_ITERATIONS:
 		var mid := (low + high) * 0.5
-		if _is_free_position(id, start.lerp(target, mid)):
+		if _is_allowed_position(id, start.lerp(target, mid)):
 			low = mid
 		else:
 			high = mid
-	return low
+	return Vector2(low, high)
+
+
+## Free (see _is_free_position) and not touching a lethal wall.
+func _is_allowed_position(id: int, center: Vector2) -> bool:
+	return not _touches_lethal(center) and _is_free_position(id, center)
+
+
+func _touches_lethal(center: Vector2) -> bool:
+	return not _lethal_segments.is_empty() \
+		and lethal_gap(center, _radius, _lethal_segments) <= GeometryUtils.EPSILON
+
+
+## Closest point on any lethal segment to center (Vector2.INF without lethal geometry).
+func nearest_lethal_point(center: Vector2) -> Vector2:
+	var best := Vector2.INF
+	var best_distance := INF
+	for i in range(0, _lethal_segments.size() - 1, 2):
+		var point := Geometry2D.get_closest_point_to_segment(center, _lethal_segments[i], _lethal_segments[i + 1])
+		var distance := center.distance_to(point)
+		if distance < best_distance:
+			best_distance = distance
+			best = point
+	return best
+
+
+func _destroy(id: int, contact: Vector2) -> void:
+	_destroyed_id = id
+	_grabbed_id = NO_NEURON
+	_moved_during_grab = false
+	neuron_destroyed.emit(id, contact)
+
+
+func _update_proximity(id: int) -> void:
+	if _lethal_segments.is_empty():
+		return
+	var proximity := get_hazard_proximity(id)
+	if proximity != _proximity.get(id, 0.0):
+		_proximity[id] = proximity
+		hazard_proximity_changed.emit(id, proximity)
 
 
 ## Returns [crossing_edges: Array[int] (sorted), pair_count: int, points: PackedVector2Array

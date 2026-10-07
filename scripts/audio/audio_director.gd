@@ -11,7 +11,8 @@ extends Node
 ##     blocked (throttled); crossings_changed with fewer crossings -> chime; tension_changed ->
 ##     tension tone whose pitch and volume follow the highest tension ratio; edge_broke -> snap;
 ##     crossing_points_changed -> buzz loop while crossings exist (volume follows the count,
-##     capped; fades out when resolved).
+##     capped; fades out when resolved); hazard_proximity_changed -> alarm loop whose pitch and
+##     volume follow the highest proximity (stops on release); neuron_destroyed -> explode.
 ##   LevelController.level_completed -> complete. Hud.star_revealed(i) -> star, pitched up per star.
 ## The ambient drone loops on the Music bus from start; everything else uses the SFX bus. Both
 ## buses come from res://default_bus_layout.tres and feed Master (the settings volume).
@@ -47,6 +48,13 @@ const BUZZ_MAX_DB := -18.0
 const BUZZ_FULL_COUNT := 6
 const BUZZ_FADE_IN := 0.35
 const BUZZ_FADE_OUT := 0.6
+## Lethal-wall alarm (T7.2): audible from ALARM_AUDIBLE_START proximity, pitch and volume rise
+## towards contact.
+const ALARM_AUDIBLE_START := 0.15
+const ALARM_PITCH_MIN := 0.8
+const ALARM_PITCH_MAX := 1.6
+const ALARM_MIN_DB := -32.0
+const ALARM_MAX_DB := -11.0
 const BLOCKED_COOLDOWN := 0.12
 const CHIME_COOLDOWN := 0.25
 const HOVER_COOLDOWN := 0.04
@@ -69,6 +77,9 @@ var _ambient_on := false
 var _buzz_on := false
 var _buzz_target_db := SILENT_DB
 var _buzz_tween: Tween
+var _alarm_on := false
+## Hazard proximity per neuron (only moved neurons report it).
+var _hazard: Dictionary[int, float] = {}
 ## False under --headless: the Dummy audio driver never mixes, so a started playback would never
 ## be released (reported as leaked at exit). Logic, signals and parameters still run.
 var _can_output := DisplayServer.get_name() != "headless"
@@ -95,6 +106,19 @@ static func buzz_volume_db(count: int) -> float:
 		return SILENT_DB
 	var t := clampf(float(count - 1) / (BUZZ_FULL_COUNT - 1), 0.0, 1.0)
 	return lerpf(BUZZ_MIN_DB, BUZZ_MAX_DB, t)
+
+
+static func is_alarm_audible(proximity: float) -> bool:
+	return proximity >= ALARM_AUDIBLE_START
+
+
+static func alarm_pitch(proximity: float) -> float:
+	return lerpf(ALARM_PITCH_MIN, ALARM_PITCH_MAX, clampf(proximity, 0.0, 1.0))
+
+
+static func alarm_volume_db(proximity: float) -> float:
+	var t := clampf((proximity - ALARM_AUDIBLE_START) / (1.0 - ALARM_AUDIBLE_START), 0.0, 1.0)
+	return lerpf(ALARM_MIN_DB, ALARM_MAX_DB, sqrt(t))
 
 
 static func star_pitch(index: int) -> float:
@@ -129,6 +153,7 @@ func _exit_tree() -> void:
 		_buzz_tween.kill()
 	_buzz_on = false
 	_buzz_target_db = SILENT_DB
+	_alarm_on = false
 	for player: AudioStreamPlayer in _players.values():
 		player.stop()
 	_tension_on = false
@@ -171,6 +196,10 @@ func is_buzz_playing() -> bool:
 
 func get_buzz_target_db() -> float:
 	return _buzz_target_db
+
+
+func is_alarm_playing() -> bool:
+	return _alarm_on
 
 
 ## True right after bind_ui(), while hover sounds are still muted.
@@ -286,11 +315,14 @@ func _bind_buttons(node: Node) -> void:
 
 func _bind_model(model: PuzzleModel) -> void:
 	_stop_tension()
+	_stop_alarm()
 	_crossing_count = model.get_crossing_edges().size()
 	_set_buzz(model.get_crossing_count())
 	model.neuron_blocked.connect(_on_neuron_blocked)
 	model.crossings_changed.connect(_on_crossings_changed)
 	model.crossing_points_changed.connect(_on_crossing_points_changed)
+	model.hazard_proximity_changed.connect(_on_hazard_proximity_changed)
+	model.neuron_destroyed.connect(_on_neuron_destroyed)
 	model.tension_changed.connect(_on_tension_changed)
 	model.edge_broke.connect(_on_edge_broke)
 
@@ -312,6 +344,7 @@ func _on_grab_started(_id: int) -> void:
 
 func _on_grab_ended(_id: int) -> void:
 	_stop_tension()
+	_stop_alarm()
 	play(&"release")
 
 
@@ -362,6 +395,36 @@ func _set_buzz(count: int) -> void:
 		_buzz_tween.tween_callback(player.stop)
 
 
+func _on_hazard_proximity_changed(id: int, proximity: float) -> void:
+	_hazard[id] = proximity
+	var highest := 0.0
+	for value: float in _hazard.values():
+		highest = maxf(highest, value)
+	var player: AudioStreamPlayer = _players[&"alarm"]
+	if not is_alarm_audible(highest):
+		_stop_alarm()
+		return
+	_ensure_stream(&"alarm")
+	player.pitch_scale = alarm_pitch(highest)
+	player.volume_db = alarm_volume_db(highest)
+	if not _alarm_on:
+		_alarm_on = true
+		_start(player)
+
+
+func _stop_alarm() -> void:
+	_hazard.clear()
+	if _alarm_on:
+		_players[&"alarm"].stop()
+		_alarm_on = false
+
+
+func _on_neuron_destroyed(_id: int, _contact: Vector2) -> void:
+	_stop_alarm()
+	_stop_tension()
+	play(&"explode")
+
+
 func _on_tension_changed(edge_id: int, ratio: float) -> void:
 	_tension_ratios[edge_id] = ratio
 	var highest := 0.0
@@ -399,6 +462,7 @@ func _on_edge_broke(_edge_id: int) -> void:
 
 func _on_level_completed(_result: LevelResult) -> void:
 	_stop_tension()
+	_stop_alarm()
 	play(&"complete")
 
 

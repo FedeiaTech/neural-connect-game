@@ -15,6 +15,8 @@ var _base := PackedVector2Array()
 var _normals := PackedVector2Array()
 ## Arc length position of each point.
 var _arc := PackedFloat32Array()
+## Index of the polygon edge each point belongs to (point k of edge i lies on i -> i + 1).
+var _edge_of := PackedInt32Array()
 var _perimeter := 0.0
 ## Reused output of displaced().
 var _buffer := PackedVector2Array()
@@ -28,6 +30,7 @@ func build(polygon: PackedVector2Array, spacing := VisualTuning.MEMBRANE_SPACING
 	_base = PackedVector2Array()
 	_normals = PackedVector2Array()
 	_arc = PackedFloat32Array()
+	_edge_of = PackedInt32Array()
 	_ripples.clear()
 	_perimeter = 0.0
 	var count := polygon.size()
@@ -46,6 +49,7 @@ func build(polygon: PackedVector2Array, spacing := VisualTuning.MEMBRANE_SPACING
 		for k in steps:
 			_base.append(from.lerp(to, float(k) / steps))
 			_arc.append(_perimeter + length * k / steps)
+			_edge_of.append(i)
 			if k == 0:
 				var previous := edge_normals[(i - 1 + count) % count]
 				_normals.append((previous + edge_normals[i]).normalized())
@@ -62,6 +66,11 @@ func get_base_points() -> PackedVector2Array:
 
 func get_normals() -> PackedVector2Array:
 	return _normals.duplicate()
+
+
+## Polygon edge index of every base point.
+func get_edge_indices() -> PackedInt32Array:
+	return _edge_of.duplicate()
 
 
 func get_perimeter() -> float:

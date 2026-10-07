@@ -251,3 +251,35 @@ func test_broken_dendrite_restarts_after_a_delay() -> void:
 	assert_int(_controller.get_state()).is_equal(LevelController.State.PLAYING)
 	assert_bool(_controller.get_model().is_broken()).is_false()
 	assert_int(_recorder.count(&"level_restart_requested")).is_equal(1)
+
+
+func test_break_reports_a_tension_loss() -> void:
+	_recorder.watch(_controller, [&"level_lost"])
+	_controller.load_level(_tension_level())
+	_pointer(Vector2(200, 500), true)
+	_move(Vector2(450, 500))
+	assert_array(_recorder.last_args(&"level_lost")).is_equal([LevelController.LossReason.TENSION_BREAK])
+	assert_int(_controller.get_loss_reason()).is_equal(LevelController.LossReason.TENSION_BREAK)
+
+
+## T7.2: touching a lethal wall loses the level (overload) and restarts after a longer delay
+## that leaves time for the explosion.
+func test_destroyed_neuron_loses_and_restarts_after_the_explosion() -> void:
+	_recorder.watch(_controller, [&"level_lost"])
+	var level := _x_level()
+	# Right side of the play area (x = 1000) is lethal.
+	level.lethal_edges = PackedInt32Array([1])
+	_controller.load_level(level)
+	_pointer(Vector2(500, 500), true)
+	_move(Vector2(1100, 500))
+	assert_bool(_controller.get_model().is_destroyed()).is_true()
+	assert_int(_controller.get_state()).is_equal(LevelController.State.RESTARTING)
+	assert_bool(_input.is_enabled()).is_false()
+	assert_array(_recorder.last_args(&"level_lost")).is_equal([LevelController.LossReason.OVERLOAD])
+	assert_float(LevelController.DESTROY_RESTART_DELAY).is_greater(LevelController.BREAK_RESTART_DELAY)
+	_controller.tick(LevelController.DESTROY_RESTART_DELAY * 0.8)
+	assert_int(_controller.get_state()).is_equal(LevelController.State.RESTARTING)
+	_controller.tick(LevelController.DESTROY_RESTART_DELAY)
+	assert_int(_controller.get_state()).is_equal(LevelController.State.PLAYING)
+	assert_bool(_controller.get_model().is_lost()).is_false()
+	assert_int(_controller.get_loss_reason()).is_equal(LevelController.LossReason.NONE)

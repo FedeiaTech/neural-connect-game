@@ -6,7 +6,10 @@ extends Node
 ## mode: play (default), grab (first neuron grabbed), wave (completion wave), break (tension
 ## break), reduced (play with reduced motion), glow (WorldEnvironment glow experiment),
 ## perf (idle level, vsync off: logs Performance monitors over PERF_SECONDS, then captures),
-## perf_drag (same while a neuron is dragged in circles every frame).
+## perf_drag (same while a neuron is dragged in circles every frame), approach (a neuron held
+## 8 px from a lethal wall: warning glow), explode (a neuron driven into a lethal wall, captured
+## mid explosion). approach / explode mark the right play-area side lethal on a copy of a
+## mission without lethal walls.
 
 const LevelScene := preload("res://scenes/level/level.tscn")
 const PerfProbe := preload("res://tests/visual/perf_probe.gd")
@@ -43,7 +46,14 @@ func _ready() -> void:
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	_level = LevelScene.instantiate()
 	add_child(_level)
-	_level.load_level(GameState.get_level(mission))
+	var data := GameState.get_level(mission)
+	if _mode in ["approach", "explode"] and data.lethal_edges.is_empty() and data.lethal_obstacles.is_empty():
+		# Debug only: a copy with the right play-area side lethal.
+		data = data.duplicate(true)
+		data.lethal_edges = PackedInt32Array([1])
+	if _mode == "explode":
+		_target = maxi(_target, 90)
+	_level.load_level(data)
 	_level.get_hud().hide_story()
 	_level.get_controller().start_playing()
 
@@ -137,3 +147,32 @@ func _trigger() -> void:
 				if model.is_tension_edge(edge):
 					model.edge_broke.emit(edge)
 					break
+		"approach", "explode":
+			_drive_to_lethal(model, 8.0 if _mode == "approach" else -20.0)
+
+
+## Grabs the movable neuron closest to a lethal wall and drags it straight towards the wall
+## until its surface gap is gap (negative: into the wall, which destroys it). Frames keep
+## running so the capture shows the warning glow or the explosion (explode captures about
+## 0.4 s after contact).
+func _drive_to_lethal(model: PuzzleModel, gap: float) -> void:
+	var best := -1
+	var best_gap := INF
+	for id in model.get_neuron_ids():
+		if model.is_fixed(id):
+			continue
+		var g := PuzzleModel.lethal_gap(model.get_neuron_position(id), model.get_neuron_radius(),
+			model.get_lethal_segments())
+		if g < best_gap:
+			best_gap = g
+			best = id
+	if best < 0:
+		return
+	var from := model.get_neuron_position(best)
+	var wall := model.nearest_lethal_point(from)
+	var direction := (wall - from).normalized()
+	model.grab(best)
+	_level.get_controller().get_neuron_view(best).set_grabbed(true)
+	model.drag_to(wall - direction * (model.get_neuron_radius() + gap))
+	if _mode == "explode":
+		_frames = _target - 26

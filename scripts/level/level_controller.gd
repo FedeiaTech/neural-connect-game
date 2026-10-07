@@ -6,9 +6,11 @@ extends Node
 ##
 ## State machine (enum, SDD 8.1):
 ##   INTRO      story text shown, input off, timer stopped. start_playing() -> PLAYING.
-##   PLAYING    input on, timer running. solved -> COMPLETE, edge_broke -> RESTARTING.
+##   PLAYING    input on, timer running. solved -> COMPLETE, edge_broke or neuron_destroyed ->
+##              RESTARTING (level_lost with the LossReason).
 ##   COMPLETE   input off, timer stopped, result emitted. restart() -> PLAYING.
-##   RESTARTING input off; after a broken dendrite it waits BREAK_RESTART_DELAY, then restart().
+##   RESTARTING input off; after a loss it waits BREAK_RESTART_DELAY (tension break) or
+##              DESTROY_RESTART_DELAY (overload explosion, T7.2), then restart().
 ## Restart never shows the story again.
 
 signal move_count_changed(n: int)
@@ -17,10 +19,15 @@ signal level_completed(result: LevelResult)
 signal level_restart_requested()
 ## Emitted after every (re)build with the new model, so listeners (e.g. AudioDirector) can rebind.
 signal model_built(model: PuzzleModel)
+## The level was lost; it restarts by itself after the reason's delay.
+signal level_lost(reason: LossReason)
 
 enum State { INTRO, PLAYING, COMPLETE, RESTARTING }
+enum LossReason { NONE, TENSION_BREAK, OVERLOAD }
 
 const BREAK_RESTART_DELAY := 0.6
+## Overload: tremble + explosion before the restart.
+const DESTROY_RESTART_DELAY := 1.2
 ## Space kept free around the play area; the top margin leaves room for the HUD bar.
 const FIT_MARGIN := 48.0
 const FIT_TOP_MARGIN := 96.0
@@ -39,6 +46,8 @@ const ObstacleScene := preload("res://scenes/views/obstacle_view.tscn")
 @export var fx: LevelFx
 ## Optional crossing spark markers (T7.1).
 @export var sparks: CrossingSparksView
+## Optional lethal-wall crackle layer (T7.2).
+@export var lethal_walls: LethalWallView
 
 var _level: LevelData
 var _model: PuzzleModel
@@ -46,6 +55,7 @@ var _state := State.INTRO
 var _elapsed := 0.0
 var _move_count := 0
 var _restart_countdown := 0.0
+var _loss_reason := LossReason.NONE
 var _neuron_views: Dictionary[int, NeuronView] = {}
 ## Indexed by edge id.
 var _dendrite_views: Array[DendriteView] = []
@@ -101,6 +111,11 @@ func tick(delta: float) -> void:
 
 func get_state() -> State:
 	return _state
+
+
+## Why the current run was lost (NONE while not lost).
+func get_loss_reason() -> LossReason:
+	return _loss_reason
 
 
 func get_model() -> PuzzleModel:
@@ -159,6 +174,8 @@ func _build() -> void:
 	_model = PuzzleModel.from_level(_level)
 	_model.solved.connect(_on_solved)
 	_model.edge_broke.connect(_on_edge_broke)
+	_model.neuron_destroyed.connect(_on_neuron_destroyed)
+	_loss_reason = LossReason.NONE
 	if input_controller != null:
 		input_controller.bind(_model)
 	_build_views()
@@ -180,11 +197,14 @@ func _build_views() -> void:
 	var membranes: Array[MembraneView] = [boundary]
 	var feedback := _level.show_crossing_feedback
 	boundary.setup(_model)
-	for polygon in _model.get_obstacles():
+	var polygons := _model.get_obstacles()
+	for i in polygons.size():
 		var obstacle: ObstacleView = ObstacleScene.instantiate()
 		obstacles_root.add_child(obstacle)
-		obstacle.setup(polygon, _model)
+		obstacle.setup(polygons[i], _model, _model.is_lethal_obstacle(i))
 		membranes.append(obstacle)
+	if lethal_walls != null:
+		lethal_walls.setup(_model)
 	for edge_id in _model.get_edge_count():
 		var dendrite: DendriteView = DendriteScene.instantiate()
 		dendrites_root.add_child(dendrite)
@@ -243,5 +263,15 @@ func _on_solved() -> void:
 
 
 func _on_edge_broke(_edge_id: int) -> void:
+	_lose(LossReason.TENSION_BREAK, BREAK_RESTART_DELAY)
+
+
+func _on_neuron_destroyed(_id: int, _contact: Vector2) -> void:
+	_lose(LossReason.OVERLOAD, DESTROY_RESTART_DELAY)
+
+
+func _lose(reason: LossReason, delay: float) -> void:
+	_loss_reason = reason
 	_set_state(State.RESTARTING)
-	_restart_countdown = BREAK_RESTART_DELAY
+	_restart_countdown = delay
+	level_lost.emit(reason)

@@ -30,12 +30,17 @@ const DIRECTIONS: Array[Vector2i] = [
 	Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1),
 ]
 const MAX_MOVES_PER_NEURON := 4
+## Surface gap kept from lethal walls: half the authoring margin, so every valid start
+## position is still usable while no plan point ever touches a wall.
+const LETHAL_MARGIN := PuzzleModel.LETHAL_SAFE_MARGIN_RADII * 28.0 * 0.5
 ## Step 3 only counts when it brings the neuron at least this much closer to its spot.
 const MIN_APPROACH := GRID_STEP
 
 var _radius := 28.0
 var _play_area := PackedVector2Array()
 var _obstacles: Array[PackedVector2Array] = []
+## Lethal segments (T7.2) as point pairs; the plan keeps LETHAL_MARGIN away from them.
+var _lethal := PackedVector2Array()
 var _ids: Array[int] = []
 var _positions: Dictionary[int, Vector2] = {}
 var _targets: Dictionary[int, Vector2] = {}
@@ -86,6 +91,8 @@ static func replay(level: LevelData, moves: Array) -> Dictionary:
 			model.drag_to(point)
 			if model.is_broken():
 				return {"model": model, "error": "move %d: a tension dendrite broke" % i}
+			if model.is_destroyed():
+				return {"model": model, "error": "move %d: neuron %d touched a lethal wall" % [i, id]}
 			if model.get_neuron_position(id) != point:
 				return {"model": model, "error": "move %d: neuron %d blocked at %s before %s" % [
 					i, id, model.get_neuron_position(id), point]}
@@ -97,6 +104,7 @@ func _setup(level: LevelData) -> void:
 	_radius = level.neuron_radius
 	_play_area = level.play_area
 	_obstacles = level.obstacles
+	_lethal = PuzzleModel.lethal_segments_of(level)
 	for neuron in level.neurons:
 		_ids.append(neuron.id)
 		_positions[neuron.id] = neuron.position
@@ -268,7 +276,11 @@ func _min_gap() -> float:
 	return 2.0 * _radius + CLEARANCE
 
 
+## Inside the playfield with CLEARANCE and at least LETHAL_MARGIN (surface gap) from every
+## lethal wall, so a plan never touches one.
 func _in_playfield(center: Vector2) -> bool:
+	if not _lethal.is_empty() and PuzzleModel.lethal_gap(center, _radius, _lethal) < LETHAL_MARGIN:
+		return false
 	return GeometryUtils.is_circle_in_playfield(center, _radius + CLEARANCE, _play_area, _obstacles)
 
 

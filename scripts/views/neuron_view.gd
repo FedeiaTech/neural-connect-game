@@ -32,6 +32,10 @@ var _highlight_amount := 0.0
 var _wave_boost := 0.0
 var _grab_tween: Tween
 var _wave_tween: Tween
+## Lethal walls (T7.2): proximity warning 0..1 and the overload before the explosion.
+var _hazard := 0.0
+var _destroyed := false
+var _overload_age := 0.0
 var _shader_material := ShaderMaterial.new()
 ## Last value pushed per dynamic shader parameter.
 var _param_cache: Dictionary[StringName, float] = {}
@@ -53,6 +57,8 @@ func setup(id: int, model: PuzzleModel, show_feedback := true) -> void:
 	model.neuron_moved.connect(_on_neuron_moved)
 	model.crossings_changed.connect(_on_crossings_changed)
 	model.neuron_blocked.connect(_on_neuron_blocked)
+	model.neuron_destroyed.connect(_on_neuron_destroyed)
+	model.hazard_proximity_changed.connect(_on_hazard_proximity_changed)
 	_configure_material()
 	queue_redraw()
 
@@ -74,6 +80,15 @@ func is_highlighted() -> bool:
 
 func is_fixed() -> bool:
 	return _fixed
+
+
+## True from the lethal contact until the explosion hides the neuron (T7.2).
+func is_overloading() -> bool:
+	return _destroyed and visible
+
+
+func is_destroyed() -> bool:
+	return _destroyed
 
 
 func is_contact_flashing() -> bool:
@@ -128,6 +143,11 @@ func _process(delta: float) -> void:
 	else:
 		_highlight_amount = target
 	_contact_flash = maxf(_contact_flash - delta, 0.0)
+	if _destroyed and visible:
+		_overload_age += delta
+		if _overload_age >= VisualTuning.OVERLOAD_TIME:
+			# The explosion (LevelFx) takes over from here.
+			visible = false
 	_update_dynamic_params(motion)
 
 
@@ -177,6 +197,10 @@ func _update_dynamic_params(motion: float) -> void:
 	_set_param(&"radius_px", lerpf(_radius, _radius * GRAB_SCALE, _grab_amount))
 	_set_param(&"crossing", _highlight_amount)
 	_set_param(&"contact", _contact_flash / CONTACT_FLASH_TIME)
+	var overload := _hazard * VisualTuning.HAZARD_OVERLOAD
+	if _destroyed:
+		overload = maxf(overload, minf(_overload_age / VisualTuning.OVERLOAD_TIME, 1.0) * 0.6 + 0.4)
+	_set_param(&"overload", overload)
 	var brightness := lerpf(1.0, VisualTuning.GRAB_BRIGHTNESS, _grab_amount)
 	_set_param(&"brightness", brightness + _wave_boost * (VisualTuning.WAVE_BRIGHTNESS - 1.0))
 
@@ -208,6 +232,17 @@ func _on_neuron_moved(id: int, pos: Vector2) -> void:
 
 func _on_crossings_changed(_crossing_edges: Array[int], involved_neurons: Array[int]) -> void:
 	_highlighted = _show_feedback and involved_neurons.has(neuron_id)
+
+
+func _on_neuron_destroyed(id: int, _contact: Vector2) -> void:
+	if id == neuron_id:
+		_destroyed = true
+		_overload_age = 0.0
+
+
+func _on_hazard_proximity_changed(id: int, proximity: float) -> void:
+	if id == neuron_id:
+		_hazard = proximity
 
 
 func _on_neuron_blocked(id: int, _contact: Vector2) -> void:

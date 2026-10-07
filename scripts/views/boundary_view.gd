@@ -17,7 +17,11 @@ func _init() -> void:
 
 func setup(model: PuzzleModel) -> void:
 	_last_contact = Vector2.INF
-	_setup_membrane(model.get_play_area(), model)
+	var lethal: Dictionary[int, bool] = {}
+	for i in model.get_play_area().size():
+		if model.is_lethal_edge(i):
+			lethal[i] = true
+	_setup_membrane(model.get_play_area(), model, lethal)
 
 
 ## Last neuron stop position reported by the model, or Vector2.INF if none.
