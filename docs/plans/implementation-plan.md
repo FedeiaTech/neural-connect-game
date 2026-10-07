@@ -45,16 +45,18 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
   Skills: `godot-prompter:scene-organization`, `godot-prompter:godot-ui`
 - [x] **T3.2 Progress save/load** — stars and completed missions, local.
   Skills: `godot-prompter:save-load`, `godot-prompter:resource-pattern`
+- [x] **T3.3 Save hardening (phase 3 review follow-ups)** — verified temp writes, backup of unusable saves, unknown fields and newer versions preserved, busy transitions reported.
+  Skills: `godot-prompter:save-load`
 
 ## Phase 4 — Aesthetics (all procedural, no external images)
 
-- [ ] **T4.1 Neuron and dendrite look** — glow, idle pulse, electric pulse along dendrites, grab feedback.
+- [x] **T4.1 Neuron and dendrite look** — glow, idle pulse, electric pulse along dendrites, grab feedback.
   Skills: `godot-prompter:shader-basics`, `godot-prompter:tween-animation`
-- [ ] **T4.2 Living boundary** — animated membrane, contact ripple.
+- [x] **T4.2 Living boundary** — animated membrane, contact ripple.
   Skills: `godot-prompter:shader-basics`, `godot-prompter:2d-essentials`
-- [ ] **T4.3 Background** — drifting particles, vignette.
+- [x] **T4.3 Background** — drifting particles, vignette.
   Skills: `godot-prompter:particles-vfx`, `godot-prompter:shader-basics`
-- [ ] **T4.4 Crossing feedback and tension effects** — pulsing highlights, green tremble, break flash and burst.
+- [x] **T4.4 Crossing feedback and tension effects** — pulsing highlights, green tremble, break flash and burst.
   Skills: `godot-prompter:particles-vfx`, `godot-prompter:tween-animation`
 - [ ] **T4.5 Interactive animated menus** — living main menu, network-style mission map, star summary, theme.
   Skills: `godot-prompter:godot-ui`, `godot-prompter:tween-animation`, `godot-prompter:shader-basics`
