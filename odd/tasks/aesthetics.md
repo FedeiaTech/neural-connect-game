@@ -144,3 +144,5 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `4d8a73d` (phase 3 review
 Next: phase 4 complete; Phase 5 content (T5.1). Review slice base for run 4b: `33099fd`.
 
 Engram mirror: pending (engram MCP unavailable in runs 4a and 4b).
+
+- Review 4b: slice `8c183a4..6e67a3e` medium, `slice_budget_reached` (3169 lines); user **declined** (candidate-scoped). Parent spot check `./run_tests.ps1` -> 326 cases, exit 0. Next slice base: `6e67a3e`.
