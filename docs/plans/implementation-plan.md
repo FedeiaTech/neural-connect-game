@@ -74,6 +74,17 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
   Automated tuning checks done (`tests/content/`: solvability replayed on the real model, pars, difficulty curve, readability).
   Pending: human playtest of pars, grab radius and the difficulty curve.
 
+## Phase 6 — Post-MVP requests
+
+- [x] **T6.1 Progress reset** — `GameState.reset_progress()` / `reset_mission(id)`; Settings "Reset progress" with inline confirmation; per-mission record reset in Mission select; restart hints in the HUD.
+  Skills: `godot-prompter:save-load`, `godot-prompter:godot-ui`
+- [x] **T6.2 Localization infrastructure** — `locale/translations.csv` (en, es), keys in every scene, formatted texts rebuilt on locale change, language setting saved (default from the OS locale), live switch from Settings.
+  Skills: `godot-prompter:localization`, `godot-prompter:godot-ui`
+- [x] **T6.3 Content translation** — mission names, stories and chapter titles/subtitles as keys, Spanish texts, levels rebuilt; layout checked in Spanish.
+  Skills: `godot-prompter:localization`, `godot-prompter:resource-pattern`
+- [x] **T6.4 Docs** — SDD 5.5/5.6/10 and this plan.
+  (Evidence in `odd/tasks/localization-and-reset.md`.)
+
 ## Open items (SDD section 10)
 
 - GDScript only; restart button in every level; local save format; chapter unlock rules. (Test framework decided: gdUnit4.)

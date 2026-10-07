@@ -28,10 +28,15 @@ Branch: `feat/mvp-foundation`. Slice base: `ed085e3`.
   - Content tests: names unique by English text, story cadence and the 2-line limit checked on both languages via the CSV, every campaign key exists with non-empty en and es, runtime `tr()` returns the Spanish name in `es`. RED observed (41 failures before the specs/CSV change), then GREEN 372/372.
   - Layout for longer Spanish: story label widened 1000 -> 1400 px (the m17 line wrapped to 3 visual lines in both languages before), mission-map names stay centered when wider than 220 px and re-center after a locale switch.
   - Visual check (windowed, `tests/visual/capture_screens.tscn -- <screen> <png> 150 reduced lang=es`; new screens `settings_reset`, `mission_reset`, `story`/`story=mXX`): main menu, settings with reset confirmation, mission select (+ record reset confirmation), m01 and m17 story, summary and pause in Spanish: accents, ñ and ¿ render with the default font, nothing clipped or overflowing.
-- [ ] **T6.4 Docs** — SDD + plan updated.
+- [x] **T6.4 Docs** — SDD + plan updated.
+  - SDD 5.5 (Settings, per-mission reset, restart discoverability), new 5.6 Localization, section 10 assumptions (save format, reset, languages). Plan: Phase 6 with T6.1–T6.4.
 
 ## Progress / evidence
 
-(none yet)
+Commits on `feat/mvp-foundation`: T6.1 `d081156`, T6.2 `e1d71f2`, T6.3 `e8f9213`, T6.4 (this docs commit).
+Checks at close: `./run_tests.ps1` 372/372 passed, 0 orphans; `godot --headless --path . --import` no errors;
+`godot --headless --path . --quit-after 300` exit 0; `build_levels.gd` OK with a clean tree; Spanish windowed captures reviewed (see T6.3).
+Not done: `CLAUDE.md` still says "UI text in English" (outside the allowed edit surface); the handoff note there should mention Spanish UI support.
+Native review: not run by the writer (parent-owned).
 
 Engram mirror: pending (engram MCP unavailable this session).

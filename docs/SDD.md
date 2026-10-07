@@ -123,6 +123,27 @@ as the playfield. No static, plain menus.
 - **Input:** all menus work with mouse now and with touch/gamepad focus later (focus-friendly layout).
 - Built with `Control` nodes and containers, themed through a single `Theme` resource, with
   tweens for motion; menu motion respects a "reduced motion" setting.
+- **Settings:** master volume, reduced motion, language (5.6) and **Reset progress** (inline
+  confirmation; clears every mission record, keeps the settings).
+- **Progress reset per mission:** in Mission select, hovering/focusing a completed mission shows
+  a small "Reset record: mission N" button (also Delete on a focused mission, or right-click);
+  after an inline confirmation only that mission's record is cleared and the map refreshes.
+  Later missions that were completed stay unlocked. In-level restart stays as before: HUD
+  Restart button (tooltip names the R key), R key and pause-menu Restart.
+
+## 5.6 Localization
+
+- Languages: English (`en`) and Spanish (`es`, neutral register, "tú" imperatives).
+- One Godot CSV translation table, `locale/translations.csv` (`keys,en,es`, semantic
+  UPPER_SNAKE keys), registered in Project Settings. Its importer writes
+  `locale/translations.{en,es}.translation`, which are committed (the project loads them).
+- Scenes and data hold keys: UI texts, and the campaign content (`LevelData.mission_name` /
+  `story_text`, `ChapterData.title` / `subtitle` = `MISSION_<ID>_NAME` / `_STORY`,
+  `CHAPTER_<n>_TITLE` / `_SUBTITLE`). Formatted texts use `tr("KEY") % value` and are rebuilt on
+  `NOTIFICATION_TRANSLATION_CHANGED`; custom-drawn text (`GlowTitle`) draws `atr(text)`.
+- The language is a setting (`settings.language` in the save). Default when absent or invalid:
+  Spanish if the OS language is Spanish, English otherwise. Switching in Settings updates the
+  whole UI live, no restart. The game name "Neural Connect" is not translated.
 
 ## 6. Scoring
 
@@ -293,4 +314,6 @@ Data ownership: positions, crossings, tension → `PuzzleModel`; moves and time 
 - Missions = fixed story levels (campaign). Unlock rules between chapters are undecided.
 - Story text appears every 2–3 missions at mission start (exact placement/skip rules to tune).
 - Restart button available in every level.
-- Level progress and stars are saved locally (format to decide when persistence is built).
+- Level progress and stars are saved locally (versioned JSON, see 8.4); the player can reset all
+  progress (Settings) or one mission's record (Mission select).
+- Languages: English and Spanish only for now; more languages would be new CSV columns.
