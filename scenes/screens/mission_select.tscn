@@ -1,6 +1,9 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/mission_select.gd" id="1_select"]
+[ext_resource type="PackedScene" path="res://scenes/views/background.tscn" id="2_background"]
+[ext_resource type="Script" path="res://scripts/ui/glow_button.gd" id="3_button"]
+[ext_resource type="Script" path="res://scripts/ui/glow_title.gd" id="4_title"]
 
 [node name="MissionSelect" type="Control"]
 layout_mode = 3
@@ -11,6 +14,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_select")
 
+[node name="Background" parent="." instance=ExtResource("2_background")]
+
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -18,28 +23,35 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 96
-theme_override_constants/margin_top = 56
+theme_override_constants/margin_top = 48
 theme_override_constants/margin_right = 96
-theme_override_constants/margin_bottom = 56
+theme_override_constants/margin_bottom = 40
 
 [node name="Column" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 40
+mouse_filter = 2
+theme_override_constants/separation = 28
 
 [node name="Header" type="HBoxContainer" parent="Margin/Column"]
 layout_mode = 2
-theme_override_constants/separation = 48
+mouse_filter = 2
+theme_override_constants/separation = 24
 
 [node name="BackButton" type="Button" parent="Margin/Column/Header"]
 custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
+size_flags_vertical = 4
 text = "Back"
+script = ExtResource("3_button")
 
-[node name="Title" type="Label" parent="Margin/Column/Header"]
+[node name="Title" type="Control" parent="Margin/Column/Header"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 56
+mouse_filter = 2
+script = ExtResource("4_title")
 text = "Missions"
+font_size = 56
 
 [node name="Scroll" type="ScrollContainer" parent="Margin/Column"]
 layout_mode = 2
@@ -49,4 +61,4 @@ horizontal_scroll_mode = 0
 [node name="Chapters" type="VBoxContainer" parent="Margin/Column/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 56
+theme_override_constants/separation = 40

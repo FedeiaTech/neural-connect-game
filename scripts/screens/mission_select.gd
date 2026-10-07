@@ -1,9 +1,12 @@
 class_name MissionSelect
 extends Control
-## Mission select (SDD 5.5, 7.1): one section per chapter (title, subtitle) with its missions as
-## MissionNodes showing locked / unlocked / completed state and best stars. Built from
-## GameState.campaign and GameState.progress when it enters the tree.
-## Emits mission_selected(id) only for unlocked missions; back_pressed on Back or ui_cancel.
+## Mission select (SDD 5.5, 7.1) as a network map: one section per chapter with an illustrated
+## procedural ChapterHeader and a MissionMap whose neurons are the missions (locked / unlocked /
+## completed with best stars). Built from GameState.campaign and GameState.progress when it enters
+## the tree.
+## Selecting an unlocked mission first sends a dendrite pulse to its node, then emits
+## mission_selected(id) (at once with reduced motion); further presses meanwhile are ignored.
+## back_pressed on Back or ui_cancel.
 
 signal mission_selected(mission_id: StringName)
 signal back_pressed()
@@ -12,7 +15,10 @@ signal back_pressed()
 @onready var _chapters_box: VBoxContainer = $Margin/Column/Scroll/Chapters
 
 var _nodes: Dictionary[StringName, MissionNode] = {}
+var _maps: Dictionary[StringName, MissionMap] = {}
+var _headers: Array[ChapterHeader] = []
 var _chapter_titles: Array[String] = []
+var _selecting := false
 
 
 func _ready() -> void:
@@ -29,6 +35,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func get_mission_node(mission_id: StringName) -> MissionNode:
 	return _nodes.get(mission_id)
+
+
+func get_map_for(mission_id: StringName) -> MissionMap:
+	return _maps.get(mission_id)
+
+
+func get_chapter_headers() -> Array[ChapterHeader]:
+	return _headers
 
 
 func get_chapter_titles() -> Array[String]:
@@ -51,49 +65,49 @@ func _build() -> void:
 
 func _make_chapter(chapter: ChapterData, title: String, campaign: Campaign) -> Control:
 	var section := VBoxContainer.new()
-	section.add_theme_constant_override(&"separation", 12)
-	var title_label := Label.new()
-	title_label.text = title
-	title_label.add_theme_font_size_override(&"font_size", 40)
-	section.add_child(title_label)
-	var subtitle_label := Label.new()
-	subtitle_label.text = chapter.subtitle
-	subtitle_label.modulate.a = 0.6
-	section.add_child(subtitle_label)
-	var row := HFlowContainer.new()
-	row.add_theme_constant_override(&"h_separation", 40)
-	row.add_theme_constant_override(&"v_separation", 24)
-	section.add_child(row)
+	section.add_theme_constant_override(&"separation", 0)
+	var header := ChapterHeader.new()
+	header.setup(chapter.chapter_id, title, chapter.subtitle)
+	_headers.append(header)
+	section.add_child(header)
+	var map := MissionMap.new()
+	section.add_child(map)
 	for level in chapter.missions:
 		if level != null:
-			row.add_child(_make_mission_cell(level, campaign))
+			_add_mission(map, level, campaign)
 	return section
 
 
-func _make_mission_cell(level: LevelData, campaign: Campaign) -> Control:
+func _add_mission(map: MissionMap, level: LevelData, campaign: Campaign) -> void:
 	var id := level.mission_id
-	var cell := VBoxContainer.new()
-	cell.add_theme_constant_override(&"separation", 4)
 	var node := MissionNode.new()
 	node.name = String(id)
 	var state := MissionNode.state_for(GameState.is_unlocked(id), GameState.progress.is_completed(id))
 	node.setup(id, campaign.get_mission_number(id), state, GameState.progress.get_best_stars(id),
 		level.mission_name)
 	node.pressed.connect(_on_mission_pressed.bind(id))
-	cell.add_child(node)
-	var name_label := Label.new()
-	name_label.text = level.mission_name if state != MissionNode.State.LOCKED else "Locked"
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_font_size_override(&"font_size", 22)
-	name_label.modulate.a = 1.0 if state != MissionNode.State.LOCKED else MissionNode.LOCKED_ALPHA
-	cell.add_child(name_label)
+	var locked := state == MissionNode.State.LOCKED
+	map.add_mission(node, "Locked" if locked else level.mission_name, locked)
 	_nodes[id] = node
-	return cell
+	_maps[id] = map
 
 
 func _on_mission_pressed(mission_id: StringName) -> void:
-	if GameState.is_unlocked(mission_id):
+	if _selecting or not GameState.is_unlocked(mission_id):
+		return
+	var map: MissionMap = _maps.get(mission_id)
+	var delay := map.play_pulse_to(mission_id) if map != null else 0.0
+	if delay <= 0.0:
 		mission_selected.emit(mission_id)
+		return
+	_selecting = true
+	# Bound callable: if this screen is freed first, the connection simply goes away.
+	get_tree().create_timer(delay).timeout.connect(_finish_selection.bind(mission_id))
+
+
+func _finish_selection(mission_id: StringName) -> void:
+	_selecting = false
+	mission_selected.emit(mission_id)
 
 
 ## Focus the first unlocked, not yet completed mission (else the first unlocked one).
