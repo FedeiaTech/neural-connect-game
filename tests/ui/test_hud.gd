@@ -1,14 +1,23 @@
 extends GdUnitTestSuite
 ## T2.4: minimal HUD — counters, story overlay, completion panel and its signals.
+## Runs with reduced motion so the completion panel shows its final values at once (T4.5 made
+## the summary animate: stars one by one and counting stats; see tests/ui/test_summary.gd).
 
 const SignalRecorder := preload("res://tests/model/signal_recorder.gd")
 const HudScene := preload("res://scenes/ui/hud.tscn")
 
 var _hud: Hud
 var _recorder: SignalRecorder
+var _saved_reduced_motion := false
+
+
+func after_test() -> void:
+	GameState.reduced_motion = _saved_reduced_motion
 
 
 func before_test() -> void:
+	_saved_reduced_motion = GameState.reduced_motion
+	GameState.reduced_motion = true
 	_hud = auto_free(HudScene.instantiate())
 	add_child(_hud)
 	_recorder = SignalRecorder.new()

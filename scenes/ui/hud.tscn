@@ -2,22 +2,13 @@
 
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
 [ext_resource type="Script" path="res://scripts/ui/star_row.gd" id="2_stars"]
+[ext_resource type="Script" path="res://scripts/ui/glow_button.gd" id="3_button"]
+[ext_resource type="Script" path="res://scripts/ui/glow_title.gd" id="4_title"]
+[ext_resource type="Shader" path="res://assets/shaders/light_sweep.gdshader" id="5_sweep"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-content_margin_left = 64.0
-content_margin_top = 40.0
-content_margin_right = 64.0
-content_margin_bottom = 40.0
-bg_color = Color(0, 0, 0, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 1, 1, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sweep"]
+shader = ExtResource("5_sweep")
+shader_parameter/progress = -1.0
 
 [node name="HUD" type="CanvasLayer"]
 process_mode = 3
@@ -37,11 +28,13 @@ theme_override_constants/margin_bottom = 12
 [node name="Row" type="HBoxContainer" parent="TopBar"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 48
+theme_override_constants/separation = 40
 
 [node name="MissionLabel" type="Label" parent="TopBar/Row"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.92, 0.96, 1, 1)
+theme_override_colors/font_outline_color = Color(0.45, 0.72, 1, 0.16)
+theme_override_constants/outline_size = 10
 theme_override_font_sizes/font_size = 28
 
 [node name="Spacer" type="Control" parent="TopBar/Row"]
@@ -51,14 +44,18 @@ mouse_filter = 2
 
 [node name="MovesLabel" type="Label" parent="TopBar/Row"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.92, 0.96, 1, 0.9)
+theme_override_colors/font_outline_color = Color(0.45, 0.72, 1, 0.16)
+theme_override_constants/outline_size = 10
 theme_override_font_sizes/font_size = 28
 text = "Moves 0"
 
 [node name="TimeLabel" type="Label" parent="TopBar/Row"]
 custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.92, 0.96, 1, 0.9)
+theme_override_colors/font_outline_color = Color(0.45, 0.72, 1, 0.16)
+theme_override_constants/outline_size = 10
 theme_override_font_sizes/font_size = 28
 text = "00:00"
 
@@ -68,6 +65,7 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 24
 text = "Restart"
+script = ExtResource("3_button")
 
 [node name="PauseButton" type="Button" parent="TopBar/Row"]
 custom_minimum_size = Vector2(140, 44)
@@ -75,6 +73,7 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 24
 text = "Pause"
+script = ExtResource("3_button")
 
 [node name="StoryOverlay" type="ColorRect" parent="."]
 visible = false
@@ -102,14 +101,16 @@ theme_override_constants/separation = 40
 [node name="StoryLabel" type="Label" parent="StoryOverlay/Center/Column"]
 custom_minimum_size = Vector2(1000, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.94, 0.97, 1, 1)
+theme_override_colors/font_outline_color = Color(0.45, 0.72, 1, 0.14)
+theme_override_constants/outline_size = 12
 theme_override_font_sizes/font_size = 36
 horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="HintLabel" type="Label" parent="StoryOverlay/Center/Column"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.5)
+theme_override_colors/font_color = Color(0.82, 0.91, 1, 0.5)
 theme_override_font_sizes/font_size = 22
 text = "Click to begin"
 horizontal_alignment = 1
@@ -134,21 +135,20 @@ mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="CompletionOverlay/Center"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="Column" type="VBoxContainer" parent="CompletionOverlay/Center/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 28
+theme_override_constants/separation = 24
 
-[node name="TitleLabel" type="Label" parent="CompletionOverlay/Center/Panel/Column"]
+[node name="Title" type="Control" parent="CompletionOverlay/Center/Panel/Column"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 44
+mouse_filter = 2
+script = ExtResource("4_title")
 text = "Network restored"
-horizontal_alignment = 1
+font_size = 48
 
 [node name="Stars" type="Control" parent="CompletionOverlay/Center/Panel/Column"]
-custom_minimum_size = Vector2(320, 100)
+custom_minimum_size = Vector2(340, 110)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
@@ -156,7 +156,7 @@ script = ExtResource("2_stars")
 
 [node name="StatsLabel" type="Label" parent="CompletionOverlay/Center/Panel/Column"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.92, 0.96, 1, 1)
 theme_override_font_sizes/font_size = 28
 horizontal_alignment = 1
 
@@ -171,18 +171,32 @@ custom_minimum_size = Vector2(220, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Next mission"
+script = ExtResource("3_button")
 
 [node name="ReplayButton" type="Button" parent="CompletionOverlay/Center/Panel/Column/Buttons"]
 custom_minimum_size = Vector2(220, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Replay"
+script = ExtResource("3_button")
 
 [node name="MissionSelectButton" type="Button" parent="CompletionOverlay/Center/Panel/Column/Buttons"]
 custom_minimum_size = Vector2(220, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Missions"
+script = ExtResource("3_button")
+
+[node name="Sweep" type="ColorRect" parent="CompletionOverlay"]
+visible = false
+material = SubResource("ShaderMaterial_sweep")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="PauseOverlay" type="ColorRect" parent="."]
 visible = false
@@ -207,25 +221,29 @@ layout_mode = 2
 
 [node name="Column" type="VBoxContainer" parent="PauseOverlay/Center/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 22
 
-[node name="TitleLabel" type="Label" parent="PauseOverlay/Center/Panel/Column"]
+[node name="Title" type="Control" parent="PauseOverlay/Center/Panel/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 44
+mouse_filter = 2
+script = ExtResource("4_title")
 text = "Paused"
-horizontal_alignment = 1
+font_size = 48
 
 [node name="ResumeButton" type="Button" parent="PauseOverlay/Center/Panel/Column"]
 custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
 text = "Resume"
+script = ExtResource("3_button")
 
 [node name="RestartButton" type="Button" parent="PauseOverlay/Center/Panel/Column"]
 custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
 text = "Restart"
+script = ExtResource("3_button")
 
 [node name="MissionSelectButton" type="Button" parent="PauseOverlay/Center/Panel/Column"]
 custom_minimum_size = Vector2(280, 56)
 layout_mode = 2
 text = "Mission select"
+script = ExtResource("3_button")

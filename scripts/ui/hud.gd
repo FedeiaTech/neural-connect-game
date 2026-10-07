@@ -7,6 +7,10 @@ extends CanvasLayer
 ## Calls come down from the Level; user intent goes up through signals.
 ## Non-interactive nodes use mouse_filter IGNORE so drags reach the InputController.
 ## The HUD runs with PROCESS_MODE_ALWAYS so the pause overlay works while the tree is paused.
+## T4.5 summary: the panel eases in, its title letters fade in, the stars light up one by one
+## (star_revealed(index) announces each, e.g. for a sound), moves and time count up and a light
+## wave sweeps across the screen. Reduced motion shows the final state at once (every star is
+## still announced). Buttons are GlowButtons; labels have a soft glow outline.
 
 signal restart_pressed()
 signal story_dismissed()
@@ -14,9 +18,17 @@ signal pause_requested()
 signal resume_pressed()
 signal next_mission_pressed()
 signal mission_select_pressed()
+signal star_revealed(index: int)
 
 const COMPLETION := "CompletionOverlay/Center/Panel/Column/"
 const PAUSE := "PauseOverlay/Center/Panel/Column/"
+const STAR_START := 0.35
+const STAR_INTERVAL := 0.32
+const COUNT_DELAY := 0.2
+const COUNT_TIME := 0.9
+const SWEEP_TIME := 1.3
+const PANEL_IN_TIME := 0.3
+const PANEL_IN_SCALE := 0.94
 
 @onready var _mission_label: Label = $TopBar/Row/MissionLabel
 @onready var _moves_label: Label = $TopBar/Row/MovesLabel
@@ -35,9 +47,17 @@ const PAUSE := "PauseOverlay/Center/Panel/Column/"
 @onready var _resume_button: Button = get_node(PAUSE + "ResumeButton")
 @onready var _pause_restart_button: Button = get_node(PAUSE + "RestartButton")
 @onready var _pause_mission_select_button: Button = get_node(PAUSE + "MissionSelectButton")
+@onready var _completion_panel: Control = $CompletionOverlay/Center/Panel
+@onready var _completion_title: GlowTitle = get_node(COMPLETION + "Title")
+@onready var _sweep: ColorRect = $CompletionOverlay/Sweep
+
+var _summary_tween: Tween
+var _sweep_tween: Tween
 
 
 func _ready() -> void:
+	_star_row.star_revealed.connect(star_revealed.emit)
+	_completion_panel.offset_transform_enabled = true
 	_restart_button.pressed.connect(restart_pressed.emit)
 	_replay_button.pressed.connect(restart_pressed.emit)
 	_pause_button.pressed.connect(pause_requested.emit)
@@ -81,15 +101,58 @@ func hide_story() -> void:
 	_story_overlay.hide()
 
 
+## Seconds after show_completion() at which each of count stars lights up.
+static func star_reveal_times(count: int) -> PackedFloat32Array:
+	var times := PackedFloat32Array()
+	for i in count:
+		times.append(STAR_START + i * STAR_INTERVAL)
+	return times
+
+
+## Summary stats with moves and time scaled by progress (0..1) for the count-up.
+static func stats_text(moves: int, seconds: float, progress: float) -> String:
+	var t := clampf(progress, 0.0, 1.0)
+	return "Moves %d    Time %s" % [roundi(moves * t), format_time(seconds * t)]
+
+
 func show_completion(result: LevelResult) -> void:
+	_stop_summary()
 	_star_row.stars = result.stars
-	_stats_label.text = "Moves %d    Time %s" % [result.moves, format_time(result.time)]
 	_completion_overlay.show()
 	_replay_button.grab_focus()
+	if not VisualTuning.is_motion_enabled():
+		_apply_count(1.0, result.moves, result.time)
+		for i in result.stars:
+			_star_row.light(i)
+		return
+	_star_row.clear_lit()
+	_apply_count(0.0, result.moves, result.time)
+	_completion_title.restart()
+	_completion_panel.modulate.a = 0.0
+	_completion_panel.offset_transform_scale = Vector2.ONE * PANEL_IN_SCALE
+	_summary_tween = create_tween().set_parallel(true)
+	_summary_tween.tween_property(_completion_panel, ^"modulate:a", 1.0, PANEL_IN_TIME)
+	_summary_tween.tween_property(_completion_panel, ^"offset_transform_scale", Vector2.ONE, PANEL_IN_TIME * 1.4) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var times := star_reveal_times(result.stars)
+	for i in times.size():
+		_summary_tween.tween_callback(_star_row.light.bind(i)).set_delay(times[i])
+	_summary_tween.tween_method(_apply_count.bind(result.moves, result.time), 0.0, 1.0, COUNT_TIME) \
+		.set_delay(COUNT_DELAY).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_play_sweep()
 
 
 func hide_completion() -> void:
+	_stop_summary()
 	_completion_overlay.hide()
+
+
+func get_lit_star_count() -> int:
+	return _star_row.get_lit_count()
+
+
+func is_sweeping() -> bool:
+	return _sweep_tween != null and _sweep_tween.is_running()
 
 
 ## Shows the Next mission button (only when a next mission exists and is unlocked).
@@ -204,6 +267,34 @@ func _on_story_gui_input(event: InputEvent) -> void:
 func _mark_handled() -> void:
 	if is_inside_tree():
 		get_viewport().set_input_as_handled()
+
+
+func _apply_count(progress: float, moves: int, seconds: float) -> void:
+	_stats_label.text = stats_text(moves, seconds, progress)
+
+
+func _play_sweep() -> void:
+	_sweep.show()
+	_sweep_tween = create_tween()
+	_sweep_tween.tween_method(_set_sweep_progress, -0.3, 1.3, SWEEP_TIME) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_sweep_tween.tween_callback(_sweep.hide)
+
+
+func _set_sweep_progress(value: float) -> void:
+	(_sweep.material as ShaderMaterial).set_shader_parameter(&"progress", value)
+
+
+## Stops a running summary animation and restores the panel.
+func _stop_summary() -> void:
+	for tween: Tween in [_summary_tween, _sweep_tween]:
+		if tween != null:
+			tween.kill()
+	_summary_tween = null
+	_sweep_tween = null
+	_sweep.hide()
+	_completion_panel.modulate.a = 1.0
+	_completion_panel.offset_transform_scale = Vector2.ONE
 
 
 func _dismiss_story() -> void:

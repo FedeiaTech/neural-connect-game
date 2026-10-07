@@ -50,6 +50,12 @@ func _ready() -> void:
 		_elapsed = reveal_duration(text.length())
 
 
+## Replays the letter reveal (instantly complete with reduced motion).
+func restart() -> void:
+	_elapsed = 0.0 if VisualTuning.is_motion_enabled() else reveal_duration(text.length())
+	queue_redraw()
+
+
 func is_revealed() -> bool:
 	return _elapsed >= reveal_duration(text.length())
 
@@ -61,6 +67,8 @@ func advance(delta: float) -> void:
 
 
 func _process(delta: float) -> void:
+	if not is_visible_in_tree():
+		return
 	if VisualTuning.is_motion_enabled():
 		advance(delta)
 	elif not is_revealed():
