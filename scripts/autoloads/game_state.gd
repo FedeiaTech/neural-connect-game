@@ -3,7 +3,7 @@ extends Node
 ## Owns the campaign catalog, the current mission, the saved progress and the settings.
 ##
 ## Save: one versioned JSON file (default user://progress.json) holding progress AND settings:
-##   {"version": 1,
+##   {"version": 2,
 ##    "progress": {"missions": {"m01": {"completed": true, "stars": 3, "moves": 5, "time": 31.2}}},
 ##    "settings": {"master_volume": 1.0, "reduced_motion": false, "language": "en"}}
 ## A missing or corrupt file means fresh progress and default settings, never a crash; a corrupt
@@ -18,7 +18,12 @@ signal current_mission_changed(mission_id: StringName)
 signal progress_changed()
 signal settings_changed()
 
-const SAVE_VERSION := 1
+## v2 (T7.4): Live Wires and Synapses chapters were inserted before Convergence, so the old
+## Convergence missions moved to new ids (see V1_MISSION_ID_MAP).
+const SAVE_VERSION := 2
+## v1 -> v2 mission renames (old Convergence m19/m20/m21 -> m26/m28/m30). Records keep their
+## stars and bests under the new id; the new missions m19..m25 start uncompleted.
+const V1_MISSION_ID_MAP: Dictionary = {"m19": "m26", "m20": "m28", "m21": "m30"}
 const DEFAULT_SAVE_PATH := "user://progress.json"
 const DEFAULT_CAMPAIGN: Campaign = preload("res://data/campaign.tres")
 const MASTER_BUS := 0
@@ -205,5 +210,24 @@ func _migrate(data: Dictionary) -> Dictionary:
 	if int(version) > SAVE_VERSION:
 		push_warning("GameState: save version %d is newer than %d; reading known fields." \
 			% [int(version), SAVE_VERSION])
-	# v1 is the first format: nothing to migrate yet.
-	return data
+	return migrate_save(data)
+
+
+## Pure migration of a parsed save with a numeric version. v1 -> v2 renames the per-mission
+## records of V1_MISSION_ID_MAP (unknown keys inside a record survive); other fields are kept.
+## Saves at v2 or newer are returned unchanged.
+static func migrate_save(data: Dictionary) -> Dictionary:
+	var version := int(data.get("version", SAVE_VERSION))
+	if version >= 2:
+		return data
+	var migrated := data.duplicate(true)
+	var progress: Variant = migrated.get("progress")
+	if progress is Dictionary and (progress as Dictionary).get("missions") is Dictionary:
+		var old: Dictionary = progress["missions"]
+		var renamed := {}
+		for key: Variant in old:
+			var new_key: Variant = V1_MISSION_ID_MAP.get(key, key)
+			renamed[new_key] = old[key]
+		progress["missions"] = renamed
+	migrated["version"] = 2
+	return migrated
