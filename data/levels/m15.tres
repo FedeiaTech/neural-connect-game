@@ -157,10 +157,9 @@ b = 6
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m15"
-mission_name = "Taut Thread"
+mission_name = "MISSION_M15_NAME"
 chapter_id = 4
-story_text = "Some bonds are short and fragile.
-Green threads snap if their neurons drift too far apart."
+story_text = "MISSION_M15_STORY"
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([])
 neuron_radius = 28.0

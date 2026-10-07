@@ -209,7 +209,7 @@ b = 11
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m18"
-mission_name = "Breaking Point"
+mission_name = "MISSION_M18_NAME"
 chapter_id = 4
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([])

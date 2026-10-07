@@ -145,10 +145,9 @@ b = 9
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m13"
-mission_name = "Red Constellation"
+mission_name = "MISSION_M13_NAME"
 chapter_id = 3
-story_text = "Three fixed stars in the dark.
-Every other light must find its orbit between them."
+story_text = "MISSION_M13_STORY"
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([])
 neuron_radius = 28.0

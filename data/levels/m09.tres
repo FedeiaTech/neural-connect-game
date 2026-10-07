@@ -131,7 +131,7 @@ b = 7
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m09"
-mission_name = "Scattered Islands"
+mission_name = "MISSION_M09_NAME"
 chapter_id = 2
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([PackedVector2Array(600, 330, 760, 330, 760, 490, 600, 490), PackedVector2Array(1160, 650, 1320, 650, 1320, 810, 1160, 810), PackedVector2Array(170, 700, 260, 700, 260, 780, 170, 780)])

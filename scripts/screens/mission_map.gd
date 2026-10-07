@@ -79,6 +79,12 @@ func add_mission(node: MissionNode, label_text: String, dim: bool) -> void:
 	_relayout()
 
 
+func _notification(what: int) -> void:
+	# Names auto-translate: re-center them once their new text is in place.
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_relayout.call_deferred()
+
+
 func has_mission(mission_id: StringName) -> bool:
 	return _index_of(mission_id) >= 0
 
@@ -122,8 +128,10 @@ func _relayout() -> void:
 	for i in _nodes.size():
 		var node := _nodes[i]
 		node.position = _points[i] - node.get_center_offset()
-		_names[i].size = Vector2(NAME_WIDTH, 0)
-		_names[i].position = _points[i] + Vector2(-NAME_WIDTH * 0.5, NAME_OFFSET)
+		# A long (e.g. translated) name may be wider than NAME_WIDTH: keep it centered anyway.
+		var width := maxf(NAME_WIDTH, _names[i].get_combined_minimum_size().x)
+		_names[i].size = Vector2(width, 0)
+		_names[i].position = _points[i] + Vector2(-width * 0.5, NAME_OFFSET)
 	queue_redraw()
 
 

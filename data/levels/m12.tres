@@ -143,7 +143,7 @@ b = 8
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m12"
-mission_name = "Pinned Lattice"
+mission_name = "MISSION_M12_NAME"
 chapter_id = 3
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([])

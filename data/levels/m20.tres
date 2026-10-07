@@ -231,7 +231,7 @@ b = 12
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m20"
-mission_name = "Neural Storm"
+mission_name = "MISSION_M20_NAME"
 chapter_id = 5
 play_area = PackedVector2Array(360, 120, 1560, 120, 1760, 570, 1560, 1020, 360, 1020, 160, 570)
 obstacles = Array[PackedVector2Array]([])

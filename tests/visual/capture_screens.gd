@@ -3,10 +3,14 @@ extends Node
 ## renderer (GL Compatibility), saves a PNG after a number of frames and quits. Run the scene (not
 ## with -s, so the GameState autoload exists):
 ##   godot --path . res://tests/visual/capture_screens.tscn -- <screen> <out.png> [frames] [reduced]
-## screen: main_menu, settings, mission_select, summary (m02 completion panel), pause (m02).
+## screen: main_menu, settings, settings_reset (reset confirmation open), mission_select,
+## mission_reset (m01 record reset confirmation), story (story overlay of m01, or of mXX with
+## story=mXX), summary (m02
+## completion panel), pause (m02).
 ## Uses a temporary save (m01 completed with 2 stars) so the real progress is never touched.
 ## Optional 4th argument: "reduced" captures with reduced motion; "perf" turns vsync off and logs
 ## Performance monitors over 5 s (after a warm-up) before capturing.
+## Any argument "lang=<code>" (e.g. lang=es) shows the UI in that language (not saved).
 
 const PerfProbe := preload("res://tests/visual/perf_probe.gd")
 const PERF_WARMUP_FRAMES := 60
@@ -32,6 +36,10 @@ func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0:
 		_screen = args[0]
+	var story_mission := &"m01"
+	if _screen.begins_with("story="):
+		story_mission = StringName(_screen.trim_prefix("story="))
+		_screen = "story"
 	if args.size() > 1:
 		_out = args[1]
 	if args.size() > 2:
@@ -40,16 +48,30 @@ func _ready() -> void:
 	GameState.save_path = TEMP_SAVE
 	GameState.load_game()
 	GameState.reduced_motion = args.size() > 3 and args[3] == "reduced"
+	for arg in args:
+		if arg.begins_with("lang="):
+			GameState.language = arg.trim_prefix("lang=")
+			GameState.apply_settings()
 	_perf = args.size() > 3 and args[3] == "perf"
 	if _perf:
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		_target = 1_000_000
 	GameState.record_result(&"m01", LevelResult.create(5, 40.0, 4, 30.0))
 	match _screen:
-		"settings":
-			add_child(SettingsScene.instantiate())
-		"mission_select":
-			add_child(MissionSelectScene.instantiate())
+		"settings", "settings_reset":
+			var settings: SettingsScreen = SettingsScene.instantiate()
+			add_child(settings)
+			if _screen == "settings_reset":
+				settings.get_reset_button().pressed.emit()
+		"mission_select", "mission_reset":
+			var select: MissionSelect = MissionSelectScene.instantiate()
+			add_child(select)
+			if _screen == "mission_reset":
+				select.request_mission_reset(&"m01")
+		"story":
+			_level = LevelScene.instantiate()
+			add_child(_level)
+			_level.load_level(GameState.get_level(story_mission))
 		"summary", "pause":
 			_level = LevelScene.instantiate()
 			add_child(_level)
@@ -64,7 +86,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_frames += 1
-	if _frames == 10 and _level != null:
+	if _frames == 10 and _level != null and _screen != "story":
 		if _screen == "summary":
 			_level.get_controller().level_completed.emit(LevelResult.create(7, 83.0, 8, 90.0))
 			_level.set_next_mission_available(true)

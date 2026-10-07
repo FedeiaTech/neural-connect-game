@@ -116,7 +116,7 @@ b = 8
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m10"
-mission_name = "Folded Cortex"
+mission_name = "MISSION_M10_NAME"
 chapter_id = 2
 play_area = PackedVector2Array(160, 120, 620, 120, 620, 700, 1300, 700, 1300, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([])

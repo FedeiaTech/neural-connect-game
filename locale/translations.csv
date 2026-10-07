@@ -31,3 +31,64 @@ SUMMARY_REPLAY,Replay,Repetir
 PAUSE_TITLE,Paused,En pausa
 PAUSE_RESUME,Resume,Continuar
 PAUSE_MISSION_SELECT,Mission select,Selección de misión
+CHAPTER_1_TITLE,First Signals,Primeras señales
+CHAPTER_1_SUBTITLE,A dormant network wakes. Untangle its first connections.,Una red dormida despierta. Desenreda sus primeras conexiones.
+CHAPTER_2_TITLE,Shaped Minds,Mentes con forma
+CHAPTER_2_SUBTITLE,Thought bends to the shape of its vessel. Walls and hollows guide every move.,El pensamiento se amolda a su recipiente. Muros y huecos guían cada movimiento.
+CHAPTER_3_TITLE,Anchored,Anclados
+CHAPTER_3_SUBTITLE,Some memories will not move. Build the network around the red anchors.,Algunos recuerdos no se mueven. Construye la red alrededor de los anclajes rojos.
+CHAPTER_4_TITLE,Tension,Tensión
+CHAPTER_4_SUBTITLE,Strained bonds glow green. Pull them too far apart and they snap.,"Los enlaces tensos brillan en verde. Si los separas demasiado, se rompen."
+CHAPTER_5_TITLE,Convergence,Convergencia
+CHAPTER_5_SUBTITLE,"Walls, anchors and fragile bonds. Everything the network has learned, at once.","Muros, anclajes y enlaces frágiles. Todo lo que la red ha aprendido, a la vez."
+MISSION_M01_NAME,First Spark,Primera chispa
+MISSION_M01_STORY,"In the dark, a first spark is looking for a way through.
+Untangle the threads so the signal can pass.","En la oscuridad, una primera chispa busca un camino.
+Desenreda los hilos para que la señal pueda pasar."
+MISSION_M02_NAME,Branching Paths,Caminos ramificados
+MISSION_M03_NAME,Echo Loop,Bucle de eco
+MISSION_M04_NAME,Twin Circuits,Circuitos gemelos
+MISSION_M04_STORY,"Two loops hum in parallel, one inside the other.
+Give each its own orbit.","Dos bucles vibran en paralelo, uno dentro del otro.
+Dale a cada uno su propia órbita."
+MISSION_M05_NAME,Relay Hub,Nodo de relevo
+MISSION_M06_NAME,Bent Corridor,Pasillo curvo
+MISSION_M06_STORY,"Not every mind is a perfect square.
+Here the walls bend, and so must the signal.","No toda mente es un cuadrado perfecto.
+Aquí los muros se curvan, y la señal debe curvarse con ellos."
+MISSION_M07_NAME,The Hollow,El hueco
+MISSION_M08_NAME,Narrow Passage,Paso estrecho
+MISSION_M08_STORY,"Two chambers, one narrow bridge.
+Only one neuron fits through at a time.","Dos cámaras, un puente estrecho.
+Solo cabe una neurona a la vez."
+MISSION_M09_NAME,Scattered Islands,Islas dispersas
+MISSION_M10_NAME,Folded Cortex,Corteza plegada
+MISSION_M11_NAME,Anchor Point,Punto de anclaje
+MISSION_M11_STORY,"A red neuron holds its ground: an old, stubborn memory.
+It will not move. Weave the rest around it.","Una neurona roja no cede: un recuerdo antiguo y obstinado.
+No se moverá. Teje el resto a su alrededor."
+MISSION_M12_NAME,Pinned Lattice,Retícula fija
+MISSION_M13_NAME,Red Constellation,Constelación roja
+MISSION_M13_STORY,"Three fixed stars in the dark.
+Every other light must find its orbit between them.","Tres estrellas fijas en la oscuridad.
+Las demás luces deben encontrar su órbita entre ellas."
+MISSION_M14_NAME,Iron Synapse,Sinapsis de hierro
+MISSION_M15_NAME,Taut Thread,Hilo tenso
+MISSION_M15_STORY,"Some bonds are short and fragile.
+Green threads snap if their neurons drift too far apart.","Algunos enlaces son cortos y frágiles.
+Los hilos verdes se rompen si sus neuronas se alejan demasiado."
+MISSION_M16_NAME,Elastic Bond,Enlace elástico
+MISSION_M17_NAME,Tight Weave,Trama ajustada
+MISSION_M17_STORY,"Pairs that must stay close, tangled with pairs that must not touch.
+Move them together.","Parejas que deben ir juntas, enredadas con otras que no deben tocarse.
+Muévelas a la vez."
+MISSION_M18_NAME,Breaking Point,Punto de ruptura
+MISSION_M19_NAME,Converging Paths,Caminos convergentes
+MISSION_M19_STORY,"Walls, anchors and fragile threads meet in one network.
+Everything it has learned is tested here.","Muros, anclajes e hilos frágiles se unen en una sola red.
+Aquí se pone a prueba todo lo que ha aprendido."
+MISSION_M20_NAME,Neural Storm,Tormenta neuronal
+MISSION_M21_NAME,Awakening,Despertar
+MISSION_M21_STORY,"Two hemispheres, one mind.
+Untangle them and the network finally wakes.","Dos hemisferios, una mente.
+Desenrédalos y la red por fin despertará."

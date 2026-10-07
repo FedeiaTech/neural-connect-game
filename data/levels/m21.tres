@@ -233,10 +233,9 @@ b = 8
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m21"
-mission_name = "Awakening"
+mission_name = "MISSION_M21_NAME"
 chapter_id = 5
-story_text = "Two hemispheres, one mind.
-Untangle them and the network finally wakes."
+story_text = "MISSION_M21_STORY"
 play_area = PackedVector2Array(260, 120, 1660, 120, 1760, 220, 1760, 920, 1660, 1020, 260, 1020, 160, 920, 160, 220)
 obstacles = Array[PackedVector2Array]([PackedVector2Array(900, 500, 1020, 500, 1020, 640, 900, 640)])
 neuron_radius = 28.0

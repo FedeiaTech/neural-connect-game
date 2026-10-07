@@ -111,10 +111,9 @@ b = 3
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m11"
-mission_name = "Anchor Point"
+mission_name = "MISSION_M11_NAME"
 chapter_id = 3
-story_text = "A red neuron holds its ground: an old, stubborn memory.
-It will not move. Weave the rest around it."
+story_text = "MISSION_M11_STORY"
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([])
 neuron_radius = 28.0

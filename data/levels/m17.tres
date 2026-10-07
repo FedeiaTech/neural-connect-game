@@ -190,10 +190,9 @@ rest_length = 260.0
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m17"
-mission_name = "Tight Weave"
+mission_name = "MISSION_M17_NAME"
 chapter_id = 4
-story_text = "Pairs that must stay close, tangled with pairs that must not touch.
-Move them together."
+story_text = "MISSION_M17_STORY"
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([])
 neuron_radius = 28.0

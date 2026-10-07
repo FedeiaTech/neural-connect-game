@@ -135,7 +135,7 @@ b = 4
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m07"
-mission_name = "The Hollow"
+mission_name = "MISSION_M07_NAME"
 chapter_id = 2
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([PackedVector2Array(760, 450, 1160, 450, 1160, 690, 760, 690)])

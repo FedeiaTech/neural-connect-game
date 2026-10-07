@@ -98,7 +98,7 @@ mouse_filter = 2
 theme_override_constants/separation = 40
 
 [node name="StoryLabel" type="Label" parent="StoryOverlay/Center/Column"]
-custom_minimum_size = Vector2(1000, 0)
+custom_minimum_size = Vector2(1400, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 0.97, 1, 1)
 theme_override_colors/font_outline_color = Color(0.45, 0.72, 1, 0.14)

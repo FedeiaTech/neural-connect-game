@@ -4,6 +4,7 @@ extends GdUnitTestSuite
 ## difficulty curve of every authored mission.
 
 const SolutionPlanner := preload("res://tests/content/solution_planner.gd")
+const Csv := preload("res://tests/localization/translation_table.gd")
 const CAMPAIGN_PATH := "res://data/campaign.tres"
 const LEVELS_DIR := "res://data/levels"
 const CHAPTER_COUNT := 5
@@ -22,12 +23,16 @@ const MAX_MISSIONS_WITHOUT_STORY := 2
 const MIN_SOLUTION_SPACING_RADII := 3.0
 ## Same threshold as tools/build_levels.gd.
 const MIN_START_CLEARANCE := 40.0
+## T6.3: content texts are translation keys of locale/translations.csv.
+const LOCALES: Array[String] = ["en", "es"]
 
 ## mission_id -> planner result, computed once for the suite.
 var _plans: Dictionary[StringName, Dictionary] = {}
+var _table: Dictionary = {}
 
 
 func before() -> void:
+	_table = Csv.load_table()
 	for level in _levels():
 		_plans[level.mission_id] = SolutionPlanner.new().plan(level)
 
@@ -91,10 +96,11 @@ func test_every_campaign_mission_is_valid_and_named() -> void:
 	for level in _levels():
 		var errors := PuzzleModel.validate_level(level)
 		assert_array(errors).override_failure_message("%s: %s" % [level.mission_id, errors]).is_empty()
-		assert_str(level.mission_name).is_not_empty()
-		assert_bool(names.has(level.mission_name)).override_failure_message(
-			"duplicate mission name %s" % level.mission_name).is_false()
-		names[level.mission_name] = true
+		var english := _english(level.mission_name)
+		assert_str(english).override_failure_message(String(level.mission_id)).is_not_empty()
+		assert_bool(names.has(english)).override_failure_message(
+			"duplicate mission name %s" % english).is_false()
+		names[english] = true
 
 
 ## The proof: the planned drags, replayed on the real PuzzleModel (collisions and tension),
@@ -202,9 +208,48 @@ func test_story_text_appears_every_two_or_three_missions() -> void:
 		else:
 			without = 0
 			with_story += 1
-			assert_int(level.story_text.split("\n").size()).is_less_equal(2)
+			for locale in LOCALES:
+				var story := Csv.text(_table, level.story_text, locale)
+				assert_int(story.split("\n").size()).override_failure_message(
+					"%s (%s): story longer than 2 lines" % [level.mission_id, locale]).is_less_equal(2)
 	assert_str(levels[0].story_text).is_not_empty()
 	assert_int(with_story).is_less(levels.size())
+
+
+## Every text the campaign shows is a key with the expected name and an English and a Spanish
+## text: MISSION_MXX_NAME / MISSION_MXX_STORY and CHAPTER_N_TITLE / CHAPTER_N_SUBTITLE.
+func test_campaign_texts_are_translated_keys() -> void:
+	var used: Array[String] = []
+	for chapter in _campaign().chapters:
+		assert_str(chapter.title).is_equal("CHAPTER_%d_TITLE" % chapter.chapter_id)
+		assert_str(chapter.subtitle).is_equal("CHAPTER_%d_SUBTITLE" % chapter.chapter_id)
+		used.append_array([chapter.title, chapter.subtitle])
+	for level in _levels():
+		var prefix := "MISSION_%s_" % String(level.mission_id).to_upper()
+		assert_str(level.mission_name).is_equal(prefix + "NAME")
+		used.append(level.mission_name)
+		if not level.story_text.is_empty():
+			assert_str(level.story_text).is_equal(prefix + "STORY")
+			used.append(level.story_text)
+	for key in used:
+		for locale in LOCALES:
+			assert_str(Csv.text(_table, key, locale).strip_edges()).override_failure_message(
+				"%s has no %s text" % [key, locale]).is_not_empty()
+
+
+## The runtime translation (imported CSV) shows Spanish content in the es locale.
+func test_content_translates_at_runtime() -> void:
+	var level := _levels()[0]
+	var previous := TranslationServer.get_locale()
+	TranslationServer.set_locale("es")
+	var spanish := tr(level.mission_name)
+	TranslationServer.set_locale(previous)
+	assert_str(spanish).is_equal(Csv.text(_table, level.mission_name, "es"))
+	assert_str(spanish).is_not_equal(level.mission_name)
+
+
+func _english(key: String) -> String:
+	return Csv.text(_table, key, "en")
 
 
 func _fixed_count(level: LevelData) -> int:

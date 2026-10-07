@@ -115,10 +115,9 @@ b = 7
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m06"
-mission_name = "Bent Corridor"
+mission_name = "MISSION_M06_NAME"
 chapter_id = 2
-story_text = "Not every mind is a perfect square.
-Here the walls bend, and so must the signal."
+story_text = "MISSION_M06_STORY"
 play_area = PackedVector2Array(160, 120, 900, 120, 900, 640, 1760, 640, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([])
 neuron_radius = 28.0

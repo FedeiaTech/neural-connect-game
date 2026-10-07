@@ -88,7 +88,7 @@ b = 1
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m02"
-mission_name = "Branching Paths"
+mission_name = "MISSION_M02_NAME"
 chapter_id = 1
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([])

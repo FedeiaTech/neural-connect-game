@@ -186,10 +186,9 @@ b = 10
 [resource]
 script = ExtResource("1_level")
 mission_id = &"m19"
-mission_name = "Converging Paths"
+mission_name = "MISSION_M19_NAME"
 chapter_id = 5
-story_text = "Walls, anchors and fragile threads meet in one network.
-Everything it has learned is tested here."
+story_text = "MISSION_M19_STORY"
 play_area = PackedVector2Array(160, 120, 1760, 120, 1760, 1020, 160, 1020)
 obstacles = Array[PackedVector2Array]([PackedVector2Array(880, 355, 1040, 355, 1040, 465, 880, 465), PackedVector2Array(1253, 675, 1413, 675, 1413, 785, 1253, 785)])
 neuron_radius = 28.0

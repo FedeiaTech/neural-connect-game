@@ -28,36 +28,36 @@
 [sub_resource type="Resource" id="Chapter_1"]
 script = ExtResource("2_chapter")
 chapter_id = 1
-title = "First Signals"
-subtitle = "A dormant network wakes. Untangle its first connections."
+title = "CHAPTER_1_TITLE"
+subtitle = "CHAPTER_1_SUBTITLE"
 missions = Array[ExtResource("3_level")]([ExtResource("4_m01"), ExtResource("5_m02"), ExtResource("6_m03"), ExtResource("7_m04"), ExtResource("8_m05")])
 
 [sub_resource type="Resource" id="Chapter_2"]
 script = ExtResource("2_chapter")
 chapter_id = 2
-title = "Shaped Minds"
-subtitle = "Thought bends to the shape of its vessel. Walls and hollows guide every move."
+title = "CHAPTER_2_TITLE"
+subtitle = "CHAPTER_2_SUBTITLE"
 missions = Array[ExtResource("3_level")]([ExtResource("9_m06"), ExtResource("10_m07"), ExtResource("11_m08"), ExtResource("12_m09"), ExtResource("13_m10")])
 
 [sub_resource type="Resource" id="Chapter_3"]
 script = ExtResource("2_chapter")
 chapter_id = 3
-title = "Anchored"
-subtitle = "Some memories will not move. Build the network around the red anchors."
+title = "CHAPTER_3_TITLE"
+subtitle = "CHAPTER_3_SUBTITLE"
 missions = Array[ExtResource("3_level")]([ExtResource("14_m11"), ExtResource("15_m12"), ExtResource("16_m13"), ExtResource("17_m14")])
 
 [sub_resource type="Resource" id="Chapter_4"]
 script = ExtResource("2_chapter")
 chapter_id = 4
-title = "Tension"
-subtitle = "Strained bonds glow green. Pull them too far apart and they snap."
+title = "CHAPTER_4_TITLE"
+subtitle = "CHAPTER_4_SUBTITLE"
 missions = Array[ExtResource("3_level")]([ExtResource("18_m15"), ExtResource("19_m16"), ExtResource("20_m17"), ExtResource("21_m18")])
 
 [sub_resource type="Resource" id="Chapter_5"]
 script = ExtResource("2_chapter")
 chapter_id = 5
-title = "Convergence"
-subtitle = "Walls, anchors and fragile bonds. Everything the network has learned, at once."
+title = "CHAPTER_5_TITLE"
+subtitle = "CHAPTER_5_SUBTITLE"
 missions = Array[ExtResource("3_level")]([ExtResource("22_m19"), ExtResource("23_m20"), ExtResource("24_m21")])
 
 [resource]

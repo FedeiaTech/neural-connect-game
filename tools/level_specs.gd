@@ -2,6 +2,10 @@ extends RefCounted
 ## Hand-designed campaign (SDD 7, 7.1): the single source for data/levels/mXX.tres and
 ## data/campaign.tres, built offline by tools/build_levels.gd. Nothing here runs in the game.
 ##
+## Texts are translation keys (T6.3); their English and Spanish live in locale/translations.csv:
+##   chapter title/subtitle: CHAPTER_<n>_TITLE / CHAPTER_<n>_SUBTITLE
+##   mission name/story: MISSION_<ID>_NAME / MISSION_<ID>_STORY (story at most 2 lines)
+##
 ## Mission spec keys:
 ##   id, name, chapter, story ("" for none), par_time (s), par_moves (optional; default is
 ##   twice the planned solution moves, see build_levels.gd)
@@ -18,16 +22,16 @@ const DEFAULT_AREA := [160, 120, 1760, 120, 1760, 1020, 160, 1020]
 
 static func chapters() -> Array[Dictionary]:
 	return [
-		{"id": 1, "title": "First Signals",
-			"subtitle": "A dormant network wakes. Untangle its first connections."},
-		{"id": 2, "title": "Shaped Minds",
-			"subtitle": "Thought bends to the shape of its vessel. Walls and hollows guide every move."},
-		{"id": 3, "title": "Anchored",
-			"subtitle": "Some memories will not move. Build the network around the red anchors."},
-		{"id": 4, "title": "Tension",
-			"subtitle": "Strained bonds glow green. Pull them too far apart and they snap."},
-		{"id": 5, "title": "Convergence",
-			"subtitle": "Walls, anchors and fragile bonds. Everything the network has learned, at once."},
+		{"id": 1, "title": "CHAPTER_1_TITLE",
+			"subtitle": "CHAPTER_1_SUBTITLE"},
+		{"id": 2, "title": "CHAPTER_2_TITLE",
+			"subtitle": "CHAPTER_2_SUBTITLE"},
+		{"id": 3, "title": "CHAPTER_3_TITLE",
+			"subtitle": "CHAPTER_3_SUBTITLE"},
+		{"id": 4, "title": "CHAPTER_4_TITLE",
+			"subtitle": "CHAPTER_4_SUBTITLE"},
+		{"id": 5, "title": "CHAPTER_5_TITLE",
+			"subtitle": "CHAPTER_5_SUBTITLE"},
 	]
 
 
@@ -55,15 +59,15 @@ static func _chapter_1() -> Array[Dictionary]:
 	return [
 		{
 			# A 4-cycle drawn as a bowtie: one crossing, one drag.
-			"id": "m01", "name": "First Spark", "chapter": 1, "par_moves": 6, "par_time": 60.0,
-			"story": "In the dark, a first spark is looking for a way through.\nUntangle the threads so the signal can pass.",
+			"id": "m01", "name": "MISSION_M01_NAME", "chapter": 1, "par_moves": 6, "par_time": 60.0,
+			"story": "MISSION_M01_STORY",
 			"sol": pts([660, 370, 1260, 370, 1260, 770, 660, 770]),
 			"start": pts([700, 330, 1250, 420, 620, 760, 1300, 720]),
 			"edges": [[0, 1], [1, 2], [2, 3], [3, 0]],
 		},
 		{
 			# First hub: neuron 0 holds four dendrites and starts swapped with neuron 4.
-			"id": "m02", "name": "Branching Paths", "chapter": 1, "par_moves": 8, "par_time": 90.0,
+			"id": "m02", "name": "MISSION_M02_NAME", "chapter": 1, "par_moves": 8, "par_time": 90.0,
 			"story": "",
 			"sol": pts([960, 570, 660, 320, 1260, 320, 1260, 820, 960, 920, 660, 820]),
 			"start": pts([960, 920, 660, 320, 1260, 320, 1260, 820, 960, 570, 660, 820]),
@@ -71,7 +75,7 @@ static func _chapter_1() -> Array[Dictionary]:
 		},
 		{
 			# A 5-cycle drawn as a pentagram (five crossings) that opens into a pentagon.
-			"id": "m03", "name": "Echo Loop", "chapter": 1, "par_time": 60.0,
+			"id": "m03", "name": "MISSION_M03_NAME", "chapter": 1, "par_time": 60.0,
 			"story": "",
 			"sol": pts([960, 270, 1245, 477, 1136, 813, 784, 813, 675, 477]),
 			"start": pts([1160, 295, 960, 910, 760, 295, 1283, 675, 637, 675]),
@@ -80,15 +84,15 @@ static func _chapter_1() -> Array[Dictionary]:
 		{
 			# Triangular prism: a triangle nested in a triangle, joined by three spokes.
 			# Start: the inner triangle is mirrored and its apex swapped with the outer apex.
-			"id": "m04", "name": "Twin Circuits", "chapter": 1, "par_time": 90.0,
-			"story": "Two loops hum in parallel, one inside the other.\nGive each its own orbit.",
+			"id": "m04", "name": "MISSION_M04_NAME", "chapter": 1, "par_time": 90.0,
+			"story": "MISSION_M04_STORY",
 			"sol": pts([960, 200, 1400, 900, 520, 900, 960, 450, 1140, 760, 780, 760]),
 			"start": pts([1010, 490, 1350, 860, 570, 860, 1010, 240, 830, 720, 1090, 720]),
 			"edges": [[0, 1], [1, 2], [2, 0], [3, 4], [4, 5], [5, 3], [0, 3], [1, 4], [2, 5]],
 		},
 		{
 			# Wheel: one hub, six rim neurons, every rim neuron wired to the hub.
-			"id": "m05", "name": "Relay Hub", "chapter": 1, "par_time": 120.0,
+			"id": "m05", "name": "MISSION_M05_NAME", "chapter": 1, "par_time": 120.0,
 			"story": "",
 			"sol": pts([960, 570, 1290, 570, 1125, 856, 795, 856, 630, 570, 795, 284, 1125, 284]),
 			"perm": [3, 0, 5, 1, 6, 2, 4], "offset": Vector2(50, 50), "nudge": {1: Vector2(55, 30)},
@@ -104,8 +108,8 @@ static func _chapter_2() -> Array[Dictionary]:
 	return [
 		{
 			# L-shaped area: neurons must travel around the inner corner.
-			"id": "m06", "name": "Bent Corridor", "chapter": 2, "par_time": 120.0,
-			"story": "Not every mind is a perfect square.\nHere the walls bend, and so must the signal.",
+			"id": "m06", "name": "MISSION_M06_NAME", "chapter": 2, "par_time": 120.0,
+			"story": "MISSION_M06_STORY",
 			"area": pts([160, 120, 900, 120, 900, 640, 1760, 640, 1760, 1020, 160, 1020]),
 			"sol": pts([330, 260, 720, 260, 330, 600, 720, 560, 450, 880, 1000, 860, 1300, 730, 1600, 900]),
 			"perm": [6, 4, 7, 5, 1, 2, 0, 3], "offset": Vector2(50, 50), "nudge": {0: Vector2(-18, 24)},
@@ -114,7 +118,7 @@ static func _chapter_2() -> Array[Dictionary]:
 		},
 		{
 			# A ring around a solid hollow: square antiprism, inner square around the hole.
-			"id": "m07", "name": "The Hollow", "chapter": 2, "par_time": 150.0,
+			"id": "m07", "name": "MISSION_M07_NAME", "chapter": 2, "par_time": 150.0,
 			"story": "",
 			"obstacles": [pts([760, 450, 1160, 450, 1160, 690, 760, 690])],
 			"sol": pts([960, 300, 1420, 570, 960, 840, 500, 570, 400, 230, 1520, 230, 1520, 910, 400, 910]),
@@ -124,8 +128,8 @@ static func _chapter_2() -> Array[Dictionary]:
 		},
 		{
 			# Two chambers and a corridor one neuron wide; neuron 4 starts inside it.
-			"id": "m08", "name": "Narrow Passage", "chapter": 2, "par_time": 150.0,
-			"story": "Two chambers, one narrow bridge.\nOnly one neuron fits through at a time.",
+			"id": "m08", "name": "MISSION_M08_NAME", "chapter": 2, "par_time": 150.0,
+			"story": "MISSION_M08_STORY",
 			"area": pts([160, 120, 760, 120, 760, 500, 1160, 500, 1160, 120, 1760, 120,
 				1760, 1020, 1160, 1020, 1160, 640, 760, 640, 760, 1020, 160, 1020]),
 			"sol": pts([320, 280, 620, 560, 320, 860, 600, 250, 1300, 570, 1600, 280, 1600, 860, 1320, 880]),
@@ -135,7 +139,7 @@ static func _chapter_2() -> Array[Dictionary]:
 		},
 		{
 			# A triangulated 3x3 lattice whose empty cells hold solid islands.
-			"id": "m09", "name": "Scattered Islands", "chapter": 2, "par_time": 150.0,
+			"id": "m09", "name": "MISSION_M09_NAME", "chapter": 2, "par_time": 150.0,
 			"story": "",
 			"obstacles": [
 				pts([600, 330, 760, 330, 760, 490, 600, 490]),
@@ -150,7 +154,7 @@ static func _chapter_2() -> Array[Dictionary]:
 		},
 		{
 			# U-shaped area: the two arms only meet through the bottom fold.
-			"id": "m10", "name": "Folded Cortex", "chapter": 2, "par_time": 150.0,
+			"id": "m10", "name": "MISSION_M10_NAME", "chapter": 2, "par_time": 150.0,
 			"story": "",
 			"area": pts([160, 120, 620, 120, 620, 700, 1300, 700, 1300, 120, 1760, 120, 1760, 1020, 160, 1020]),
 			"sol": pts([390, 250, 390, 600, 390, 900, 800, 880, 1120, 880, 1530, 900, 1530, 600, 1530, 250, 960, 800]),
@@ -167,8 +171,8 @@ static func _chapter_3() -> Array[Dictionary]:
 	return [
 		{
 			# A fixed hub: the hexagon must close around it.
-			"id": "m11", "name": "Anchor Point", "chapter": 3, "par_time": 120.0,
-			"story": "A red neuron holds its ground: an old, stubborn memory.\nIt will not move. Weave the rest around it.",
+			"id": "m11", "name": "MISSION_M11_NAME", "chapter": 3, "par_time": 120.0,
+			"story": "MISSION_M11_STORY",
 			"sol": pts([960, 570, 1280, 570, 1120, 847, 800, 847, 640, 570, 800, 293, 1120, 293, 960, 960]),
 			"fixed": [0],
 			"perm": [0, 4, 6, 7, 2, 1, 3, 5], "offset": Vector2(50, -50), "nudge": {3: Vector2(-90, -10)},
@@ -177,7 +181,7 @@ static func _chapter_3() -> Array[Dictionary]:
 		},
 		{
 			# Triangulated lattice pinned at two opposite corners.
-			"id": "m12", "name": "Pinned Lattice", "chapter": 3, "par_time": 150.0,
+			"id": "m12", "name": "MISSION_M12_NAME", "chapter": 3, "par_time": 150.0,
 			"story": "",
 			"sol": pts([500, 250, 960, 250, 1420, 250, 500, 570, 960, 570, 1420, 570, 500, 890, 960, 890, 1420, 890]),
 			"fixed": [2, 6],
@@ -188,8 +192,8 @@ static func _chapter_3() -> Array[Dictionary]:
 		},
 		{
 			# Pentagonal prism with three anchors, inner and outer.
-			"id": "m13", "name": "Red Constellation", "chapter": 3, "par_time": 180.0,
-			"story": "Three fixed stars in the dark.\nEvery other light must find its orbit between them.",
+			"id": "m13", "name": "MISSION_M13_NAME", "chapter": 3, "par_time": 180.0,
+			"story": "MISSION_M13_STORY",
 			"sol": pts([960, 190, 1321, 453, 1183, 877, 737, 877, 599, 453,
 				960, 400, 1122, 517, 1060, 708, 860, 708, 798, 517]),
 			"fixed": [0, 4, 7],
@@ -199,7 +203,7 @@ static func _chapter_3() -> Array[Dictionary]:
 		},
 		{
 			# Four anchored corners pull on a hexagonal wheel; side walls narrow the field.
-			"id": "m14", "name": "Iron Synapse", "chapter": 3, "par_time": 180.0,
+			"id": "m14", "name": "MISSION_M14_NAME", "chapter": 3, "par_time": 180.0,
 			"story": "",
 			"obstacles": [
 				pts([160, 520, 260, 520, 260, 620, 160, 620]),
@@ -223,8 +227,8 @@ static func _chapter_4() -> Array[Dictionary]:
 		{
 			# Wheel with two short tension spokes: rim neurons 1 and 4 start on the wrong
 			# side of the hub, near breaking, and must swing around it instead of across.
-			"id": "m15", "name": "Taut Thread", "chapter": 4, "par_time": 150.0,
-			"story": "Some bonds are short and fragile.\nGreen threads snap if their neurons drift too far apart.",
+			"id": "m15", "name": "MISSION_M15_NAME", "chapter": 4, "par_time": 150.0,
+			"story": "MISSION_M15_STORY",
 			"sol": pts([960, 570, 1220, 570, 1090, 795, 830, 795, 700, 570, 830, 345, 1090, 345, 360, 570, 1560, 570]),
 			"start": pts([960, 570, 680, 640, 1130, 230, 1150, 880, 1240, 500, 780, 850, 720, 360, 1600, 420, 360, 300]),
 			"edges": [[0, 1, 200.0, 330.0], [0, 2], [0, 3], [0, 4, 200.0, 330.0], [0, 5], [0, 6],
@@ -233,7 +237,7 @@ static func _chapter_4() -> Array[Dictionary]:
 		},
 		{
 			# Ladder whose three tension rungs start flipped upside down.
-			"id": "m16", "name": "Elastic Bond", "chapter": 4, "par_time": 180.0,
+			"id": "m16", "name": "MISSION_M16_NAME", "chapter": 4, "par_time": 180.0,
 			"story": "",
 			"sol": pts([400, 380, 680, 380, 960, 380, 1240, 380, 1520, 380,
 				400, 760, 680, 760, 960, 760, 1240, 760, 1520, 760]),
@@ -245,8 +249,8 @@ static func _chapter_4() -> Array[Dictionary]:
 		},
 		{
 			# Triangular lattice: four tension pairs start swapped as units.
-			"id": "m17", "name": "Tight Weave", "chapter": 4, "par_time": 210.0,
-			"story": "Pairs that must stay close, tangled with pairs that must not touch.\nMove them together.",
+			"id": "m17", "name": "MISSION_M17_NAME", "chapter": 4, "par_time": 210.0,
+			"story": "MISSION_M17_STORY",
 			"sol": pts([640, 250, 960, 250, 1280, 250, 480, 570, 800, 570, 1120, 570, 1440, 570,
 				640, 890, 960, 890, 1280, 890, 1600, 890]),
 			"start": pts([1010, 300, 620, 340, 1230, 830, 580, 830, 1170, 630, 800, 690, 1560, 840,
@@ -257,7 +261,7 @@ static func _chapter_4() -> Array[Dictionary]:
 		},
 		{
 			# Two wheels joined by a tension bridge; both rims start as pentagrams.
-			"id": "m18", "name": "Breaking Point", "chapter": 4, "par_time": 240.0,
+			"id": "m18", "name": "MISSION_M18_NAME", "chapter": 4, "par_time": 240.0,
 			"story": "",
 			"sol": pts([600, 570, 830, 570, 671, 789, 414, 705, 414, 435, 671, 351,
 				1320, 570, 1090, 570, 1249, 351, 1506, 435, 1506, 705, 1249, 789]),
@@ -278,8 +282,8 @@ static func _chapter_5() -> Array[Dictionary]:
 	return [
 		{
 			# 4x3 lattice with two islands and two anchors.
-			"id": "m19", "name": "Converging Paths", "chapter": 5, "par_time": 210.0,
-			"story": "Walls, anchors and fragile threads meet in one network.\nEverything it has learned is tested here.",
+			"id": "m19", "name": "MISSION_M19_NAME", "chapter": 5, "par_time": 210.0,
+			"story": "MISSION_M19_STORY",
 			"obstacles": [
 				pts([880, 355, 1040, 355, 1040, 465, 880, 465]),
 				pts([1253, 675, 1413, 675, 1413, 785, 1253, 785]),
@@ -295,7 +299,7 @@ static func _chapter_5() -> Array[Dictionary]:
 		},
 		{
 			# Hexagonal field, fixed hub, three folded tension pairs.
-			"id": "m20", "name": "Neural Storm", "chapter": 5, "par_time": 240.0,
+			"id": "m20", "name": "MISSION_M20_NAME", "chapter": 5, "par_time": 240.0,
 			"story": "",
 			"area": pts([360, 120, 1560, 120, 1760, 570, 1560, 1020, 360, 1020, 160, 570]),
 			"sol": pts([960, 570, 1190, 570, 1075, 769, 845, 769, 730, 570, 845, 371, 1075, 371,
@@ -311,8 +315,8 @@ static func _chapter_5() -> Array[Dictionary]:
 		},
 		{
 			# Two hemispheres around a solid core, bridged by tension, anchored top and bottom.
-			"id": "m21", "name": "Awakening", "chapter": 5, "par_time": 240.0,
-			"story": "Two hemispheres, one mind.\nUntangle them and the network finally wakes.",
+			"id": "m21", "name": "MISSION_M21_NAME", "chapter": 5, "par_time": 240.0,
+			"story": "MISSION_M21_STORY",
 			"area": pts([260, 120, 1660, 120, 1760, 220, 1760, 920, 1660, 1020, 260, 1020, 160, 920, 160, 220]),
 			"obstacles": [pts([900, 500, 1020, 500, 1020, 640, 900, 640])],
 			"sol": pts([580, 310, 805, 440, 805, 700, 580, 830, 355, 700, 355, 440,
