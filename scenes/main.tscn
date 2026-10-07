@@ -1,6 +1,25 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/flow/screen_host.gd" id="2_host"]
+[ext_resource type="Script" path="res://scripts/flow/transition.gd" id="3_transition"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
+
+[node name="ScreenHost" type="Node" parent="." node_paths=PackedStringArray("transition")]
+script = ExtResource("2_host")
+transition = NodePath("../Transition")
+
+[node name="Transition" type="CanvasLayer" parent="."]
+process_mode = 3
+layer = 100
+script = ExtResource("3_transition")
+
+[node name="Fade" type="ColorRect" parent="Transition"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)

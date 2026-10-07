@@ -1,0 +1,64 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/screens/settings_screen.gd" id="1_settings"]
+
+[node name="SettingsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_settings")
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Column" type="VBoxContainer" parent="Center"]
+custom_minimum_size = Vector2(760, 0)
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="Title" type="Label" parent="Center/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="VolumeRow" type="HBoxContainer" parent="Center/Column"]
+layout_mode = 2
+theme_override_constants/separation = 32
+
+[node name="VolumeLabel" type="Label" parent="Center/Column/VolumeRow"]
+layout_mode = 2
+text = "Master volume"
+
+[node name="VolumeSlider" type="HSlider" parent="Center/Column/VolumeRow"]
+custom_minimum_size = Vector2(320, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="VolumeValue" type="Label" parent="Center/Column/VolumeRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="ReducedMotionToggle" type="CheckButton" parent="Center/Column"]
+layout_mode = 2
+text = "Reduced motion"
+
+[node name="BackButton" type="Button" parent="Center/Column"]
+custom_minimum_size = Vector2(240, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Back"
