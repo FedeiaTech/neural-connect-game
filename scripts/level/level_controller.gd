@@ -48,6 +48,9 @@ const ObstacleScene := preload("res://scenes/views/obstacle_view.tscn")
 @export var sparks: CrossingSparksView
 ## Optional lethal-wall crackle layer (T7.2).
 @export var lethal_walls: LethalWallView
+## Optional dynamic receptor links layer and receptor halos container (T7.3).
+@export var links: LinksView
+@export var receptors_root: Node2D
 
 var _level: LevelData
 var _model: PuzzleModel
@@ -188,7 +191,9 @@ func _build() -> void:
 
 
 func _build_views() -> void:
-	for container: Node2D in [obstacles_root, dendrites_root, neurons_root]:
+	for container: Node2D in [obstacles_root, dendrites_root, neurons_root, receptors_root]:
+		if container == null:
+			continue
 		for child in container.get_children():
 			container.remove_child(child)
 			child.queue_free()
@@ -215,6 +220,13 @@ func _build_views() -> void:
 		neurons_root.add_child(neuron)
 		neuron.setup(id, _model, feedback)
 		_neuron_views[id] = neuron
+	if receptors_root != null:
+		for id in _model.get_receptor_ids():
+			var receptor := ReceptorView.new()
+			receptors_root.add_child(receptor)
+			receptor.setup(id, _model)
+	if links != null:
+		links.setup(_model)
 	if sparks != null:
 		sparks.setup(_model, feedback)
 	if fx != null:

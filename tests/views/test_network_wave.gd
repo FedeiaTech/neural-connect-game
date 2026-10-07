@@ -47,6 +47,31 @@ func test_unknown_origin_starts_at_the_first_neuron() -> void:
 	assert_dict(NetworkWave.graph_distances(ids, edges, PuzzleModel.NO_NEURON)).is_equal({3: 0, 4: 1})
 
 
+## T7.3: the completion wave travels through dynamic receptor links too.
+func test_schedule_travels_through_receptor_links() -> void:
+	var receptor := LevelFactory.neuron(0, Vector2(500, 500))
+	receptor.kind = NeuronData.Kind.RECEPTOR
+	receptor.reach = 120.0
+	var neurons: Array[NeuronData] = [
+		receptor,
+		LevelFactory.neuron(1, Vector2(600, 500)),
+		LevelFactory.neuron(2, Vector2(800, 500)),
+	]
+	var dendrites: Array[DendriteData] = [LevelFactory.edge(1, 2)]
+	var model := PuzzleModel.from_level(LevelFactory.level(neurons, dendrites))
+	var schedule := NetworkWave.schedule(model, 2)
+	var delays: Dictionary = schedule["neurons"]
+	# 2 -> 1 (dendrite) -> 0 (link): the receptor is two steps away, not a separate component.
+	assert_float(delays[0]).is_equal_approx(2.0 * VisualTuning.WAVE_STEP, 0.0001)
+	var links: Array = schedule["links"]
+	assert_int(links.size()).is_equal(1)
+	assert_that(links[0]["pair"]).is_equal(Vector2i(0, 1))
+	assert_bool(links[0]["from_a"]).is_false()
+	assert_float(links[0]["delay"]).is_equal_approx(VisualTuning.WAVE_STEP, 0.0001)
+	# Static edge entries stay indexed by edge id.
+	assert_int((schedule["edges"] as Array).size()).is_equal(1)
+
+
 func test_schedule_orders_neurons_and_dendrites_by_distance() -> void:
 	# x_level: edges 0-1 and 2-3 (two components). Origin 1.
 	var model := PuzzleModel.from_level(LevelFactory.x_level())

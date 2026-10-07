@@ -12,7 +12,8 @@ extends Node
 ##     tension tone whose pitch and volume follow the highest tension ratio; edge_broke -> snap;
 ##     crossing_points_changed -> buzz loop while crossings exist (volume follows the count,
 ##     capped; fades out when resolved); hazard_proximity_changed -> alarm loop whose pitch and
-##     volume follow the highest proximity (stops on release); neuron_destroyed -> explode.
+##     volume follow the highest proximity (stops on release); neuron_destroyed -> explode;
+##     link_formed -> link (ascending synaptic click); link_broken -> unlink (small snap).
 ##   LevelController.level_completed -> complete. Hud.star_revealed(i) -> star, pitched up per star.
 ## The ambient drone loops on the Music bus from start; everything else uses the SFX bus. Both
 ## buses come from res://default_bus_layout.tres and feed Master (the settings volume).
@@ -33,6 +34,7 @@ const AMBIENT_FADE_IN := 3.0
 const VOLUMES: Dictionary[StringName, float] = {
 	&"grab": -8.0, &"release": -10.0, &"blocked": -14.0, &"snap": -4.0, &"chime": -10.0,
 	&"complete": -6.0, &"star": -8.0, &"ui_hover": -18.0, &"ui_click": -12.0,
+	&"explode": -3.0, &"link": -9.0, &"unlink": -11.0,
 }
 const POLYPHONY := 4
 ## The tension tone is silent below this ratio and rises to TENSION_MAX_DB at the limit.
@@ -323,6 +325,8 @@ func _bind_model(model: PuzzleModel) -> void:
 	model.crossing_points_changed.connect(_on_crossing_points_changed)
 	model.hazard_proximity_changed.connect(_on_hazard_proximity_changed)
 	model.neuron_destroyed.connect(_on_neuron_destroyed)
+	model.link_formed.connect(_on_link_formed)
+	model.link_broken.connect(_on_link_broken)
 	model.tension_changed.connect(_on_tension_changed)
 	model.edge_broke.connect(_on_edge_broke)
 
@@ -417,6 +421,14 @@ func _stop_alarm() -> void:
 	if _alarm_on:
 		_players[&"alarm"].stop()
 		_alarm_on = false
+
+
+func _on_link_formed(_receptor_id: int, _neuron_id: int) -> void:
+	play(&"link")
+
+
+func _on_link_broken(_receptor_id: int, _neuron_id: int) -> void:
+	play(&"unlink")
 
 
 func _on_neuron_destroyed(_id: int, _contact: Vector2) -> void:

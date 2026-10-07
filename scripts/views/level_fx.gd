@@ -15,6 +15,8 @@ extends Node2D
 
 ## Node moved by the screen shake (the Level root; CanvasLayers like the HUD stay still).
 @export var shake_target: Node2D
+## Optional receptor links layer: the completion wave runs through the links too (T7.3).
+@export var links_view: LinksView
 
 var _model: PuzzleModel
 var _neuron_views: Dictionary[int, NeuronView] = {}
@@ -100,6 +102,8 @@ func play_completion_wave() -> float:
 			var view := _dendrite_views[i]
 			if is_instance_valid(view):
 				view.play_wave(edges[i]["delay"], edges[i]["from_a"], edges[i]["duration"])
+		if links_view != null and is_instance_valid(links_view):
+			links_view.play_wave(schedule["links"])
 	var duration: float = schedule["duration"] if motion else 0.0
 	for membrane in _membranes:
 		if is_instance_valid(membrane):

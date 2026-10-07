@@ -5,6 +5,16 @@ extends RefCounted
 ##
 ## Crossing rule: two dendrites cross when their segments intersect (endpoints touching and
 ## collinear overlaps included) and they share no neuron. Edge id = index in LevelData.dendrites.
+##
+## Receptors and dynamic links (T7.3): a RECEPTOR neuron is immovable (is_fixed() is true). After
+## every move each receptor first drops links whose neuron left its reach, then, while it has
+## fewer than required_links, links the closest in-reach candidate (ties: lower id). Candidate =
+## movable (not fixed, not a receptor), not yet linked to this receptor, no static dendrite to
+## it. In reach: center distance - neuron radius <= reach. Links never get an edge id: they are
+## keyed Vector2i(receptor_id, neuron_id). Crossings are computed over static edges + links with
+## the same rule; get_crossing_edges() lists static ids only, get_crossing_links() the links,
+## get_crossing_count() / get_crossing_points() / get_crossing_neurons() include both.
+## Win (on release): zero crossings and every receptor holding required_links links.
 
 signal neuron_moved(id: int, pos: Vector2)
 signal neuron_blocked(id: int, contact: Vector2)
@@ -19,6 +29,11 @@ signal edge_broke(edge_id: int)
 signal neuron_destroyed(id: int, contact: Vector2)
 ## T7.2: lethal-wall proximity (0..1, see get_hazard_proximity) of a moved neuron changed.
 signal hazard_proximity_changed(id: int, proximity: float)
+## T7.3: dynamic receptor links.
+signal link_formed(receptor_id: int, neuron_id: int)
+signal link_broken(receptor_id: int, neuron_id: int)
+## ratio 0..1 (see link_strain()), 1 at the reach limit. Emitted when a linked neuron moves.
+signal link_strain_changed(receptor_id: int, neuron_id: int, ratio: float)
 signal solved()
 
 const NO_NEURON := -1
@@ -46,6 +61,16 @@ var _crossing_edges: Array[int] = []
 var _crossing_neurons: Array[int] = []
 var _crossing_count := 0
 var _crossing_points := PackedVector2Array()
+var _crossing_links: Array[Vector2i] = []
+
+## Receptors (T7.3): id -> reach / required links; links per receptor (sorted neuron ids) and
+## last notified strain per link.
+var _reach: Dictionary[int, float] = {}
+var _required: Dictionary[int, int] = {}
+var _links: Dictionary[int, Array] = {}
+var _strain: Dictionary[Vector2i, float] = {}
+## Static neighbour pairs Vector2i(min, max), to exclude statically connected candidates.
+var _static_pairs: Dictionary[Vector2i, bool] = {}
 
 ## TENSION edges only: edge id -> Vector2(rest_length, max_length).
 var _tension_limits: Dictionary[int, Vector2] = {}
@@ -88,13 +113,18 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 	for neuron: NeuronData in level.neurons:
 		model._ids.append(neuron.id)
 		model._positions[neuron.id] = neuron.solution_position if use_solution else neuron.position
-		model._fixed[neuron.id] = neuron.fixed
+		model._fixed[neuron.id] = neuron.fixed or neuron.is_receptor()
+		if neuron.is_receptor():
+			model._reach[neuron.id] = neuron.reach
+			model._required[neuron.id] = neuron.required_links
+			model._links[neuron.id] = []
 	for dendrite: DendriteData in level.dendrites:
 		if not model._positions.has(dendrite.a) or not model._positions.has(dendrite.b):
 			push_error("PuzzleModel: dendrite references a missing neuron (%d-%d)." % [dendrite.a, dendrite.b])
 			return null
 		var edge_id := model._edges.size()
 		model._edges.append(Vector2i(dendrite.a, dendrite.b))
+		model._static_pairs[Vector2i(mini(dendrite.a, dendrite.b), maxi(dendrite.a, dendrite.b))] = true
 		if dendrite.is_tension():
 			model._tension_limits[edge_id] = Vector2(dendrite.rest_length, dendrite.max_length)
 			for neuron_id in [dendrite.a, dendrite.b]:
@@ -102,6 +132,7 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 					model._tension_edges_by_neuron[neuron_id] = []
 				model._tension_edges_by_neuron[neuron_id].append(edge_id)
 			model._tension_ratios[edge_id] = model._compute_tension_ratio(edge_id)
+	model._update_links(PuzzleModel.NO_NEURON, false)
 	model._update_crossings(false)
 	for id in model._ids:
 		model._proximity[id] = model.get_hazard_proximity(id)
@@ -141,6 +172,8 @@ static func validate_level(level: LevelData) -> PackedStringArray:
 			neurons.append(neuron)
 			if neuron.fixed and neuron.solution_position != neuron.position:
 				errors.append("Fixed neuron %d: solution_position must equal position." % neuron.id)
+			if neuron.is_receptor():
+				_validate_receptor(neuron, errors)
 
 	var seen_pairs: Dictionary[Vector2i, int] = {}
 	for i in level.dendrites.size():
@@ -185,12 +218,28 @@ static func validate_level(level: LevelData) -> PackedStringArray:
 	if structure_ok:
 		var start := PuzzleModel.from_level(level)
 		if start.get_crossing_count() == 0:
-			errors.append("Start layout has no crossings: a level must start tangled.")
+			if start.get_receptor_ids().is_empty():
+				errors.append("Start layout has no crossings: a level must start tangled.")
+			elif start.are_receptors_satisfied():
+				errors.append("Start layout is already solved: no crossings and every receptor linked.")
 		var solution := PuzzleModel.from_level(level, true)
 		if solution.get_crossing_count() > 0:
-			errors.append("Solution layout has %d crossing(s) between dendrites %s." % [
-				solution.get_crossing_count(), solution.get_crossing_edges()])
+			errors.append("Solution layout has %d crossing(s) between dendrites %s and links %s." % [
+				solution.get_crossing_count(), solution.get_crossing_edges(), solution.get_crossing_links()])
+		for receptor_id in solution.get_receptor_ids():
+			if not solution.is_receptor_satisfied(receptor_id):
+				errors.append("Solution layout leaves receptor %d with %d of %d link(s)." % [
+					receptor_id, solution.get_link_count(receptor_id), solution.get_required_links(receptor_id)])
 	return errors
+
+
+static func _validate_receptor(neuron: NeuronData, errors: PackedStringArray) -> void:
+	if neuron.reach <= 0.0:
+		errors.append("Receptor %d: reach must be greater than 0." % neuron.id)
+	if neuron.required_links < 1 or neuron.required_links > 2:
+		errors.append("Receptor %d: required_links must be 1 or 2 (got %d)." % [neuron.id, neuron.required_links])
+	if neuron.solution_position != neuron.position:
+		errors.append("Receptor %d: solution_position must equal position (receptors never move)." % neuron.id)
 
 
 static func _validate_tension(
@@ -339,6 +388,7 @@ func drag_to(target: Vector2) -> void:
 		_positions[id] = reached
 		_moved_during_grab = true
 		neuron_moved.emit(id, reached)
+		_update_links(id, true)
 		_update_crossings(true)
 		_update_proximity(id)
 		if lethal_contact == null:
@@ -351,7 +401,8 @@ func drag_to(target: Vector2) -> void:
 
 ## Ends the current drag. One move = one grab-to-release during which the neuron actually
 ## changed position (a grab with no displacement, e.g. fully blocked, is not a move).
-## With zero crossings the model becomes solved and emits solved() once per model.
+## With zero crossings (static edges and links) and every receptor fully linked the model
+## becomes solved and emits solved() once per model.
 func release() -> void:
 	if _grabbed_id == NO_NEURON:
 		return
@@ -359,7 +410,7 @@ func release() -> void:
 		_move_count += 1
 	_grabbed_id = NO_NEURON
 	_moved_during_grab = false
-	if not _solved and _crossing_edges.is_empty():
+	if not _solved and _crossing_count == 0 and are_receptors_satisfied():
 		_solved = true
 		solved.emit()
 
@@ -506,6 +557,85 @@ func get_crossing_count() -> int:
 	return _crossing_count
 
 
+## Links involved in at least one crossing, as Vector2i(receptor_id, neuron_id), sorted.
+func get_crossing_links() -> Array[Vector2i]:
+	return _crossing_links.duplicate()
+
+
+# --- Receptors (T7.3) --------------------------------------------------------------
+
+## Strain of a link: (center distance - radius) / reach, clamped to 0..1 (1 at the reach limit).
+static func link_strain(receptor_pos: Vector2, neuron_pos: Vector2, radius: float, reach: float) -> float:
+	if reach <= 0.0:
+		return 1.0
+	return clampf((receptor_pos.distance_to(neuron_pos) - radius) / reach, 0.0, 1.0)
+
+
+## Receptor ids in authoring order.
+func get_receptor_ids() -> Array[int]:
+	var ids: Array[int] = []
+	for id in _ids:
+		if _reach.has(id):
+			ids.append(id)
+	return ids
+
+
+func is_receptor(id: int) -> bool:
+	return _reach.has(id)
+
+
+func get_receptor_reach(id: int) -> float:
+	return _reach.get(id, 0.0)
+
+
+func get_required_links(id: int) -> int:
+	return _required.get(id, 0)
+
+
+## Neuron ids linked to a receptor, sorted.
+func get_links(receptor_id: int) -> Array[int]:
+	var result: Array[int] = []
+	result.assign(_links.get(receptor_id, []))
+	return result
+
+
+func get_link_count(receptor_id: int) -> int:
+	return (_links.get(receptor_id, []) as Array).size()
+
+
+func is_receptor_satisfied(receptor_id: int) -> bool:
+	return get_link_count(receptor_id) >= get_required_links(receptor_id)
+
+
+## True when every receptor holds its required links (true without receptors).
+func are_receptors_satisfied() -> bool:
+	for receptor_id: int in _reach:
+		if not is_receptor_satisfied(receptor_id):
+			return false
+	return true
+
+
+## Every link as Vector2i(receptor_id, neuron_id), sorted by receptor then neuron.
+func get_link_pairs() -> Array[Vector2i]:
+	var pairs: Array[Vector2i] = []
+	for receptor_id in get_receptor_ids():
+		for neuron_id: int in _links[receptor_id]:
+			pairs.append(Vector2i(receptor_id, neuron_id))
+	pairs.sort()
+	return pairs
+
+
+func has_link(receptor_id: int, neuron_id: int) -> bool:
+	return (_links.get(receptor_id, []) as Array).has(neuron_id)
+
+
+## Current strain of a link (0..1), 0 for an unknown link.
+func get_link_strain(receptor_id: int, neuron_id: int) -> float:
+	if not has_link(receptor_id, neuron_id):
+		return 0.0
+	return link_strain(_positions[receptor_id], _positions[neuron_id], _radius, _reach[receptor_id])
+
+
 ## Exact crossing positions, one per crossing pair (count == get_crossing_count()), in pair
 ## order. A collinear overlap is marked at the midpoint of the shared part.
 func get_crossing_points() -> PackedVector2Array:
@@ -592,6 +722,58 @@ func nearest_lethal_point(center: Vector2) -> Vector2:
 	return best
 
 
+## Receptor link maintenance (see the class documentation). moved_id: the neuron that moved
+## (strain notifications only concern its links); NO_NEURON at build time.
+func _update_links(moved_id: int, notify: bool) -> void:
+	if _reach.is_empty():
+		return
+	for receptor_id in get_receptor_ids():
+		var linked: Array = _links[receptor_id]
+		for neuron_id: int in linked.duplicate():
+			if not _in_reach(receptor_id, neuron_id):
+				linked.erase(neuron_id)
+				_strain.erase(Vector2i(receptor_id, neuron_id))
+				if notify:
+					link_broken.emit(receptor_id, neuron_id)
+		while linked.size() < _required[receptor_id]:
+			var candidate := _closest_candidate(receptor_id)
+			if candidate == NO_NEURON:
+				break
+			linked.append(candidate)
+			linked.sort()
+			_strain[Vector2i(receptor_id, candidate)] = get_link_strain(receptor_id, candidate)
+			if notify:
+				link_formed.emit(receptor_id, candidate)
+		if notify and linked.has(moved_id):
+			var key := Vector2i(receptor_id, moved_id)
+			var strain := get_link_strain(receptor_id, moved_id)
+			if strain != _strain.get(key, -1.0):
+				_strain[key] = strain
+				link_strain_changed.emit(receptor_id, moved_id, strain)
+
+
+func _in_reach(receptor_id: int, neuron_id: int) -> bool:
+	return _positions[receptor_id].distance_to(_positions[neuron_id]) - _radius \
+		<= _reach[receptor_id] + GeometryUtils.EPSILON
+
+
+## Closest unlinked candidate within reach (ties: lower id), or NO_NEURON.
+func _closest_candidate(receptor_id: int) -> int:
+	var best := NO_NEURON
+	var best_distance := INF
+	var linked: Array = _links[receptor_id]
+	for id in _ids:
+		if _fixed[id] or linked.has(id) or not _in_reach(receptor_id, id):
+			continue
+		if _static_pairs.has(Vector2i(mini(id, receptor_id), maxi(id, receptor_id))):
+			continue
+		var distance := _positions[receptor_id].distance_to(_positions[id])
+		if distance < best_distance or (distance == best_distance and id < best):
+			best = id
+			best_distance = distance
+	return best
+
+
 func _destroy(id: int, contact: Vector2) -> void:
 	_destroyed_id = id
 	_grabbed_id = NO_NEURON
@@ -608,18 +790,22 @@ func _update_proximity(id: int) -> void:
 		hazard_proximity_changed.emit(id, proximity)
 
 
-## Returns [crossing_edges: Array[int] (sorted), pair_count: int, points: PackedVector2Array
-## (one per pair, in pair order)]. O(E^2).
+## Returns [crossing_edges: Array[int] (sorted static ids), pair_count: int,
+## points: PackedVector2Array (one per pair, in pair order), crossing_links: Array[Vector2i]
+## (sorted)]. Segments = static edges (index = edge id) followed by the links. O(S^2).
 func _find_crossings() -> Array:
+	var segments: Array[Vector2i] = _edges.duplicate()
+	segments.append_array(get_link_pairs())
+	var edge_count := _edges.size()
 	var flagged: Dictionary[int, bool] = {}
 	var pairs := 0
 	var points := PackedVector2Array()
-	for i in _edges.size():
-		var e1 := _edges[i]
+	for i in segments.size():
+		var e1 := segments[i]
 		var a1 := _positions[e1.x]
 		var a2 := _positions[e1.y]
-		for j in range(i + 1, _edges.size()):
-			var e2 := _edges[j]
+		for j in range(i + 1, segments.size()):
+			var e2 := segments[j]
 			if e2.x == e1.x or e2.x == e1.y or e2.y == e1.x or e2.y == e1.y:
 				continue
 			var point: Variant = GeometryUtils.crossing_point(a1, a2, _positions[e2.x], _positions[e2.y])
@@ -629,9 +815,15 @@ func _find_crossings() -> Array:
 				pairs += 1
 				points.append(point)
 	var edges: Array[int] = []
-	edges.assign(flagged.keys())
+	var links: Array[Vector2i] = []
+	for index: int in flagged:
+		if index < edge_count:
+			edges.append(index)
+		else:
+			links.append(segments[index])
 	edges.sort()
-	return [edges, pairs, points]
+	links.sort()
+	return [edges, pairs, points, links]
 
 
 func _update_crossings(notify: bool) -> void:
@@ -639,16 +831,21 @@ func _update_crossings(notify: bool) -> void:
 	var edges: Array[int] = result[0]
 	var count: int = result[1]
 	var points: PackedVector2Array = result[2]
+	var links: Array[Vector2i] = result[3]
 	var points_changed := points != _crossing_points
 	_crossing_points = points
 	# The pair count can change while the set of crossing edges stays the same.
-	if edges != _crossing_edges or count != _crossing_count:
+	if edges != _crossing_edges or count != _crossing_count or links != _crossing_links:
 		_crossing_count = count
 		_crossing_edges = edges
+		_crossing_links = links
 		var involved: Dictionary[int, bool] = {}
 		for edge_id in edges:
 			involved[_edges[edge_id].x] = true
 			involved[_edges[edge_id].y] = true
+		for link in links:
+			involved[link.x] = true
+			involved[link.y] = true
 		_crossing_neurons.assign(involved.keys())
 		_crossing_neurons.sort()
 		if notify:

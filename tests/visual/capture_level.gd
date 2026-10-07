@@ -9,7 +9,8 @@ extends Node
 ## perf_drag (same while a neuron is dragged in circles every frame), approach (a neuron held
 ## 8 px from a lethal wall: warning glow), explode (a neuron driven into a lethal wall, captured
 ## mid explosion). approach / explode mark the right play-area side lethal on a copy of a
-## mission without lethal walls.
+## mission without lethal walls. link / strain (receptor missions): pulls the nearest free
+## neuron into the first receptor's reach (fresh link growing / near the reach limit).
 
 const LevelScene := preload("res://scenes/level/level.tscn")
 const PerfProbe := preload("res://tests/visual/perf_probe.gd")
@@ -149,6 +150,33 @@ func _trigger() -> void:
 					break
 		"approach", "explode":
 			_drive_to_lethal(model, 8.0 if _mode == "approach" else -20.0)
+		"link", "strain":
+			_drive_to_receptor(model, 0.45 if _mode == "link" else 0.96)
+
+
+## Pulls the movable neuron closest to the first receptor into its reach, ending at the given
+## strain (0.45: freshly formed link, captured a few frames later; 0.96: near the limit).
+func _drive_to_receptor(model: PuzzleModel, strain: float) -> void:
+	var receptors := model.get_receptor_ids()
+	if receptors.is_empty():
+		return
+	var receptor := receptors[0]
+	var center := model.get_neuron_position(receptor)
+	var best := -1
+	for id in model.get_neuron_ids():
+		if model.is_fixed(id) or model.get_links(receptor).has(id):
+			continue
+		if best < 0 or model.get_neuron_position(id).distance_to(center) \
+				< model.get_neuron_position(best).distance_to(center):
+			best = id
+	if best < 0:
+		return
+	var direction := (model.get_neuron_position(best) - center).normalized()
+	model.grab(best)
+	_level.get_controller().get_neuron_view(best).set_grabbed(true)
+	var distance := model.get_neuron_radius() + model.get_receptor_reach(receptor) * strain
+	model.drag_to(center + direction * distance)
+	_frames = maxi(_frames, _target - 12)
 
 
 ## Grabs the movable neuron closest to a lethal wall and drags it straight towards the wall

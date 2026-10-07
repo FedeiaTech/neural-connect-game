@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/views/level_fx.gd" id="7_fx"]
 [ext_resource type="Script" path="res://scripts/views/crossing_sparks_view.gd" id="8_sparks"]
 [ext_resource type="Script" path="res://scripts/views/lethal_wall_view.gd" id="9_lethal"]
+[ext_resource type="Script" path="res://scripts/views/links_view.gd" id="10_links"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_add"]
 blend_mode = 1
@@ -30,22 +31,30 @@ script = ExtResource("9_lethal")
 
 [node name="Dendrites" type="Node2D" parent="Playfield"]
 
+[node name="Links" type="Node2D" parent="Playfield"]
+material = SubResource("CanvasItemMaterial_add")
+script = ExtResource("10_links")
+
 [node name="Sparks" type="Node2D" parent="Playfield"]
 material = SubResource("CanvasItemMaterial_add")
 script = ExtResource("8_sparks")
 
 [node name="Neurons" type="Node2D" parent="Playfield"]
 
-[node name="Fx" type="Node2D" parent="Playfield" node_paths=PackedStringArray("shake_target")]
+[node name="Receptors" type="Node2D" parent="Playfield"]
+material = SubResource("CanvasItemMaterial_add")
+
+[node name="Fx" type="Node2D" parent="Playfield" node_paths=PackedStringArray("shake_target", "links_view")]
 material = SubResource("CanvasItemMaterial_add")
 script = ExtResource("7_fx")
 shake_target = NodePath("../..")
+links_view = NodePath("../Links")
 
 [node name="InputController" type="Node" parent="." node_paths=PackedStringArray("playfield")]
 script = ExtResource("3_input")
 playfield = NodePath("../Playfield")
 
-[node name="LevelController" type="Node" parent="." node_paths=PackedStringArray("playfield", "boundary", "obstacles_root", "dendrites_root", "neurons_root", "input_controller", "fx", "sparks", "lethal_walls")]
+[node name="LevelController" type="Node" parent="." node_paths=PackedStringArray("playfield", "boundary", "obstacles_root", "dendrites_root", "neurons_root", "input_controller", "fx", "sparks", "lethal_walls", "links", "receptors_root")]
 script = ExtResource("4_controller")
 playfield = NodePath("../Playfield")
 boundary = NodePath("../Playfield/Boundary")
@@ -56,5 +65,7 @@ input_controller = NodePath("../InputController")
 fx = NodePath("../Playfield/Fx")
 sparks = NodePath("../Playfield/Sparks")
 lethal_walls = NodePath("../Playfield/LethalWalls")
+links = NodePath("../Playfield/Links")
+receptors_root = NodePath("../Playfield/Receptors")
 
 [node name="HUD" parent="." instance=ExtResource("5_hud")]

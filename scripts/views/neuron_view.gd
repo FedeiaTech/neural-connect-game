@@ -22,6 +22,8 @@ var neuron_id := PuzzleModel.NO_NEURON
 
 var _radius := 28.0
 var _fixed := false
+## Receptor (T7.3): cyan soma; ReceptorView draws its halo, stub and link dots.
+var _receptor := false
 var _show_feedback := true
 var _highlighted := false
 var _grabbed := false
@@ -50,6 +52,7 @@ func setup(id: int, model: PuzzleModel, show_feedback := true) -> void:
 	neuron_id = id
 	_radius = model.get_neuron_radius()
 	_fixed = model.is_fixed(id)
+	_receptor = model.is_receptor(id)
 	_show_feedback = show_feedback
 	position = model.get_neuron_position(id)
 	_highlighted = show_feedback and model.get_crossing_neurons().has(id)
@@ -82,6 +85,10 @@ func is_fixed() -> bool:
 	return _fixed
 
 
+func is_receptor() -> bool:
+	return _receptor
+
+
 ## True from the lethal contact until the explosion hides the neuron (T7.2).
 func is_overloading() -> bool:
 	return _destroyed and visible
@@ -106,6 +113,8 @@ func get_draw_radius() -> float:
 
 
 func get_fill_color() -> Color:
+	if _receptor:
+		return Palette.RECEPTOR
 	if _fixed:
 		return Palette.NEURON_FIXED
 	if _grabbed:
@@ -173,16 +182,21 @@ func _quad_half_size() -> float:
 
 func _configure_material() -> void:
 	var m := _shader_material
-	m.set_shader_parameter(&"core_color", Palette.NEURON_FIXED if _fixed else Palette.NEURON)
-	m.set_shader_parameter(&"glow_color", Palette.NEURON_FIXED_GLOW if _fixed else Palette.NEURON_GLOW)
+	if _receptor:
+		m.set_shader_parameter(&"core_color", Palette.RECEPTOR)
+		m.set_shader_parameter(&"glow_color", Palette.RECEPTOR_GLOW)
+	else:
+		m.set_shader_parameter(&"core_color", Palette.NEURON_FIXED if _fixed else Palette.NEURON)
+		m.set_shader_parameter(&"glow_color", Palette.NEURON_FIXED_GLOW if _fixed else Palette.NEURON_GLOW)
 	m.set_shader_parameter(&"ring_color", Palette.CROSSING)
 	m.set_shader_parameter(&"overload_color", Palette.OVERLOAD_FLASH)
 	m.set_shader_parameter(&"half_size_px", _quad_half_size())
 	m.set_shader_parameter(&"glow_strength", VisualTuning.NEURON_GLOW_STRENGTH)
+	var heavy := _fixed and not _receptor
 	m.set_shader_parameter(&"pulse_speed",
-		VisualTuning.FIXED_PULSE_SPEED if _fixed else VisualTuning.NEURON_PULSE_SPEED)
+		VisualTuning.FIXED_PULSE_SPEED if heavy else VisualTuning.NEURON_PULSE_SPEED)
 	m.set_shader_parameter(&"pulse_depth",
-		VisualTuning.FIXED_PULSE_DEPTH if _fixed else VisualTuning.NEURON_PULSE_DEPTH)
+		VisualTuning.FIXED_PULSE_DEPTH if heavy else VisualTuning.NEURON_PULSE_DEPTH)
 	m.set_shader_parameter(&"phase", VisualTuning.phase_for(neuron_id))
 	m.set_shader_parameter(&"wobble", VisualTuning.NEURON_WOBBLE)
 	m.set_shader_parameter(&"stub_count", VisualTuning.NEURON_STUB_COUNT)

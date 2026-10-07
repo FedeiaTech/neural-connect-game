@@ -20,7 +20,9 @@ extends RefCounted
 ## 2. else park a misplaced neuron that sits on another neuron's solution spot at the nearest
 ##    reachable free spot that blocks no solution spot;
 ## 3. else move a neuron as close to its solution spot as its TENSION dendrites allow.
-## It stops as soon as the layout has zero crossings, like the game does on release.
+## It stops as soon as a shadow PuzzleModel, fed every planned move, reports solved (zero
+## crossings over dendrites and receptor links, every receptor fully linked), like the game
+## does on release. Lethal walls (T7.2) are kept LETHAL_MARGIN away; receptors never move.
 
 const CLEARANCE := 2.0
 const GRID_STEP := 40.0
@@ -58,23 +60,50 @@ var _link_cache: Dictionary[String, bool] = {}
 ## Plans a solution for a valid level. See the class documentation.
 func plan(level: LevelData) -> Dictionary:
 	_setup(level)
+	# The shadow model replays every planned move with the real rules: receptor links depend on
+	# the move history, so "solved" (zero crossings + every receptor linked) is read from it.
+	var shadow := PuzzleModel.from_level(level)
 	var moves: Array[Dictionary] = []
 	var movable := 0
 	for id in _ids:
 		if not _fixed[id]:
 			movable += 1
 	var limit := maxi(movable, 1) * MAX_MOVES_PER_NEURON
-	while _crossing_count() > 0:
+	while not shadow.is_solved():
 		if moves.size() >= limit:
 			return {"ok": false, "moves": moves, "reason": "move limit (%d) reached" % limit}
 		var move := _next_move()
 		if move.is_empty():
-			return {"ok": false, "moves": moves, "reason": "stuck after %d moves; misplaced %s" % [
-				moves.size(), _misplaced()]}
+			return {"ok": false, "moves": moves, "reason": "stuck after %d moves; misplaced %s; crossings %d; receptors %s" % [
+				moves.size(), _misplaced(), shadow.get_crossing_count(), _receptor_report(shadow)]}
 		var points: Array[Vector2] = move["points"]
 		_positions[move["id"]] = points[-1]
 		moves.append(move)
+		var error := _apply(shadow, move)
+		if error != "":
+			return {"ok": false, "moves": moves, "reason": "shadow replay: " + error}
 	return {"ok": true, "moves": moves, "reason": ""}
+
+
+static func _apply(model: PuzzleModel, move: Dictionary) -> String:
+	var id: int = move["id"]
+	if not model.grab(id):
+		return "grab of neuron %d refused" % id
+	for point: Vector2 in move["points"]:
+		model.drag_to(point)
+		if model.is_lost():
+			return "neuron %d lost the level (break or lethal contact)" % id
+		if model.get_neuron_position(id) != point:
+			return "neuron %d blocked at %s before %s" % [id, model.get_neuron_position(id), point]
+	model.release()
+	return ""
+
+
+static func _receptor_report(model: PuzzleModel) -> String:
+	var parts := PackedStringArray()
+	for receptor_id in model.get_receptor_ids():
+		parts.append("%d:%s/%d" % [receptor_id, model.get_links(receptor_id), model.get_required_links(receptor_id)])
+	return ", ".join(parts)
 
 
 ## Runs a plan on a fresh PuzzleModel built from the level. Returns {"model": PuzzleModel,
@@ -109,7 +138,7 @@ func _setup(level: LevelData) -> void:
 		_ids.append(neuron.id)
 		_positions[neuron.id] = neuron.position
 		_targets[neuron.id] = neuron.solution_position
-		_fixed[neuron.id] = neuron.fixed
+		_fixed[neuron.id] = neuron.fixed or neuron.is_receptor()
 		_tension[neuron.id] = []
 	_ids.sort()
 	for dendrite in level.dendrites:
@@ -331,16 +360,3 @@ func _link_static_ok(cell: Vector2i, direction: Vector2i) -> bool:
 	if not _link_cache.has(key):
 		_link_cache[key] = _segment_in_playfield(_grid[cell], _grid[cell + direction])
 	return _link_cache[key]
-
-
-func _crossing_count() -> int:
-	var count := 0
-	for i in _edges.size():
-		var e1 := _edges[i]
-		for j in range(i + 1, _edges.size()):
-			var e2 := _edges[j]
-			if e2.x == e1.x or e2.x == e1.y or e2.y == e1.x or e2.y == e1.y:
-				continue
-			if GeometryUtils.segments_cross(_positions[e1.x], _positions[e1.y], _positions[e2.x], _positions[e2.y]):
-				count += 1
-	return count

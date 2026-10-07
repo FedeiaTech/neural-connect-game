@@ -206,6 +206,16 @@ func test_destroyed_neuron_explodes_and_silences_the_alarm() -> void:
 	assert_bool(_director.is_alarm_playing()).is_false()
 
 
+## T7.3: synaptic click when a receptor link forms, a small snap when it breaks.
+func test_link_formation_clicks_and_breaking_snaps() -> void:
+	var level := _level()
+	var model := level.get_controller().get_model()
+	model.link_formed.emit(0, 1)
+	assert_bool(_played().has(&"link")).is_true()
+	model.link_broken.emit(0, 1)
+	assert_bool(_played().has(&"unlink")).is_true()
+
+
 func test_completion_chord_and_star_pings() -> void:
 	var level := _level()
 	level.get_controller().level_completed.emit(LevelResult.create(4, 20.0, 6, 60.0))
