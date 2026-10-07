@@ -1,0 +1,37 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/level/level.gd" id="1_level"]
+[ext_resource type="PackedScene" path="res://scenes/views/boundary.tscn" id="2_boundary"]
+[ext_resource type="Script" path="res://scripts/level/input_controller.gd" id="3_input"]
+[ext_resource type="Script" path="res://scripts/level/level_controller.gd" id="4_controller"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="5_hud"]
+
+[node name="Level" type="Node2D"]
+script = ExtResource("1_level")
+
+[node name="Background" type="Node2D" parent="."]
+
+[node name="Playfield" type="Node2D" parent="."]
+
+[node name="Boundary" parent="Playfield" instance=ExtResource("2_boundary")]
+
+[node name="Obstacles" type="Node2D" parent="Playfield"]
+
+[node name="Dendrites" type="Node2D" parent="Playfield"]
+
+[node name="Neurons" type="Node2D" parent="Playfield"]
+
+[node name="InputController" type="Node" parent="." node_paths=PackedStringArray("playfield")]
+script = ExtResource("3_input")
+playfield = NodePath("../Playfield")
+
+[node name="LevelController" type="Node" parent="." node_paths=PackedStringArray("playfield", "boundary", "obstacles_root", "dendrites_root", "neurons_root", "input_controller")]
+script = ExtResource("4_controller")
+playfield = NodePath("../Playfield")
+boundary = NodePath("../Playfield/Boundary")
+obstacles_root = NodePath("../Playfield/Obstacles")
+dendrites_root = NodePath("../Playfield/Dendrites")
+neurons_root = NodePath("../Playfield/Neurons")
+input_controller = NodePath("../InputController")
+
+[node name="HUD" parent="." instance=ExtResource("5_hud")]
