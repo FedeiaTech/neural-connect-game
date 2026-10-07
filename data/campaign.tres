@@ -8,6 +8,11 @@
 [ext_resource type="Resource" path="res://data/levels/m03.tres" id="6_m03"]
 [ext_resource type="Resource" path="res://data/levels/m04.tres" id="7_m04"]
 [ext_resource type="Resource" path="res://data/levels/m05.tres" id="8_m05"]
+[ext_resource type="Resource" path="res://data/levels/m06.tres" id="9_m06"]
+[ext_resource type="Resource" path="res://data/levels/m07.tres" id="10_m07"]
+[ext_resource type="Resource" path="res://data/levels/m08.tres" id="11_m08"]
+[ext_resource type="Resource" path="res://data/levels/m09.tres" id="12_m09"]
+[ext_resource type="Resource" path="res://data/levels/m10.tres" id="13_m10"]
 
 [sub_resource type="Resource" id="Chapter_1"]
 script = ExtResource("2_chapter")
@@ -16,6 +21,13 @@ title = "First Signals"
 subtitle = "A dormant network wakes. Untangle its first connections."
 missions = Array[ExtResource("3_level")]([ExtResource("4_m01"), ExtResource("5_m02"), ExtResource("6_m03"), ExtResource("7_m04"), ExtResource("8_m05")])
 
+[sub_resource type="Resource" id="Chapter_2"]
+script = ExtResource("2_chapter")
+chapter_id = 2
+title = "Shaped Minds"
+subtitle = "Thought bends to the shape of its vessel. Walls and hollows guide every move."
+missions = Array[ExtResource("3_level")]([ExtResource("9_m06"), ExtResource("10_m07"), ExtResource("11_m08"), ExtResource("12_m09"), ExtResource("13_m10")])
+
 [resource]
 script = ExtResource("1_campaign")
-chapters = Array[ExtResource("2_chapter")]([SubResource("Chapter_1")])
+chapters = Array[ExtResource("2_chapter")]([SubResource("Chapter_1"), SubResource("Chapter_2")])
