@@ -15,6 +15,8 @@ signal move_count_changed(n: int)
 signal time_changed(seconds: float)
 signal level_completed(result: LevelResult)
 signal level_restart_requested()
+## Emitted after every (re)build with the new model, so listeners (e.g. AudioDirector) can rebind.
+signal model_built(model: PuzzleModel)
 
 enum State { INTRO, PLAYING, COMPLETE, RESTARTING }
 
@@ -163,6 +165,7 @@ func _build() -> void:
 	_restart_countdown = 0.0
 	move_count_changed.emit(_move_count)
 	time_changed.emit(_elapsed)
+	model_built.emit(_model)
 
 
 func _build_views() -> void:

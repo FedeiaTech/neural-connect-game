@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/flow/screen_host.gd" id="2_host"]
 [ext_resource type="Script" path="res://scripts/flow/transition.gd" id="3_transition"]
 [ext_resource type="Shader" path="res://assets/shaders/iris_fade.gdshader" id="4_iris"]
+[ext_resource type="Script" path="res://scripts/audio/audio_director.gd" id="5_audio"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_iris"]
 shader = ExtResource("4_iris")
@@ -11,9 +12,14 @@ shader = ExtResource("4_iris")
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
 
-[node name="ScreenHost" type="Node" parent="." node_paths=PackedStringArray("transition")]
+[node name="AudioDirector" type="Node" parent="."]
+process_mode = 3
+script = ExtResource("5_audio")
+
+[node name="ScreenHost" type="Node" parent="." node_paths=PackedStringArray("transition", "audio")]
 script = ExtResource("2_host")
 transition = NodePath("../Transition")
+audio = NodePath("../AudioDirector")
 
 [node name="Transition" type="CanvasLayer" parent="."]
 process_mode = 3

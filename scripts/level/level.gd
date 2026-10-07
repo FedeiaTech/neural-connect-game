@@ -17,6 +17,7 @@ signal mission_select_requested()
 @onready var _controller: LevelController = $LevelController
 @onready var _hud: Hud = $HUD
 @onready var _fx: LevelFx = $Playfield/Fx
+@onready var _input: InputController = $InputController
 
 var _paused := false
 var _next_mission_available := false
@@ -61,6 +62,10 @@ func get_controller() -> LevelController:
 
 func get_hud() -> Hud:
 	return _hud
+
+
+func get_input_controller() -> InputController:
+	return _input
 
 
 ## Pauses the mission (only while PLAYING) and shows the pause overlay.

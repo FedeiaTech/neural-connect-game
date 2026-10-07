@@ -19,6 +19,8 @@ const LevelScene := preload("res://scenes/level/level.tscn")
 
 ## Optional; without it screens swap instantly (used by isolated tests).
 @export var transition: Transition
+## Optional; receives every new screen so it can play sounds from that screen's signals.
+@export var audio: AudioDirector
 
 var _screen := Screen.NONE
 var _current: Node
@@ -82,7 +84,17 @@ func _swap(screen: Screen, mission_id: StringName) -> void:
 		Screen.LEVEL:
 			_current = _enter_level(mission_id)
 	_screen = screen if _current != null else Screen.NONE
+	_attach_audio(_current)
 	screen_changed.emit(_screen)
+
+
+func _attach_audio(node: Node) -> void:
+	if audio == null or node == null:
+		return
+	if node is Level:
+		audio.bind_level(node as Level)
+	else:
+		audio.bind_ui(node)
 
 
 func _enter_main_menu() -> Node:
