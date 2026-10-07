@@ -58,10 +58,12 @@ Tension dendrite details:
 
 ## 4. Feedback
 
-- Crossing dendrites are highlighted **without changing their identity color** (white, tension
-  green, receptor-link cyan): they show travelling dashes and a crackling flicker, and a
-  crackling **spark marker** sits on every exact crossing point (one per crossing pair; the
-  midpoint for collinear overlaps). The neurons at both ends get a dashed amber ring, never a
+- Crossing **normal dendrites turn red** (a bright warm red, distinct from the deeper red of a
+  fixed neuron's soma) while they cross; **tension dendrites stay green** and receptor links
+  stay cyan. Every crossing line stays a plain solid line with its normal glow (no pattern).
+  A crackling **spark marker** sits on every exact crossing point (one per crossing pair; the
+  midpoint for collinear overlaps). The neurons at both ends keep their soma color and get a
+  soft, slowly breathing warm "latency" glow with a light sparkle around the soma, never a
   tint that could read as a red fixed neuron. A soft electric buzz loops while crossings exist.
 - Feedback is a per-level/per-mode flag so harder modes can disable it later.
 - Level complete: a clear visual/audio confirmation, then star summary.
@@ -95,7 +97,7 @@ on other platforms later.
 ## 5.4 Art direction and atmosphere
 
 Mood: a dark, quiet, bioluminescent microscopic world. The palette stays strict
-(black, white, red, light green, plus amber crossing sparks, violet lethal walls and cyan
+(black, white, red, light green, plus red crossing lines with amber sparks, violet lethal walls and cyan
 receptors since Phase 7) and the beauty comes from light, motion and sound.
 
 - **Background:** pure black base with a very subtle drifting layer of faint particles
@@ -107,9 +109,10 @@ receptors since Phase 7) and the beauty comes from light, motion and sound.
   Aesthetic is isolated from logic (see 8.1) so it can later switch to curved/organic branches.
 - **Tension dendrites:** light green, thinning and trembling as they near the limit, with a
   rising warning flicker; the break plays a snap flash and particle burst.
-- **Crossing feedback:** involved dendrites keep their color and flicker with travelling
-  dashes; spark markers crackle at each crossing point (static stars with reduced motion);
-  neurons get an amber dashed ring; everything calms down smoothly when resolved.
+- **Crossing feedback:** involved normal dendrites fade to red (tension stays green, links
+  cyan), drawn as solid lines; spark markers crackle at each crossing point (static stars with
+  reduced motion); involved neurons breathe a soft warm glow with a light sparkle (a static
+  warm tint, no sparkle, with reduced motion); everything calms down smoothly when resolved.
 - **Lethal walls:** violet membrane with magenta lightning crackling along it, glowing
   stronger (and a hot spot on the nearest wall point) as a grabbed neuron approaches; on
   contact the neuron trembles and burns violet-white, then explodes (particles, flash, shock

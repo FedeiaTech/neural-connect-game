@@ -110,18 +110,33 @@ func test_crossing_glow_fades_in_and_calms_smoothly() -> void:
 	GameState.reduced_motion = saved
 
 
-## T7.1: crossing shows as a flickering spark ring; the soma keeps its own color and the ring
-## color can never be read as a red fixed neuron.
-func test_crossing_ring_keeps_the_soma_color_and_is_not_fixed_red() -> void:
+## T7.1 (revised): crossing shows as a soft, slow warm "latency" glow with light sparkle, not a
+## dashed ring; the soma keeps its own color so it never reads as a red fixed neuron.
+func test_crossing_uses_a_soft_latency_glow_not_a_ring() -> void:
 	var model := PuzzleModel.from_level(LevelFactory.x_level())
 	var view := _view(0, model)
 	assert_bool(view.is_highlighted()).is_true()
 	assert_that(view.get_shader_param(&"core_color")).is_equal(Palette.NEURON)
-	var ring: Color = view.get_shader_param(&"ring_color")
-	assert_that(ring).is_equal(Palette.CROSSING)
-	# Hue far from the fixed red (more than 30 degrees around the color wheel).
-	var hue_gap := absf(ring.h - Palette.NEURON_FIXED.h)
-	assert_float(minf(hue_gap, 1.0 - hue_gap)).is_greater(30.0 / 360.0)
+	assert_that(view.get_shader_param(&"latency_color")).is_equal(Palette.CROSSING_LATENCY)
+	assert_object(view.get_shader_param(&"ring_color")).is_null()
+	# Slower than the idle pulse: a gentle breathing.
+	assert_float(view.get_shader_param(&"latency_speed")).is_less(VisualTuning.NEURON_PULSE_SPEED)
+	var code := NeuronView.NeuronShader.code
+	assert_bool(code.contains("dashes")).is_false()
+
+
+func test_crossing_sparkle_honors_reduced_motion() -> void:
+	var saved := GameState.reduced_motion
+	var model := PuzzleModel.from_level(LevelFactory.x_level())
+	var view := _view(0, model)
+	GameState.reduced_motion = false
+	view._process(0.016)
+	assert_float(view.get_shader_param(&"sparkle")).is_greater(0.0)
+	GameState.reduced_motion = true
+	view._process(0.016)
+	assert_float(view.get_shader_param(&"sparkle")).is_equal(0.0)
+	assert_float(view.get_shader_param(&"motion")).is_equal(0.0)
+	GameState.reduced_motion = saved
 
 
 func test_fixed_neuron_pulses_slower_and_deeper() -> void:

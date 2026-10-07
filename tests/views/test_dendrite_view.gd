@@ -40,20 +40,35 @@ func test_endpoint_follows_moved_neuron() -> void:
 	assert_that(view.get_endpoints()).is_equal(PackedVector2Array([Vector2(100, 100), Vector2(450, 200)]))
 
 
-## T7.1: a crossing dendrite keeps its identity color; the crossing shows as a flicker / dash
-## modulation (shader `crossing`) and spark markers, never as a recolor.
-func test_crossing_dendrite_is_highlighted_without_recoloring() -> void:
+## T7.1 (revised): a crossing NORMAL dendrite turns red while it crosses; the shader eases from
+## `line_color` to `cross_color` by `crossing`.
+func test_crossing_normal_dendrite_turns_red() -> void:
 	var model := PuzzleModel.from_level(LevelFactory.x_level())
 	var view := _view(0, model)
 	assert_bool(view.is_highlighted()).is_true()
-	assert_that(view.get_line_color()).is_equal(Palette.DENDRITE)
+	assert_that(view.get_line_color()).is_equal(Palette.CROSSING_DENDRITE)
 	assert_that(view.get_shader_param(&"line_color")).is_equal(Palette.DENDRITE)
+	assert_that(view.get_shader_param(&"cross_color")).is_equal(Palette.CROSSING_DENDRITE)
 	assert_float(view.get_shader_param(&"crossing")).is_equal(1.0)
 	# Pull neuron 1 to the same side of edge 2-3 as neuron 0: one move untangles the X.
 	model.grab(1)
 	model.drag_to(Vector2(300, 180))
 	assert_bool(view.is_highlighted()).is_false()
 	assert_that(view.get_line_color()).is_equal(Palette.DENDRITE)
+
+
+## Crossing dendrites are plain solid lines: no travelling dash or crackle pattern.
+func test_crossing_dendrite_is_a_solid_line() -> void:
+	var code := DendriteView.DendriteShader.code
+	assert_bool(code.contains("dash")).is_false()
+	assert_bool(code.contains("crackle")).is_false()
+
+
+## The crossing red must not read as a red fixed neuron: brighter and warmer.
+func test_crossing_red_differs_from_fixed_neuron_red() -> void:
+	var red := Palette.CROSSING_DENDRITE
+	assert_that(red).is_not_equal(Palette.NEURON_FIXED)
+	assert_float(red.v).is_greater(Palette.NEURON_FIXED.v)
 
 
 func test_crossing_tension_dendrite_stays_green() -> void:
@@ -72,6 +87,7 @@ func test_crossing_tension_dendrite_stays_green() -> void:
 	assert_bool(view.is_highlighted()).is_true()
 	assert_that(view.get_line_color()).is_equal(Palette.TENSION)
 	assert_that(view.get_shader_param(&"line_color")).is_equal(Palette.TENSION)
+	assert_that(view.get_shader_param(&"cross_color")).is_equal(Palette.TENSION)
 
 
 func test_no_highlight_when_feedback_is_off() -> void:

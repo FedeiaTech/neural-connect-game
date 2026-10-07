@@ -142,6 +142,8 @@ func test_crossing_link_is_flagged() -> void:
 	model.drag_to(Vector2(560, 380))
 	assert_array(model.get_crossing_links()).is_equal([Vector2i(0, 1)])
 	assert_bool(view.is_link_crossing(Vector2i(0, 1))).is_true()
+	# A crossing link stays a solid cyan line: no travelling dashes.
+	assert_bool(view.has_method(&"_draw_dashed")).is_false()
 
 
 func test_completion_wave_runs_through_links_in_the_level() -> void:

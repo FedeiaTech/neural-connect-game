@@ -1,7 +1,7 @@
 class_name Palette
 extends RefCounted
-## Strict palette (SDD 1, 3, 5.4): black, white, red, light green, plus an amber crossing
-## accent, violet lethal walls and cyan receptors (T7).
+## Strict palette (SDD 1, 3, 5.4): black, white, red, light green, plus red crossing feedback
+## with amber spark markers, violet lethal walls and cyan receptors (T7).
 ## Keeping every color here means the aesthetics can change without touching view logic.
 
 const BACKGROUND := Color(0.0, 0.0, 0.0)
@@ -13,9 +13,13 @@ const NEURON_GLOW := Color(0.78, 0.9, 1.0)
 const NEURON_FIXED_GLOW := Color(1.0, 0.22, 0.24)
 const DENDRITE := Color(1.0, 1.0, 1.0, 0.9)
 const TENSION := Color(0.62, 1.0, 0.62)
-## Crossing feedback (T7.1): electric amber used for the neuron crossing ring and the spark
-## markers. Dendrites never take this color: they keep their identity color and flicker.
-const CROSSING := Color(1.0, 0.82, 0.32)
+## Crossing feedback (T7.1): a crossing NORMAL dendrite turns this bright warm red (brighter
+## and more orange than the NEURON_FIXED soma red, and drawn as a thin line, so the two never
+## blend). Tension dendrites and receptor links keep their identity color.
+const CROSSING_DENDRITE := Color(1.0, 0.3, 0.2)
+## Soft warm "latency" glow breathing around neurons involved in a crossing (halo only, the
+## soma keeps its color).
+const CROSSING_LATENCY := Color(1.0, 0.42, 0.28)
 ## Crossing spark markers: hot white-yellow core and amber glow.
 const SPARK := Color(1.0, 0.95, 0.75)
 const SPARK_GLOW := Color(1.0, 0.72, 0.25)

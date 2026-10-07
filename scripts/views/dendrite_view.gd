@@ -3,8 +3,9 @@ extends Node2D
 ## Draws one dendrite as a straight glowing line between its neurons (SDD 2, 3, 4, 5.4).
 ## NORMAL: white. TENSION: light green, thinning from WIDTH to MIN_TENSION_WIDTH as the
 ## tension ratio goes 0 -> 1, trembling and flickering near the limit, hidden once broken.
-## Crossing involvement (T7.1) never recolors: the dendrite keeps its identity color and fades in
-## a dash / crackle modulation (shader `crossing`) that calms smoothly when resolved.
+## Crossing involvement (T7.1): a NORMAL dendrite fades to red (Palette.CROSSING_DENDRITE) while
+## it crosses and back to white when resolved; a TENSION dendrite keeps its green. Either way it
+## stays a plain solid line with its normal glow (shader `crossing` blends to `cross_color`).
 ## The look (core, glow, travelling electrical pulse, tremble, completion wave) lives in
 ## assets/shaders/dendrite.gdshader; this script only feeds it parameters.
 ##
@@ -86,16 +87,21 @@ func get_line_width() -> float:
 	return WIDTH
 
 
-## Identity color, also while crossing (T7.1).
+## Logical line color: the crossing color while crossing, else the identity color (T7.1).
 func get_line_color() -> Color:
-	return get_base_color()
+	return get_crossing_color() if _highlighted else get_base_color()
 
 
 func get_base_color() -> Color:
 	return Palette.TENSION if _tension else Palette.DENDRITE
 
 
-## Crossing modulation currently shown, 0..1 (eases towards is_highlighted()).
+## Color shown while crossing: red for a normal dendrite, its own green for a tension one.
+func get_crossing_color() -> Color:
+	return Palette.TENSION if _tension else Palette.CROSSING_DENDRITE
+
+
+## Crossing color blend currently shown, 0..1 (eases towards is_highlighted()).
 func get_highlight_amount() -> float:
 	return _highlight_amount
 
@@ -169,6 +175,7 @@ func _draw_dendrite(from: Vector2, to: Vector2, width: float) -> void:
 func _configure_material() -> void:
 	var m := _shader_material
 	m.set_shader_parameter(&"line_color", get_base_color())
+	m.set_shader_parameter(&"cross_color", get_crossing_color())
 	m.set_shader_parameter(&"glow_strength", VisualTuning.DENDRITE_GLOW_STRENGTH)
 	m.set_shader_parameter(&"phase", VisualTuning.phase_for(edge_id + 101) / TAU * VisualTuning.PULSE_INTERVAL)
 	m.set_shader_parameter(&"pulse_interval", VisualTuning.PULSE_INTERVAL)

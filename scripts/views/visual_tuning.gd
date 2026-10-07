@@ -21,6 +21,11 @@ const GRAB_BRIGHTNESS := 1.35
 const GRAB_TWEEN_TIME := 0.16
 ## Crossing warmth fades in/out at this rate (amount per second).
 const HIGHLIGHT_RATE := 4.0
+## Crossing "latency" glow on involved neurons: slow breathing (rad/s), halo strength, and the
+## strength of the occasional light sparkle around the soma (0 with reduced motion).
+const LATENCY_SPEED := 1.1
+const LATENCY_GLOW := 0.5
+const LATENCY_SPARKLE := 1.0
 
 # --- Dendrites -----------------------------------------------------------------
 ## Glow quad half thickness (beyond the core).

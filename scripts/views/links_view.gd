@@ -5,7 +5,8 @@ extends Node2D
 ## - Formation: the line grows from the receptor to the neuron in GROW_TIME with a cyan flash at
 ##   the neuron (the AudioDirector plays the synaptic click).
 ## - Strain: past WARNING_START the line thins towards MIN_WIDTH and flickers.
-## - Crossing: same identity color, travelling dashes (like dendrites).
+## - Crossing: same identity color and solid line (like tension dendrites); the crossing shows
+##   through the spark markers and the latency glow on the involved neurons.
 ## - Break: the line stretches and trembles, then snaps into two retracting halves with a few
 ##   sparks (not a loss).
 ## - Completion wave: a light front runs along each link (NetworkWave "links" entries).
@@ -21,7 +22,6 @@ const BREAK_TIME := 0.4
 ## Fraction of BREAK_TIME spent stretching before the snap.
 const SNAP_AT := 0.45
 const SPARKS_PER_SNAP := 10
-const DASH_LENGTH := 12.0
 
 var _model: PuzzleModel
 ## pair -> {"grow": float, "crossing": bool}
@@ -148,10 +148,7 @@ func _draw() -> void:
 		var boost := _wave_boost(pair, a, b)
 		var width := get_width(pair)
 		draw_line(a, end, Color(Palette.RECEPTOR_GLOW, (0.12 + 0.25 * boost) * flicker), width * 4.0 + 6.0)
-		if link["crossing"]:
-			_draw_dashed(a, end, Color(Palette.LINK, 0.95 * flicker), width, motion)
-		else:
-			draw_line(a, end, Color(Palette.LINK, minf(1.0, (0.9 + boost) * flicker)), width, true)
+		draw_line(a, end, Color(Palette.LINK, minf(1.0, (0.9 + boost) * flicker)), width, true)
 		if link["grow"] < 1.0:
 			draw_circle(end, 4.0, Color(Palette.LINK, 0.9))
 	for broken in _breaking:
@@ -164,22 +161,6 @@ func _draw() -> void:
 		var fade: float = 1.0 - spark["age"] / 0.35
 		var pos: Vector2 = spark["pos"]
 		draw_line(pos - (spark["vel"] as Vector2) * 0.03, pos, Color(Palette.LINK, fade), 1.5, true)
-
-
-func _draw_dashed(a: Vector2, b: Vector2, color: Color, width: float, motion: float) -> void:
-	var length := a.distance_to(b)
-	if length < 1.0:
-		return
-	var direction := (b - a) / length
-	var offset := fposmod(_time * 60.0 * motion, DASH_LENGTH * 2.0)
-	var s := -DASH_LENGTH * 2.0 + offset
-	while s < length:
-		var from := maxf(s, 0.0)
-		var to := minf(s + DASH_LENGTH, length)
-		if to > from:
-			draw_line(a + direction * from, a + direction * to, color, width, true)
-		s += DASH_LENGTH * 2.0
-	draw_line(a, b, Color(color, 0.35), width)
 
 
 ## Stretch and tremble, then two halves retract to their ends while fading.

@@ -2,15 +2,19 @@
 // Premultiplied alpha: the soma is opaque (alpha = coverage) and covers dendrite ends, while
 // the halo only adds light (alpha 0), which reads as additive bloom on the black background.
 // Every animated term is multiplied by `motion` (0 when reduced motion is on).
-// Crossing (T7.1): the soma keeps its own color; a dashed, crackling amber ring (ring_color)
-// turns around it, which can never be mistaken for a red fixed neuron.
+// Crossing (T7.1): the soma keeps its own color; a soft warm "latency" glow (latency_color)
+// breathes slowly in the halo, with a few small sparks twinkling around the soma (`sparkle`,
+// 0 with reduced motion, when the glow is static).
 // Overload (T7.2): before a lethal-wall explosion the soma trembles and burns violet-white.
 shader_type canvas_item;
 render_mode blend_premul_alpha, unshaded;
 
 uniform vec4 core_color : source_color = vec4(1.0);
 uniform vec4 glow_color : source_color = vec4(0.78, 0.9, 1.0, 1.0);
-uniform vec4 ring_color : source_color = vec4(1.0, 0.82, 0.32, 1.0);
+uniform vec4 latency_color : source_color = vec4(1.0, 0.42, 0.28, 1.0);
+uniform float latency_speed = 1.1;
+uniform float latency_glow = 0.5;
+uniform float sparkle = 1.0;
 uniform vec4 overload_color : source_color = vec4(1.0, 0.75, 1.0, 1.0);
 uniform float radius_px = 28.0;
 uniform float half_size_px = 80.0;
@@ -22,7 +26,7 @@ uniform float motion = 1.0;
 uniform float wobble = 0.045;
 uniform float stub_count = 5.0;
 uniform float stub_length = 0.3;
-// 0..1 crossing ring, contact ring, overall brightness boost and overload.
+// 0..1 crossing latency glow, contact ring, overall brightness boost and overload.
 uniform float crossing = 0.0;
 uniform float contact = 0.0;
 uniform float brightness = 1.0;
@@ -62,15 +66,32 @@ void fragment() {
 	float halo = exp(-outside * 1.6) * glow_strength * pulse * (1.0 + o * 1.5);
 	halo *= 1.0 - smoothstep(half_size_px * 0.72, half_size_px, d);
 
-	// Crossing ring: eight dashes turning around the soma with a stepped crackle.
-	float dashes = smoothstep(0.35, 0.55, fract(ang / TAU * 8.0 + t * 0.35));
-	float crackle = 0.55 + 0.45 * step(0.3, hash(floor(t * 20.0) + phase));
-	float ring = exp(-pow((d - r - 7.0) / 2.6, 2.0)) * c * dashes * crackle * 1.6;
-	float ring_glow = exp(-pow((d - r - 7.0) / 9.0, 2.0)) * c * 0.25 * crackle;
+	// Crossing latency: a slow, soft warm breathing in the halo (static mid level without motion).
+	float breath = mix(0.5, 0.5 + 0.5 * sin(TIME * latency_speed + phase), motion);
+	float latency = exp(-outside * 1.1) * latency_glow * c * (0.55 + 0.45 * breath);
+	latency *= 1.0 - smoothstep(half_size_px * 0.72, half_size_px, d);
+
+	// Light sparkle: in each of seven angular cells a tiny spark blinks on at a random radius
+	// for a short random slot; most slots stay dark.
+	float sparks = 0.0;
+	if (sparkle > 0.0 && c > 0.0) {
+		const float CELLS = 7.0;
+		float cell = floor((ang + PI) / TAU * CELLS);
+		float seed = cell * 7.31 + phase * 3.7;
+		float slot_time = TIME * 1.6 + hash(seed) * 10.0;
+		float slot = floor(slot_time);
+		float on = step(0.68, hash(slot * 1.93 + seed));
+		float life = sin(PI * fract(slot_time));
+		float sa = (cell + 0.3 + 0.4 * hash(slot + seed * 1.7)) / CELLS * TAU - PI;
+		float sr = r + 6.0 + 14.0 * hash(slot * 2.71 + seed);
+		vec2 sp = vec2(cos(sa), sin(sa)) * sr;
+		float sd2 = dot(p - sp, p - sp);
+		sparks = on * life * (exp(-sd2 / 1.8) + 0.25 * exp(-sd2 / 20.0)) * sparkle * c;
+	}
 	float contact_ring = exp(-pow((d - r - 10.0) / 2.5, 2.0)) * contact;
 
 	vec3 halo_rgb = mix(glow_color.rgb, overload_color.rgb, o);
-	vec3 rgb = soma * core + (halo_rgb * halo + ring_color.rgb * (ring + ring_glow)
-		+ vec3(contact_ring * 0.8)) * (1.0 - core);
+	vec3 rgb = soma * core + (halo_rgb * halo + latency_color.rgb * latency
+		+ vec3(1.0, 0.88, 0.74) * sparks + vec3(contact_ring * 0.8)) * (1.0 - core);
 	COLOR = vec4(rgb * brightness, core * core_color.a);
 }
