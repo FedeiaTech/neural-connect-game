@@ -25,7 +25,10 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `84c69e1` (see mvp-founda
   Decisions: break when length > max_length (exactly max does not break); the move that breaks is
   applied (`neuron_moved`, `tension_changed` 1.0) then `edge_broke`; broken model refuses grab/drag
   and `neuron_blocked` is suppressed; ratio is 0 when max_length <= rest_length.
-- [ ] **T1.5 Win and moves** — `solved`, move count.
+- [x] **T1.5 Win and moves** — `solved`, move count.
+  Evidence: RED (`is_solved` nonexistent) → GREEN `test_puzzle_model_win.gd` 10/10, suite 66/66.
+  Decisions: a move counts only if the neuron actually changed position during the grab; `solved`
+  is checked on release only (never mid-drag) and emitted at most once per model.
 - [ ] **T1.6 Level validation helper** — reference solution has zero crossings and valid placement.
 
 ## Acceptance

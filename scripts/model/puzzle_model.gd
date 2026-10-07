@@ -43,6 +43,7 @@ var _broken := false
 var _grabbed_id := NO_NEURON
 var _moved_during_grab := false
 var _move_count := 0
+var _solved := false
 
 
 ## Builds a model from level data. The resource is copied, never mutated.
@@ -124,12 +125,19 @@ func drag_to(target: Vector2) -> void:
 		neuron_blocked.emit(id, reached)
 
 
-## Ends the current drag.
+## Ends the current drag. One move = one grab-to-release during which the neuron actually
+## changed position (a grab with no displacement, e.g. fully blocked, is not a move).
+## With zero crossings the model becomes solved and emits solved() once per model.
 func release() -> void:
 	if _grabbed_id == NO_NEURON:
 		return
+	if _moved_during_grab:
+		_move_count += 1
 	_grabbed_id = NO_NEURON
 	_moved_during_grab = false
+	if not _solved and _crossing_edges.is_empty():
+		_solved = true
+		solved.emit()
 
 
 ## Nearest neuron whose center is within grab_radius of point, or NO_NEURON.
@@ -155,6 +163,11 @@ func get_grabbed_id() -> int:
 ## Completed moves (see release()).
 func get_move_count() -> int:
 	return _move_count
+
+
+## True once a release happened with zero crossings. Never resets for this model.
+func is_solved() -> bool:
+	return _solved
 
 
 ## True after a TENSION dendrite broke. The model then ignores all input.
