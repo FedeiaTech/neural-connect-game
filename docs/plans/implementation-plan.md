@@ -41,9 +41,9 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
 
 ## Phase 3 — Flow and persistence
 
-- [ ] **T3.1 ScreenHost and screens** — Main, MissionSelect, Level, summary; transition layer.
+- [x] **T3.1 ScreenHost and screens** — Main, MissionSelect, Level, summary; transition layer.
   Skills: `godot-prompter:scene-organization`, `godot-prompter:godot-ui`
-- [ ] **T3.2 Progress save/load** — stars and completed missions, local.
+- [x] **T3.2 Progress save/load** — stars and completed missions, local.
   Skills: `godot-prompter:save-load`, `godot-prompter:resource-pattern`
 
 ## Phase 4 — Aesthetics (all procedural, no external images)
