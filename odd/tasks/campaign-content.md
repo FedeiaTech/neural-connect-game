@@ -80,3 +80,5 @@ Engram mirror: pending (engram MCP unavailable this session).
 ## Next step
 
 Human playtest of the 21 missions; retune pars from real moves/times by editing `tools/level_specs.gd` and rerunning the builder.
+
+- Review: slice `6e67a3e..8126eab` medium, `slice_budget_reached` (4410 lines); user **declined** (candidate-scoped). Parent spot check `./run_tests.ps1` -> 337 cases, exit 0.

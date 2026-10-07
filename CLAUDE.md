@@ -5,8 +5,10 @@ dendrites (straight segments) do not cross. Design: `docs/SDD.md`. Plan: `docs/p
 
 ## Handoff (read first)
 
-Status: design is complete, **no code implemented yet**. Next step: start the plan at **T0.1**
-in `docs/plans/implementation-plan.md` and follow tasks in order, checking each off when done.
+Status (2026-10-07): **MVP implemented** on branch `feat/mvp-foundation` — phases 0–5 of
+`docs/plans/implementation-plan.md` done (21 missions, 337 tests). Per-feature evidence in `odd/tasks/*.md`.
+Next step: human playtest (pars, grab radius, difficulty curve); retune via `tools/level_specs.gd` +
+`godot --headless --path . -s res://tools/build_levels.gd`. Not pushed; no remote configured.
 
 Decisions already made (all details in `docs/SDD.md`, do not re-ask):
 - Straight-segment dendrites; elasticity is visual only. Aesthetics must stay swappable (logic separate from drawing).
