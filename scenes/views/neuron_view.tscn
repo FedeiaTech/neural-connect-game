@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/views/neuron_view.gd" id="1_script"]
+
+[node name="NeuronView" type="Node2D"]
+script = ExtResource("1_script")
