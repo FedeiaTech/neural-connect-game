@@ -121,6 +121,36 @@ func record_result(mission_id: StringName, result: LevelResult) -> void:
 	progress_changed.emit()
 
 
+## Back to fresh progress (only the first mission unlocked) and saves. Settings are kept.
+## Every mission record is dropped from the save, including unknown per-mission keys and
+## missions this version does not know; unknown fields outside the records survive.
+func reset_progress() -> void:
+	progress.clear()
+	var loaded_progress: Variant = _loaded_data.get("progress")
+	if loaded_progress is Dictionary:
+		(loaded_progress as Dictionary).erase("missions")
+	save_game()
+	progress_changed.emit()
+
+
+## Clears one mission's record (completed flag, stars, best moves and time, unknown keys) and
+## saves. Unlocks follow the linear rule: later missions that were completed stay completed
+## (so they and the mission after them stay unlocked); a later mission that was only unlocked
+## by this one locks again. Unknown missions are ignored.
+func reset_mission(mission_id: StringName) -> void:
+	if campaign.get_level(mission_id) == null:
+		push_warning("GameState: reset of unknown mission '%s' ignored." % mission_id)
+		return
+	progress.erase(mission_id)
+	var loaded_progress: Variant = _loaded_data.get("progress")
+	if loaded_progress is Dictionary:
+		var missions: Variant = (loaded_progress as Dictionary).get("missions")
+		if missions is Dictionary:
+			(missions as Dictionary).erase(String(mission_id))
+	save_game()
+	progress_changed.emit()
+
+
 func set_master_volume(value: float) -> void:
 	master_volume = clampf(value, 0.0, 1.0)
 	apply_settings()

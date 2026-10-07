@@ -49,8 +49,9 @@ func _init() -> void:
 	resized.connect(_on_resized)
 
 
+## Shows "Chapter <id>: <title>" and the subtitle over the chapter's backdrop.
 func setup(chapter_id: int, title: String, subtitle: String) -> void:
-	_title.text = title
+	_title.text = "Chapter %d: %s" % [chapter_id, title]
 	_subtitle.text = subtitle
 	_material.set_shader_parameter(&"seed", seed_for(chapter_id))
 	_material.set_shader_parameter(&"accent", accent_for(chapter_id))

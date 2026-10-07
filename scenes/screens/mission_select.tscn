@@ -53,6 +53,45 @@ script = ExtResource("4_title")
 text = "Missions"
 font_size = 56
 
+[node name="Spacer" type="Control" parent="Margin/Column/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="ResetRecordButton" type="Button" parent="Margin/Column/Header"]
+visible = false
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 22
+text = "Reset record"
+script = ExtResource("3_button")
+
+[node name="ConfirmRow" type="HBoxContainer" parent="Margin/Column/Header"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 16
+
+[node name="ConfirmLabel" type="Label" parent="Margin/Column/Header/ConfirmRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Reset this record?"
+
+[node name="ConfirmButton" type="Button" parent="Margin/Column/Header/ConfirmRow"]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Reset"
+script = ExtResource("3_button")
+
+[node name="CancelButton" type="Button" parent="Margin/Column/Header/ConfirmRow"]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Cancel"
+script = ExtResource("3_button")
+
 [node name="Scroll" type="ScrollContainer" parent="Margin/Column"]
 layout_mode = 2
 size_flags_vertical = 3

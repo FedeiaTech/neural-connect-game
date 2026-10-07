@@ -26,6 +26,16 @@ func record(mission_id: StringName, stars: int, moves: int, time: float) -> void
 	_missions[mission_id] = entry
 
 
+## Forgets one mission's record (completed flag and every best value).
+func erase(mission_id: StringName) -> void:
+	_missions.erase(mission_id)
+
+
+## Forgets every mission record.
+func clear() -> void:
+	_missions.clear()
+
+
 func is_completed(mission_id: StringName) -> bool:
 	return _missions.get(mission_id, {}).get("completed", false)
 
