@@ -2,6 +2,8 @@ class_name Transition
 extends CanvasLayer
 ## Full-screen fade between screens (SDD 5.5: never a hard cut). ScreenHost calls cover(),
 ## swaps the screen, then reveal(). Honors GameState.reduced_motion (instant fades).
+## The Fade rect draws assets/shaders/iris_fade.gdshader: its color alpha is the progress, shown as
+## a soft iris closing from the edges (cover) and opening from the center (reveal).
 ## Runs with PROCESS_MODE_ALWAYS so it also works while the tree is paused.
 
 ## One full transition (cover + reveal) lasts about this long.

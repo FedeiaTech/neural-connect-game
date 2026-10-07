@@ -1,6 +1,10 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/screens/main_menu.gd" id="1_menu"]
+[ext_resource type="PackedScene" path="res://scenes/views/background.tscn" id="2_background"]
+[ext_resource type="Script" path="res://scripts/screens/menu_network_view.gd" id="3_network"]
+[ext_resource type="Script" path="res://scripts/ui/glow_title.gd" id="4_title"]
+[ext_resource type="Script" path="res://scripts/ui/glow_button.gd" id="5_button"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -11,6 +15,18 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
 
+[node name="Background" parent="." instance=ExtResource("2_background")]
+
+[node name="Network" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_network")
+
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -18,26 +34,28 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="Column" type="VBoxContainer" parent="Center"]
 custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
-theme_override_constants/separation = 24
+mouse_filter = 2
+theme_override_constants/separation = 22
 
-[node name="Title" type="Label" parent="Center/Column"]
+[node name="Title" type="Control" parent="Center/Column"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 104
+mouse_filter = 2
+script = ExtResource("4_title")
 text = "Neural Connect"
-horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Center/Column"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.6)
+theme_override_colors/font_color = Color(0.82, 0.91, 1, 0.62)
 text = "Untangle the network. Let the signal through."
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="Center/Column"]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 mouse_filter = 2
 
@@ -46,15 +64,18 @@ custom_minimum_size = Vector2(320, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Play"
+script = ExtResource("5_button")
 
 [node name="SettingsButton" type="Button" parent="Center/Column"]
 custom_minimum_size = Vector2(320, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Settings"
+script = ExtResource("5_button")
 
 [node name="QuitButton" type="Button" parent="Center/Column"]
 custom_minimum_size = Vector2(320, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Quit"
+script = ExtResource("5_button")

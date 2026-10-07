@@ -2,15 +2,17 @@ class_name SettingsScreen
 extends Control
 ## Minimal settings (SDD 5.5): master volume and reduced motion. Changes apply and save
 ## immediately through GameState; Back (or ui_cancel) emits back_pressed.
+## T4.5: shown on the shared Background inside a glowing panel, with a GlowTitle and GlowButton.
 
 signal back_pressed()
 
 const PERCENT := 100.0
+const COLUMN := "Center/Panel/Column/"
 
-@onready var _volume_slider: HSlider = $Center/Column/VolumeRow/VolumeSlider
-@onready var _volume_value: Label = $Center/Column/VolumeRow/VolumeValue
-@onready var _motion_toggle: CheckButton = $Center/Column/ReducedMotionToggle
-@onready var _back_button: Button = $Center/Column/BackButton
+@onready var _volume_slider: HSlider = get_node(COLUMN + "VolumeRow/VolumeSlider")
+@onready var _volume_value: Label = get_node(COLUMN + "VolumeRow/VolumeValue")
+@onready var _motion_toggle: CheckButton = get_node(COLUMN + "ReducedMotionToggle")
+@onready var _back_button: Button = get_node(COLUMN + "BackButton")
 
 
 func _ready() -> void:

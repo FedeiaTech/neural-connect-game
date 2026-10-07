@@ -3,6 +3,10 @@
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/flow/screen_host.gd" id="2_host"]
 [ext_resource type="Script" path="res://scripts/flow/transition.gd" id="3_transition"]
+[ext_resource type="Shader" path="res://assets/shaders/iris_fade.gdshader" id="4_iris"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_iris"]
+shader = ExtResource("4_iris")
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
@@ -17,6 +21,7 @@ layer = 100
 script = ExtResource("3_transition")
 
 [node name="Fade" type="ColorRect" parent="Transition"]
+material = SubResource("ShaderMaterial_iris")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
