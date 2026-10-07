@@ -29,7 +29,11 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `84c69e1` (see mvp-founda
   Evidence: RED (`is_solved` nonexistent) → GREEN `test_puzzle_model_win.gd` 10/10, suite 66/66.
   Decisions: a move counts only if the neuron actually changed position during the grab; `solved`
   is checked on release only (never mid-drag) and emitted at most once per model.
-- [ ] **T1.6 Level validation helper** — reference solution has zero crossings and valid placement.
+- [x] **T1.6 Level validation helper** — reference solution has zero crossings and valid placement.
+  Evidence: RED (`validate_level()` not found) → GREEN `test_level_validation.gd` 19/19 (incl. a guard
+  that validates every `.tres` under `res://data/levels`, currently none), suite 85/85.
+  Decisions: also rejects null entries, radius <= 0, fixed neurons whose solution differs from start,
+  and TENSION edges with max_length <= rest_length; crossing check is skipped when structure is broken.
 
 ## Acceptance
 
@@ -38,6 +42,12 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `84c69e1` (see mvp-founda
 
 ## Progress / evidence
 
-(none yet)
+- Route: every task delegated direct (single bounded writer), test-first with RED observed before GREEN.
+- Commits (one per task): T1.1 `20ae5cc`, T1.2 `b780bc7`, T1.3 `38768d4`, T1.4 `61df38f`,
+  T1.5 `f885a49`, T1.6 see `git log` (feat(model): add level validation helper).
+- Final checks: `./run_tests.ps1` exit 0, 85 test cases, 0 errors/failures/orphans;
+  `godot --headless --path . --import` exit 0, no SCRIPT ERROR or warnings.
+- `PuzzleModel` extends `RefCounted`; no Node references in `scripts/model/`.
+- Next: Phase 2 (T2.1 views driven by model signals). Native review not run by this writer.
 
 Engram mirror: pending (engram MCP unavailable this session).

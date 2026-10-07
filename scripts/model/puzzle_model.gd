@@ -76,6 +76,120 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 	return model
 
 
+## Checks a hand-authored level and returns human-readable errors (empty = valid).
+## Covers: play area and radius, null entries, duplicate neuron ids, dendrites referencing
+## missing neurons, self-loops, duplicate edges, tension limits, start and solution placement
+## (inside the area, outside obstacles, no overlaps), fixed neurons moved in the solution,
+## and crossings in the reference solution. Never mutates the level.
+static func validate_level(level: LevelData) -> PackedStringArray:
+	var errors := PackedStringArray()
+	if level == null:
+		errors.append("Level is null.")
+		return errors
+	var area_ok := level.play_area.size() >= 3
+	if not area_ok:
+		errors.append("Play area must have at least 3 points.")
+	if level.neuron_radius <= 0.0:
+		errors.append("Neuron radius must be greater than 0.")
+
+	var structure_ok := true
+	var neurons: Array[NeuronData] = []
+	var by_id: Dictionary[int, NeuronData] = {}
+	for i in level.neurons.size():
+		var neuron := level.neurons[i]
+		if neuron == null:
+			errors.append("Neuron entry %d is null." % i)
+			structure_ok = false
+		elif by_id.has(neuron.id):
+			errors.append("Duplicate neuron id %d." % neuron.id)
+			structure_ok = false
+		else:
+			by_id[neuron.id] = neuron
+			neurons.append(neuron)
+			if neuron.fixed and neuron.solution_position != neuron.position:
+				errors.append("Fixed neuron %d: solution_position must equal position." % neuron.id)
+
+	var seen_pairs: Dictionary[Vector2i, int] = {}
+	for i in level.dendrites.size():
+		var dendrite := level.dendrites[i]
+		if dendrite == null:
+			errors.append("Dendrite entry %d is null." % i)
+			structure_ok = false
+			continue
+		var missing := false
+		for neuron_id: int in [dendrite.a, dendrite.b]:
+			if not by_id.has(neuron_id):
+				errors.append("Dendrite %d references missing neuron %d." % [i, neuron_id])
+				missing = true
+		if missing:
+			structure_ok = false
+			continue
+		if dendrite.a == dendrite.b:
+			errors.append("Dendrite %d is a self-loop on neuron %d." % [i, dendrite.a])
+			continue
+		var key := Vector2i(mini(dendrite.a, dendrite.b), maxi(dendrite.a, dendrite.b))
+		if seen_pairs.has(key):
+			errors.append("Dendrite %d duplicates dendrite %d (%d-%d)." % [i, seen_pairs[key], key.x, key.y])
+		else:
+			seen_pairs[key] = i
+		if dendrite.is_tension():
+			_validate_tension(i, dendrite, by_id, errors)
+
+	if area_ok and level.neuron_radius > 0.0:
+		for use_solution in [false, true]:
+			_validate_placement(level, neurons, use_solution, errors)
+
+	if structure_ok:
+		var solution := PuzzleModel.from_level(level, true)
+		if solution.get_crossing_count() > 0:
+			errors.append("Solution layout has %d crossing(s) between dendrites %s." % [
+				solution.get_crossing_count(), solution.get_crossing_edges()])
+	return errors
+
+
+static func _validate_tension(
+	edge_id: int,
+	dendrite: DendriteData,
+	by_id: Dictionary[int, NeuronData],
+	errors: PackedStringArray,
+) -> void:
+	if dendrite.max_length <= dendrite.rest_length:
+		errors.append("Tension dendrite %d: max_length must be greater than rest_length." % edge_id)
+		return
+	var a := by_id[dendrite.a]
+	var b := by_id[dendrite.b]
+	var start_length := a.position.distance_to(b.position)
+	var solution_length := a.solution_position.distance_to(b.solution_position)
+	if start_length > dendrite.max_length:
+		errors.append("Tension dendrite %d exceeds max_length at start positions (%.1f > %.1f)." % [
+			edge_id, start_length, dendrite.max_length])
+	if solution_length > dendrite.max_length:
+		errors.append("Tension dendrite %d exceeds max_length at solution positions (%.1f > %.1f)." % [
+			edge_id, solution_length, dendrite.max_length])
+
+
+static func _validate_placement(
+	level: LevelData,
+	neurons: Array[NeuronData],
+	use_solution: bool,
+	errors: PackedStringArray,
+) -> void:
+	var layout := "solution" if use_solution else "start"
+	var radius := level.neuron_radius
+	var min_distance := 2.0 * radius - GeometryUtils.EPSILON
+	for i in neurons.size():
+		var neuron := neurons[i]
+		var center := neuron.solution_position if use_solution else neuron.position
+		if not GeometryUtils.is_circle_in_playfield(center, radius, level.play_area, level.obstacles):
+			errors.append("Neuron %d %s position is outside the play area or overlaps an obstacle." % [
+				neuron.id, layout])
+		for j in range(i + 1, neurons.size()):
+			var other := neurons[j]
+			var other_center := other.solution_position if use_solution else other.position
+			if center.distance_to(other_center) < min_distance:
+				errors.append("Neurons %d and %d overlap at %s positions." % [neuron.id, other.id, layout])
+
+
 # --- Input -------------------------------------------------------------------
 
 ## Grabs a neuron for dragging. Refused (false) for unknown or fixed neurons, or while

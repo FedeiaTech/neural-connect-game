@@ -22,7 +22,7 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
   Skills: `godot-prompter:math-essentials`, `godot-prompter:godot-testing`
 - [x] **T1.5 Win condition and moves** — `solved` on release with zero crossings; move counting.
   Skills: `godot-prompter:godot-testing`
-- [ ] **T1.6 Level validation** — reference solution of every `LevelData` must have zero crossings (test).
+- [x] **T1.6 Level validation** — reference solution of every `LevelData` must have zero crossings (test).
   Skills: `godot-prompter:godot-testing`
 
 ## Phase 2 — Playable core (placeholder visuals)
