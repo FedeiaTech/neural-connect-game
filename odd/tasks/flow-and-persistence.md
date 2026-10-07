@@ -67,4 +67,9 @@ Branch: `feat/mvp-foundation`. Slice base: `13a078c` (phase 2 review declined by
 - Known: saving on every volume slider step writes the save file repeatedly while dragging (small file; fine for now).
 - Next: native review of the phase 3 slice (base `13a078c`), then Phase 4.
 
+- Review: slice `13a078c..4d8a73d` medium, `slice_budget_reached` (2259 lines); user granted; lens
+  review-reliability → approved, acknowledged (lineage review-d040a9cde8341cd4). Advisory warnings (save write
+  unchecked, corrupt save overwritten, newer version downgraded, play_mission busy) → `odd/tasks/aesthetics.md` T3.3.
+  Reviewed boundary → `4d8a73d`.
+
 Engram mirror: pending (engram MCP unavailable this session).
