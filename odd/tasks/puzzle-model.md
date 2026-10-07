@@ -20,7 +20,11 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `84c69e1` (see mvp-founda
   Decisions: path sub-stepped at radius*0.25 plus 16-step bisection for the contact point (no
   tunneling; max corner clip ~0.2 px at r=28); `neuron_blocked` carries the neuron's stop center and
   fires on every blocked `drag_to`; `grab` refuses while another neuron is grabbed (single pointer).
-- [ ] **T1.4 Tension dendrites** — `tension_changed`, `edge_broke`.
+- [x] **T1.4 Tension dendrites** — `tension_changed`, `edge_broke`.
+  Evidence: RED (`get_tension_ratio` nonexistent) → GREEN `test_puzzle_model_tension.gd` 11/11, suite 56/56.
+  Decisions: break when length > max_length (exactly max does not break); the move that breaks is
+  applied (`neuron_moved`, `tension_changed` 1.0) then `edge_broke`; broken model refuses grab/drag
+  and `neuron_blocked` is suppressed; ratio is 0 when max_length <= rest_length.
 - [ ] **T1.5 Win and moves** — `solved`, move count.
 - [ ] **T1.6 Level validation helper** — reference solution has zero crossings and valid placement.
 

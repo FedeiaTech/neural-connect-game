@@ -33,8 +33,16 @@ var _crossing_edges: Array[int] = []
 var _crossing_neurons: Array[int] = []
 var _crossing_count := 0
 
+## TENSION edges only: edge id -> Vector2(rest_length, max_length).
+var _tension_limits: Dictionary[int, Vector2] = {}
+var _tension_ratios: Dictionary[int, float] = {}
+## Neuron id -> ids of the TENSION edges attached to it.
+var _tension_edges_by_neuron: Dictionary[int, Array] = {}
+var _broken := false
+
 var _grabbed_id := NO_NEURON
 var _moved_during_grab := false
+var _move_count := 0
 
 
 ## Builds a model from level data. The resource is copied, never mutated.
@@ -54,7 +62,15 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 		if not model._positions.has(dendrite.a) or not model._positions.has(dendrite.b):
 			push_error("PuzzleModel: dendrite references a missing neuron (%d-%d)." % [dendrite.a, dendrite.b])
 			return null
+		var edge_id := model._edges.size()
 		model._edges.append(Vector2i(dendrite.a, dendrite.b))
+		if dendrite.is_tension():
+			model._tension_limits[edge_id] = Vector2(dendrite.rest_length, dendrite.max_length)
+			for neuron_id in [dendrite.a, dendrite.b]:
+				if not model._tension_edges_by_neuron.has(neuron_id):
+					model._tension_edges_by_neuron[neuron_id] = []
+				model._tension_edges_by_neuron[neuron_id].append(edge_id)
+			model._tension_ratios[edge_id] = model._compute_tension_ratio(edge_id)
 	model._update_crossings(false)
 	return model
 
@@ -64,7 +80,7 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 ## Grabs a neuron for dragging. Refused (false) for unknown or fixed neurons, or while
 ## another neuron is grabbed (single pointer). Grabbing the already grabbed neuron is true.
 func grab(id: int) -> bool:
-	if not _positions.has(id) or _fixed[id]:
+	if _broken or not _positions.has(id) or _fixed[id]:
 		return false
 	if _grabbed_id != NO_NEURON:
 		return _grabbed_id == id
@@ -77,8 +93,10 @@ func grab(id: int) -> bool:
 ## play area outline, an obstacle or another neuron, the neuron stops at the last valid point
 ## (no sliding, no pushing), stays grabbed and neuron_blocked(id, stop_position) is emitted on
 ## every blocked call. Dendrites never block neurons.
+## If the move stretches a TENSION dendrite beyond max_length, edge_broke is emitted, the grab
+## is released and the model ignores further input (the owner rebuilds it).
 func drag_to(target: Vector2) -> void:
-	if _grabbed_id == NO_NEURON:
+	if _grabbed_id == NO_NEURON or _broken:
 		return
 	var id := _grabbed_id
 	var start := _positions[id]
@@ -101,7 +119,8 @@ func drag_to(target: Vector2) -> void:
 		_moved_during_grab = true
 		neuron_moved.emit(id, reached)
 		_update_crossings(true)
-	if blocked:
+		_update_tension(id)
+	if blocked and not _broken:
 		neuron_blocked.emit(id, reached)
 
 
@@ -131,6 +150,25 @@ func pick_neuron(point: Vector2, grab_radius: float) -> int:
 
 func get_grabbed_id() -> int:
 	return _grabbed_id
+
+
+## Completed moves (see release()).
+func get_move_count() -> int:
+	return _move_count
+
+
+## True after a TENSION dendrite broke. The model then ignores all input.
+func is_broken() -> bool:
+	return _broken
+
+
+func is_tension_edge(edge_id: int) -> bool:
+	return _tension_limits.has(edge_id)
+
+
+## 0 at (or below) rest length, 1 at max length. Always 0 for NORMAL edges.
+func get_tension_ratio(edge_id: int) -> float:
+	return _tension_ratios.get(edge_id, 0.0)
 
 
 func get_neuron_ids() -> Array[int]:
@@ -207,6 +245,30 @@ func _is_free_position(id: int, center: Vector2) -> bool:
 		if other != id and center.distance_to(_positions[other]) < min_distance:
 			return false
 	return true
+
+
+## ratio = clamp((length - rest) / (max - rest), 0, 1); 0 when max <= rest.
+func _compute_tension_ratio(edge_id: int) -> float:
+	var limits := _tension_limits[edge_id]
+	var span := limits.y - limits.x
+	if span <= 0.0:
+		return 0.0
+	return clampf((get_edge_length(edge_id) - limits.x) / span, 0.0, 1.0)
+
+
+## Refreshes the TENSION edges attached to the moved neuron; breaks the first one past max.
+func _update_tension(moved_id: int) -> void:
+	for edge_id: int in _tension_edges_by_neuron.get(moved_id, []):
+		var ratio := _compute_tension_ratio(edge_id)
+		if ratio != _tension_ratios[edge_id]:
+			_tension_ratios[edge_id] = ratio
+			tension_changed.emit(edge_id, ratio)
+		if get_edge_length(edge_id) > _tension_limits[edge_id].y:
+			_broken = true
+			_grabbed_id = NO_NEURON
+			_moved_during_grab = false
+			edge_broke.emit(edge_id)
+			return
 
 
 ## Largest t in [valid_t, invalid_t] (to bisection precision) where the neuron is free.
