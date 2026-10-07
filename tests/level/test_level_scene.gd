@@ -9,14 +9,20 @@ const M01_PATH := "res://data/levels/m01.tres"
 const M02_PATH := "res://data/levels/m02.tres"
 
 var _level: Level
+var _saved_reduced_motion := false
 
 
+## Reduced motion: the completion summary shows at once (the delayed path is covered by
+## tests/level/test_level_fx.gd).
 func before_test() -> void:
+	_saved_reduced_motion = GameState.reduced_motion
+	GameState.reduced_motion = true
 	_level = auto_free(LevelScene.instantiate())
 	add_child(_level)
 
 
 func after_test() -> void:
+	GameState.reduced_motion = _saved_reduced_motion
 	# Never leave the tree paused for the next test.
 	get_tree().paused = false
 

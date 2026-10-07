@@ -7,20 +7,27 @@ extends Node2D
 ## Pause: pausing sets SceneTree.paused; the Level subtree (controller timer, input) is pausable
 ## while the HUD runs with PROCESS_MODE_ALWAYS to show the pause overlay. Only allowed while
 ## PLAYING. Leaving the tree while paused always unpauses.
+##
+## Completion: the playfield plays its light wave first (LevelFx) and the summary appears when
+## it ends (immediately with reduced motion). A restart or reload meanwhile cancels the summary.
 
 signal next_mission_requested()
 signal mission_select_requested()
 
 @onready var _controller: LevelController = $LevelController
 @onready var _hud: Hud = $HUD
+@onready var _fx: LevelFx = $Playfield/Fx
 
 var _paused := false
+var _next_mission_available := false
+## Bumped on every completion, restart and load; a pending summary only shows if unchanged.
+var _completion_serial := 0
 
 
 func _ready() -> void:
 	_controller.move_count_changed.connect(_hud.set_moves)
 	_controller.time_changed.connect(_hud.set_time)
-	_controller.level_completed.connect(_hud.show_completion)
+	_controller.level_completed.connect(_on_level_completed)
 	_controller.level_restart_requested.connect(_on_level_restarted)
 	_hud.restart_pressed.connect(_on_restart_pressed)
 	_hud.story_dismissed.connect(_controller.start_playing)
@@ -37,8 +44,9 @@ func _exit_tree() -> void:
 
 func load_level(level: LevelData) -> void:
 	resume()
+	_completion_serial += 1
 	_hud.hide_completion()
-	_hud.set_next_mission_available(false)
+	set_next_mission_available(false)
 	_hud.set_mission_title(level.mission_name)
 	_controller.load_level(level)
 	if _controller.get_state() == LevelController.State.INTRO:
@@ -76,6 +84,7 @@ func is_paused() -> bool:
 
 ## Called by ScreenHost after the result is recorded.
 func set_next_mission_available(available: bool) -> void:
+	_next_mission_available = available
 	_hud.set_next_mission_available(available)
 
 
@@ -95,6 +104,26 @@ func _on_mission_select_pressed() -> void:
 	mission_select_requested.emit()
 
 
+func _on_level_completed(result: LevelResult) -> void:
+	_completion_serial += 1
+	var serial := _completion_serial
+	var delay := _fx.play_completion_wave()
+	if delay > 0.0 and is_inside_tree():
+		# A bound callable (not await): if the Level is freed first, the connection just goes away.
+		get_tree().create_timer(delay, false).timeout.connect(_show_completion.bind(serial, result))
+	else:
+		_show_completion(serial, result)
+
+
+func _show_completion(serial: int, result: LevelResult) -> void:
+	if serial != _completion_serial:
+		return
+	_hud.show_completion(result)
+	# Re-offer after showing so the Next button gets focus when it is available.
+	_hud.set_next_mission_available(_next_mission_available)
+
+
 func _on_level_restarted() -> void:
+	_completion_serial += 1
 	_hud.hide_completion()
 	_hud.hide_story()

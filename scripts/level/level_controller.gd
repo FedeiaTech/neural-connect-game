@@ -33,6 +33,8 @@ const ObstacleScene := preload("res://scenes/views/obstacle_view.tscn")
 @export var dendrites_root: Node2D
 @export var neurons_root: Node2D
 @export var input_controller: InputController
+## Optional one-off effects layer (break flash, completion wave).
+@export var fx: LevelFx
 
 var _level: LevelData
 var _model: PuzzleModel
@@ -41,6 +43,8 @@ var _elapsed := 0.0
 var _move_count := 0
 var _restart_countdown := 0.0
 var _neuron_views: Dictionary[int, NeuronView] = {}
+## Indexed by edge id.
+var _dendrite_views: Array[DendriteView] = []
 
 
 func _ready() -> void:
@@ -115,6 +119,12 @@ func get_neuron_view(id: int) -> NeuronView:
 	return _neuron_views.get(id)
 
 
+func get_dendrite_view(edge_id: int) -> DendriteView:
+	if edge_id < 0 or edge_id >= _dendrite_views.size():
+		return null
+	return _dendrite_views[edge_id]
+
+
 ## Transform that centers bounds inside area, scaling down (never up) to fit.
 static func compute_fit(bounds: Rect2, area: Rect2) -> Transform2D:
 	var scale := 1.0
@@ -160,22 +170,28 @@ func _build_views() -> void:
 		for child in container.get_children():
 			container.remove_child(child)
 			child.queue_free()
-	_neuron_views.clear()
+	_neuron_views = {}
+	_dendrite_views = []
+	var membranes: Array[MembraneView] = [boundary]
 	var feedback := _level.show_crossing_feedback
 	boundary.setup(_model)
 	for polygon in _model.get_obstacles():
 		var obstacle: ObstacleView = ObstacleScene.instantiate()
 		obstacles_root.add_child(obstacle)
 		obstacle.setup(polygon, _model)
+		membranes.append(obstacle)
 	for edge_id in _model.get_edge_count():
 		var dendrite: DendriteView = DendriteScene.instantiate()
 		dendrites_root.add_child(dendrite)
 		dendrite.setup(edge_id, _model, feedback)
+		_dendrite_views.append(dendrite)
 	for id in _model.get_neuron_ids():
 		var neuron: NeuronView = NeuronScene.instantiate()
 		neurons_root.add_child(neuron)
 		neuron.setup(id, _model, feedback)
 		_neuron_views[id] = neuron
+	if fx != null:
+		fx.setup(_model, _neuron_views, _dendrite_views, membranes)
 
 
 func _fit_playfield() -> void:

@@ -4,7 +4,7 @@ extends Node
 ## and to eyeball the look. Run the scene (not with -s, so the GameState autoload exists):
 ##   godot --path . res://tests/visual/capture_level.tscn -- <mission_id> <out.png> [frames] [mode]
 ## mode: play (default), grab (first neuron grabbed), wave (completion wave), break (tension
-## break), reduced (play with reduced motion).
+## break), reduced (play with reduced motion), glow (WorldEnvironment glow experiment).
 
 const LevelScene := preload("res://scenes/level/level.tscn")
 
@@ -27,6 +27,8 @@ func _ready() -> void:
 		_mode = args[3]
 	_saved_reduced_motion = GameState.reduced_motion
 	GameState.reduced_motion = _mode == "reduced"
+	if _mode == "glow":
+		_add_environment_glow()
 	_level = LevelScene.instantiate()
 	add_child(_level)
 	_level.load_level(GameState.get_level(mission))
@@ -44,6 +46,24 @@ func _process(_delta: float) -> void:
 		print("capture_level: saved %s (%s)" % [_out, error_string(error)])
 		GameState.reduced_motion = _saved_reduced_motion
 		get_tree().quit()
+
+
+## Experiment for T4.4/T4.7: screen-wide WorldEnvironment glow over the 2D canvas.
+## Result 2026-10-07 (Godot 4.7.2, GL Compatibility, Intel UHD 600 / OpenGL 3.3): the whole
+## background turns into a checkerboard artifact, so the game does not use it and relies on
+## additive / premultiplied blending in its shaders instead. Re-check on other GPUs in T4.7.
+func _add_environment_glow() -> void:
+	var environment := Environment.new()
+	environment.background_mode = Environment.BG_CANVAS
+	environment.glow_enabled = true
+	environment.glow_intensity = 1.0
+	environment.glow_strength = 1.2
+	environment.glow_bloom = 0.15
+	environment.glow_hdr_threshold = 0.7
+	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	var world := WorldEnvironment.new()
+	world.environment = environment
+	add_child(world)
 
 
 func _trigger() -> void:
