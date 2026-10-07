@@ -10,7 +10,11 @@ Branch: `feat/mvp-foundation`. Last reviewed boundary: `84c69e1` (see mvp-founda
 
 - [x] **T1.1 LevelData resources** — `scripts/model/level_data.gd`, `neuron_data.gd`, `dendrite_data.gd`.
   Evidence: RED (types missing, parse errors) → GREEN `tests/model/test_level_data.gd` 7/7, suite 9/9.
-- [ ] **T1.2 Crossing detection** — `PuzzleModel.compute_crossings()`, `crossings_changed`.
+- [x] **T1.2 Crossing detection** — `PuzzleModel.compute_crossings()`, `crossings_changed`.
+  Evidence: RED (GeometryUtils/PuzzleModel undeclared) → GREEN `test_geometry_utils.gd` 7/7,
+  `test_puzzle_model_crossings.gd` 8/8, suite 24/24. `crossings_changed` emission is exercised by the
+  drag tests (T1.3) since only a position change can trigger it.
+  Decision: touching endpoints and collinear overlaps of edges with no shared neuron count as crossings.
 - [ ] **T1.3 Drag and collisions** — `grab/drag_to/release`, boundary/obstacles/neurons, fixed neurons.
 - [ ] **T1.4 Tension dendrites** — `tension_changed`, `edge_broke`.
 - [ ] **T1.5 Win and moves** — `solved`, move count.
