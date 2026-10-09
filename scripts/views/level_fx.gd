@@ -9,6 +9,8 @@ extends Node2D
 ## - Level complete: a wave of light through the network (NetworkWave schedule, starting at the
 ##   last moved neuron) and the membrane exhaling. play_completion_wave() returns how long to
 ##   wait before showing the summary.
+## - Toxic overload (T8.6, HARD toxic bosses): the same blast in toxic yellow with a second,
+##   slower shock ring (the neuron that explodes is the toxic one).
 ## Reduced motion: no burst, no shake, no travelling wave; flashes and glows still fade, and the
 ## summary is not delayed.
 ##
@@ -37,6 +39,11 @@ var _pending_explosions: Array[Dictionary] = []
 ## Each overload flash: {"pos": Vector2, "age": float}.
 var _blasts: Array[Dictionary] = []
 var _explosion_count := 0
+## True once the model announced a toxic overload (the next explosion is yellow).
+var _toxic_blast := false
+
+## Extra seconds the summary waits after a boss wave (the celebration bursts).
+const BOSS_EXTRA_TIME := 0.6
 
 static var _spark_texture: GradientTexture2D
 
@@ -54,6 +61,8 @@ func setup(model: PuzzleModel, neuron_views: Dictionary[int, NeuronView],
 	model.edge_broke.connect(_on_edge_broke)
 	model.diseased_broken.connect(_on_diseased_broken)
 	model.neuron_destroyed.connect(_on_neuron_destroyed)
+	_toxic_blast = false
+	model.toxic_overloaded.connect(_on_toxic_overloaded.unbind(2))
 
 
 func get_last_moved_id() -> int:
@@ -88,7 +97,7 @@ func get_last_wave_duration() -> float:
 
 ## Starts the completion wave and returns the seconds to wait before showing the summary
 ## (0 with reduced motion: everything just glows at once).
-func play_completion_wave() -> float:
+func play_completion_wave(boss := false) -> float:
 	if _model == null:
 		return 0.0
 	var motion := VisualTuning.is_motion_enabled()
@@ -109,10 +118,32 @@ func play_completion_wave() -> float:
 	var duration: float = schedule["duration"] if motion else 0.0
 	for membrane in _membranes:
 		if is_instance_valid(membrane):
-			membrane.exhale(maxf(duration, 1.2) + 0.6)
+			membrane.exhale((maxf(duration, 1.2) + 0.6) * (1.5 if boss else 1.0))
+	if boss and motion:
+		_boss_celebration(neuron_delays)
+		duration += BOSS_EXTRA_TIME
 	_last_wave_duration = duration
 	_wave_end_msec = Time.get_ticks_msec() + int(duration * 1000.0)
 	return duration
+
+
+## Boss completion (T8.6): a golden-white spark burst on every neuron as the wave reaches it, a
+## shock ring over the network and a stronger shake.
+func _boss_celebration(neuron_delays: Dictionary) -> void:
+	for id: int in neuron_delays:
+		var position := _model.get_neuron_position(id)
+		var timer := get_tree().create_timer(neuron_delays[id] + 0.15, false) if is_inside_tree() else null
+		if timer != null:
+			timer.timeout.connect(_boss_burst.bind(position))
+	_shake(VisualTuning.EXPLOSION_SHAKE_STRENGTH * 0.7)
+
+
+func _boss_burst(position: Vector2) -> void:
+	if not is_inside_tree():
+		return
+	_spawn_burst(position, position, Palette.BOSS_MEMBRANE, 20, 230.0)
+	_blasts.append({"pos": position, "age": 0.0, "toxic": false, "soft": true})
+	queue_redraw()
 
 
 func _process(delta: float) -> void:
@@ -120,7 +151,7 @@ func _process(delta: float) -> void:
 		for pending in _pending_explosions:
 			pending["wait"] -= delta
 		for pending in _pending_explosions.filter(func(p: Dictionary) -> bool: return p["wait"] <= 0.0):
-			_explode(pending["pos"])
+			_explode(pending["pos"], pending.get("toxic", false))
 		_pending_explosions = _pending_explosions.filter(func(p: Dictionary) -> bool: return p["wait"] > 0.0)
 	if _flashes.is_empty() and _blasts.is_empty():
 		return
@@ -137,17 +168,30 @@ func _draw() -> void:
 	for flash in _flashes:
 		_draw_break_flash(flash["a"], flash["b"], flash["age"] / VisualTuning.BREAK_FLASH_TIME)
 	for blast in _blasts:
-		_draw_overload_flash(blast["pos"], blast["age"] / VisualTuning.EXPLOSION_FLASH_TIME)
+		if blast.get("soft", false):
+			_draw_celebration_flash(blast["pos"], blast["age"] / VisualTuning.EXPLOSION_FLASH_TIME)
+		else:
+			_draw_overload_flash(blast["pos"], blast["age"] / VisualTuning.EXPLOSION_FLASH_TIME, blast.get("toxic", false))
 
 
 ## Overload flash: a white-violet core, a fast expanding shock ring and a wide fading glow.
-func _draw_overload_flash(center: Vector2, t: float) -> void:
+func _draw_overload_flash(center: Vector2, t: float, toxic := false) -> void:
 	var fade := 1.0 - t
-	var color := Palette.OVERLOAD_FLASH
+	var color := Palette.TOXIC_GLOW if toxic else Palette.OVERLOAD_FLASH
 	draw_circle(center, 30.0 + 40.0 * t, Color(1.0, 1.0, 1.0, 0.8 * fade * fade), true, -1.0, true)
 	for i in 3:
 		draw_circle(center, (60.0 + 220.0 * t) * (1.0 + i * 0.5), Color(color, 0.16 * fade / (i + 1)), true, -1.0, true)
-	draw_arc(center, 40.0 + 260.0 * t, 0.0, TAU, 48, Color(Palette.LETHAL_CRACKLE, 0.7 * fade), 4.0 * fade + 1.0, true)
+	draw_arc(center, 40.0 + 260.0 * t, 0.0, TAU, 48,
+		Color(Palette.TOXIC if toxic else Palette.LETHAL_CRACKLE, 0.7 * fade), 4.0 * fade + 1.0, true)
+	if toxic:
+		draw_arc(center, 20.0 + 380.0 * t * t, 0.0, TAU, 64, Color(Palette.TOXIC_GLOW, 0.5 * fade), 3.0 * fade + 1.0, true)
+
+
+## Boss celebration ring: a warm white glow and one soft expanding ring.
+func _draw_celebration_flash(center: Vector2, t: float) -> void:
+	var fade := 1.0 - t
+	draw_circle(center, 24.0 + 90.0 * t, Color(Palette.BOSS_MEMBRANE, 0.22 * fade), true, -1.0, true)
+	draw_arc(center, 30.0 + 150.0 * t, 0.0, TAU, 40, Color(Palette.BOSS_MEMBRANE, 0.6 * fade), 2.5 * fade + 1.0, true)
 
 
 ## Snap flash: a bright line that fades and a glow swelling from the snap point.
@@ -186,21 +230,25 @@ func _on_diseased_broken(edge_id: int) -> void:
 	_shake(VisualTuning.SHAKE_STRENGTH * VisualTuning.DISEASED_SHAKE_FACTOR)
 
 
+func _on_toxic_overloaded() -> void:
+	_toxic_blast = true
+
+
 func _on_neuron_destroyed(_id: int, contact: Vector2) -> void:
 	# The neuron trembles (NeuronView overload) first; the explosion follows.
 	var center := contact
 	if _model != null and _model.get_destroyed_id() != PuzzleModel.NO_NEURON:
 		center = _model.get_neuron_position(_model.get_destroyed_id())
-	_pending_explosions.append({"pos": center, "wait": VisualTuning.OVERLOAD_TIME})
+	_pending_explosions.append({"pos": center, "wait": VisualTuning.OVERLOAD_TIME, "toxic": _toxic_blast})
 
 
-func _explode(center: Vector2) -> void:
+func _explode(center: Vector2, toxic := false) -> void:
 	_explosion_count += 1
-	_blasts.append({"pos": center, "age": 0.0})
+	_blasts.append({"pos": center, "age": 0.0, "toxic": toxic})
 	queue_redraw()
 	if VisualTuning.is_motion_enabled():
-		_spawn_burst(center, center, Palette.OVERLOAD_FLASH, 64, 360.0)
-		_spawn_burst(center, center, Palette.LETHAL_CRACKLE, 32, 220.0)
+		_spawn_burst(center, center, Palette.TOXIC if toxic else Palette.OVERLOAD_FLASH, 64, 360.0)
+		_spawn_burst(center, center, Palette.TOXIC_GLOW if toxic else Palette.LETHAL_CRACKLE, 32, 220.0)
 		_shake(VisualTuning.EXPLOSION_SHAKE_STRENGTH)
 
 

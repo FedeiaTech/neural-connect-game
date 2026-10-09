@@ -156,7 +156,7 @@ func _add_mission(map: MissionMap, level: LevelData, campaign: Campaign) -> void
 	node.name = String(id)
 	var state := MissionNode.state_for(GameState.is_unlocked(id), GameState.progress.is_completed(id))
 	node.setup(id, campaign.get_mission_number(id), state, GameState.progress.get_best_stars(id),
-		level.mission_name)
+		level.mission_name, level.is_boss)
 	node.pressed.connect(_on_mission_pressed.bind(id))
 	node.focus_entered.connect(_on_mission_hovered.bind(id))
 	node.mouse_entered.connect(_on_mission_hovered.bind(id))

@@ -5,7 +5,8 @@ extends Node
 ## only) and moves, restarts without reloading the scene and scores the result.
 ##
 ## State machine (enum, SDD 8.1):
-##   INTRO      story text shown, input off, timer stopped. start_playing() -> PLAYING.
+##   INTRO      story text (or, for a boss, the intro card) shown, input off, timer stopped.
+##              start_playing() -> PLAYING.
 ##   PLAYING    input on, timer running. solved -> COMPLETE, edge_broke or neuron_destroyed ->
 ##              RESTARTING (level_lost with the LossReason).
 ##   COMPLETE   input off, timer stopped, result emitted. restart() -> PLAYING.
@@ -29,7 +30,9 @@ signal model_built(model: PuzzleModel)
 signal level_lost(reason: LossReason)
 
 enum State { INTRO, PLAYING, COMPLETE, RESTARTING }
-enum LossReason { NONE, TENSION_BREAK, OVERLOAD }
+## OVERLOAD: a lethal wall burned a neuron. TOXIC_OVERLOAD (T8.6, HARD toxic bosses): a toxic
+## neuron entered a receptor's reach and exploded.
+enum LossReason { NONE, TENSION_BREAK, OVERLOAD, TOXIC_OVERLOAD }
 
 const BREAK_RESTART_DELAY := 0.6
 ## Overload: tremble + explosion before the restart.
@@ -88,7 +91,8 @@ func load_level(level: LevelData) -> void:
 	_level = level
 	_build()
 	_fit_playfield()
-	_set_state(State.INTRO if not level.story_text.strip_edges().is_empty() else State.PLAYING)
+	var intro := not level.story_text.strip_edges().is_empty() or level.is_boss
+	_set_state(State.INTRO if intro else State.PLAYING)
 
 
 ## Leaves INTRO (story dismissed). Ignored in any other state.
@@ -214,6 +218,7 @@ func _build_views() -> void:
 	_dendrite_views = []
 	var membranes: Array[MembraneView] = [boundary]
 	var feedback := _level.show_crossing_feedback
+	boundary.set_boss_look(_level.is_boss)
 	boundary.setup(_model)
 	var polygons := _model.get_obstacles()
 	for i in polygons.size():
@@ -302,7 +307,8 @@ func _on_edge_broke(_edge_id: int) -> void:
 
 
 func _on_neuron_destroyed(_id: int, _contact: Vector2) -> void:
-	_lose(LossReason.OVERLOAD, DESTROY_RESTART_DELAY)
+	var toxic := _model.get_destroy_cause() == PuzzleModel.DestroyCause.TOXIC
+	_lose(LossReason.TOXIC_OVERLOAD if toxic else LossReason.OVERLOAD, DESTROY_RESTART_DELAY)
 
 
 func _lose(reason: LossReason, delay: float) -> void:

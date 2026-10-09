@@ -18,7 +18,10 @@ extends Node
 ##     intact diseased dendrite (stops on release); diseased_broken -> diseased_snap;
 ##     contamination_formed -> toxic alarm loop (dry beeps, stays on until every contamination is
 ##     cleared, also after release); contamination_cleared (last one) -> toxic_clear chime.
-##   LevelController.level_completed -> complete. Hud.star_revealed(i) -> star, pitched up per star.
+##     toxic_overloaded (HARD toxic, T8.6) -> toxic_overload instead of explode.
+##   LevelController.level_completed -> complete (boss missions: boss_fanfare on top).
+##   Level.boss_intro_started -> boss_stinger. Boss nodes on the mission map (MissionNode.is_boss):
+##   mouse_entered / focus_entered -> boss_hover, pressed -> boss_press instead of the UI sounds. Hud.star_revealed(i) -> star, pitched up per star.
 ## The ambient drone loops on the Music bus from start; everything else uses the SFX bus. Both
 ## buses come from res://default_bus_layout.tres and feed Master (the settings volume).
 ## Streams come from SoundBank, rendered once on a WorkerThreadPool task (pure synthesis, no
@@ -39,7 +42,8 @@ const VOLUMES: Dictionary[StringName, float] = {
 	&"grab": -8.0, &"release": -10.0, &"blocked": -14.0, &"snap": -4.0, &"chime": -10.0,
 	&"complete": -6.0, &"star": -8.0, &"ui_hover": -18.0, &"ui_click": -12.0,
 	&"explode": -3.0, &"link": -9.0, &"unlink": -11.0, &"toxic_alarm": -16.0, &"toxic_clear": -8.0,
-	&"diseased_snap": -5.0,
+	&"diseased_snap": -5.0, &"toxic_overload": -3.0, &"boss_stinger": -3.0, &"boss_fanfare": -5.0,
+	&"boss_hover": -15.0, &"boss_press": -8.0,
 }
 const POLYPHONY := 4
 ## The tension tone is silent below this ratio and rises to TENSION_MAX_DB at the limit.
@@ -274,12 +278,13 @@ func bind_level(level: Level) -> void:
 	controller.model_built.connect(_bind_model)
 	if controller.get_model() != null:
 		_bind_model(controller.get_model())
-	controller.level_completed.connect(_on_level_completed)
+	controller.level_completed.connect(_on_level_completed.bind(controller))
 	controller.level_restart_requested.connect(_stop_tension)
 	var input := level.get_input_controller()
 	input.grab_started.connect(_on_grab_started)
 	input.grab_ended.connect(_on_grab_ended)
 	level.get_hud().star_revealed.connect(_on_star_revealed)
+	level.boss_intro_started.connect(play.bind(&"boss_stinger", 1.0))
 	bind_ui(level.get_hud())
 
 
@@ -348,7 +353,8 @@ func _bind_buttons(node: Node) -> void:
 		var id := button.get_instance_id()
 		if not _bound_buttons.has(id):
 			_bound_buttons[id] = true
-			button.pressed.connect(play.bind(&"ui_click", 1.0))
+			var boss := button is MissionNode and (button as MissionNode).is_boss
+			button.pressed.connect(play.bind(&"boss_press" if boss else &"ui_click", 1.0))
 			button.mouse_entered.connect(_on_ui_hover.bind(button))
 			button.focus_entered.connect(_on_ui_hover.bind(button))
 	for child in node.get_children():
@@ -366,7 +372,7 @@ func _bind_model(model: PuzzleModel) -> void:
 	model.crossings_changed.connect(_on_crossings_changed)
 	model.crossing_points_changed.connect(_on_crossing_points_changed)
 	model.hazard_proximity_changed.connect(_on_hazard_proximity_changed)
-	model.neuron_destroyed.connect(_on_neuron_destroyed)
+	model.neuron_destroyed.connect(_on_neuron_destroyed.bind(model))
 	model.link_formed.connect(_on_link_formed)
 	model.link_broken.connect(_on_link_broken)
 	model.contamination_formed.connect(_on_contamination_formed.bind(model).unbind(2))
@@ -385,8 +391,9 @@ func _cooled_down(sound: StringName, cooldown: float) -> bool:
 func _on_ui_hover(button: BaseButton) -> void:
 	if button.disabled or Time.get_ticks_msec() < _ui_quiet_until_msec:
 		return
-	if _cooled_down(&"ui_hover", HOVER_COOLDOWN):
-		play(&"ui_hover")
+	var sound := &"boss_hover" if button is MissionNode and (button as MissionNode).is_boss else &"ui_hover"
+	if _cooled_down(sound, HOVER_COOLDOWN):
+		play(sound)
 
 
 func _on_grab_started(_id: int) -> void:
@@ -542,12 +549,12 @@ func _stop_toxic_alarm() -> void:
 	_set_toxic_alarm(false)
 
 
-func _on_neuron_destroyed(_id: int, _contact: Vector2) -> void:
+func _on_neuron_destroyed(_id: int, _contact: Vector2, model: PuzzleModel) -> void:
 	_stop_alarm()
 	_stop_tension()
 	_stop_toxic_alarm()
 	_stop_diseased_crack()
-	play(&"explode")
+	play(&"toxic_overload" if model.get_destroy_cause() == PuzzleModel.DestroyCause.TOXIC else &"explode")
 
 
 func _on_tension_changed(edge_id: int, ratio: float) -> void:
@@ -585,12 +592,15 @@ func _on_edge_broke(_edge_id: int) -> void:
 	play(&"snap")
 
 
-func _on_level_completed(_result: LevelResult) -> void:
+func _on_level_completed(_result: LevelResult, controller: LevelController) -> void:
 	_stop_tension()
 	_stop_alarm()
 	_stop_toxic_alarm()
 	_stop_diseased_crack()
 	play(&"complete")
+	var level := controller.get_level()
+	if level != null and level.is_boss:
+		play(&"boss_fanfare")
 
 
 func _on_star_revealed(index: int) -> void:

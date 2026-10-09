@@ -53,3 +53,9 @@ const SPORE := Color(0.8, 0.92, 1.0, 0.16)
 const VIGNETTE := Color(0.0, 0.0, 0.0, 0.85)
 ## Tension break flash.
 const BREAK_FLASH := Color(0.85, 1.0, 0.85)
+
+## Boss missions (T8.6): a hot red for the BOSS tag, intro bars, the spiky crown of the map node
+## and the HUD tag; the boss membrane is a warm white.
+const BOSS := Color(1.0, 0.28, 0.22)
+const BOSS_GLOW := Color(1.0, 0.4, 0.28)
+const BOSS_MEMBRANE := Color(1.0, 0.88, 0.84)

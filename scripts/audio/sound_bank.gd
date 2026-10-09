@@ -25,12 +25,19 @@ extends RefCounted
 ##   diseased_snap   dry crack: noise burst, a falling split tone and embers
 ##   toxic_alarm  1 s loop: four short dry 1250 Hz beeps (contamination warning; not the warble)
 ##   toxic_clear  two ascending bell notes when the contamination is cleared
+##   toxic_overload  HARD toxic (T8.6): sizzling yellow burst: noise, a falling whine over four
+##                   squeezed 1250 Hz beeps and a crackle (not the lethal-wall explosion)
+##   boss_stinger  boss intro hit: low swelling sub, a rising tritone sweep and an inharmonic gong
+##   boss_fanfare  boss completion: fast rising C major arpeggio into a wide chord with bells
+##   boss_hover    mission map: soft low-high double tick when a boss node is hovered
+##   boss_press    mission map: deep thud with a rising swell when a boss node is pressed
 ##   unlink    small snap: noise tick and a falling chirp (receptor link broken; not a loss)
 
 const NAMES: Array[StringName] = [&"ambient", &"grab", &"release", &"blocked", &"tension", &"snap",
 	&"chime", &"complete", &"star", &"ui_hover", &"ui_click", &"buzz", &"alarm", &"explode",
 	&"link", &"unlink", &"toxic_alarm", &"toxic_clear",
-	&"diseased_crack", &"diseased_snap"]
+	&"diseased_crack", &"diseased_snap",
+	&"toxic_overload", &"boss_stinger", &"boss_fanfare", &"boss_hover", &"boss_press"]
 ## Sounds that loop (the AudioDirector keeps one voice for each).
 const LOOPS: Array[StringName] = [&"ambient", &"tension", &"buzz", &"alarm", &"toxic_alarm", &"diseased_crack"]
 
@@ -128,6 +135,43 @@ static func build(sound: StringName) -> AudioStreamWAV:
 			crack = Synth.mix(crack, Synth.tone(620.0, 0.2, 0.001, 18.0, [1.0, 0.3], 140.0), roundi(0.035 * Synth.MIX_RATE), 0.6)
 			crack = Synth.mix(crack, Synth.crackle(0.4, 22, 53), 0, 0.5)
 			return _one_shot(crack, 0.75)
+		&"toxic_overload":
+			var fizz := Synth.mix(Synth.noise_burst(0.55, 7.0, 61),
+				Synth.tone(2400.0, 0.5, 0.002, 6.0, [1.0, 0.4], 260.0), 0, 0.8)
+			fizz = Synth.mix(fizz, Synth.tone(110.0, 0.6, 0.002, 5.0, [1.0, 0.7], 40.0), 0, 0.8)
+			for k in 4:
+				fizz = Synth.mix(fizz, Synth.tone(1250.0, 0.05, 0.002, 40.0, [1.0, 0.35]),
+					roundi((0.02 + 0.07 * k) * Synth.MIX_RATE), 0.6)
+			fizz = Synth.mix(fizz, Synth.crackle(0.5, 36, 67), 0, 0.5)
+			return _one_shot(fizz, 0.85)
+		&"boss_stinger":
+			var hit := Synth.tone(55.0, 1.6, 0.35, 1.6, [1.0, 0.6, 0.3], 41.0)
+			hit = Synth.mix(hit, Synth.tone(196.0, 1.2, 0.5, 2.0, [1.0, 0.3, 0.2], 277.0), 0, 0.5)
+			hit = Synth.mix(hit, Synth.tone(277.2, 1.2, 0.5, 2.0, [1.0, 0.3, 0.2], 392.0), 0, 0.45)
+			hit = Synth.mix(hit, Synth.tone(110.0, 1.4, 0.01, 2.6, [1.0, 0.8, 0.5]), roundi(0.55 * Synth.MIX_RATE), 0.9)
+			hit = Synth.mix(hit, _bell(164.8, 2.0, 1.8), roundi(0.55 * Synth.MIX_RATE), 0.55)
+			hit = Synth.mix(hit, Synth.noise_burst(0.7, 5.0, 71), roundi(0.55 * Synth.MIX_RATE), 0.35)
+			return _one_shot(hit, 0.9)
+		&"boss_fanfare":
+			var fan := PackedFloat32Array()
+			var notes := [261.63, 329.63, 392.0, 523.25, 659.25]
+			for k in notes.size():
+				fan = Synth.mix(fan, Synth.tone(notes[k], 0.5, 0.004, 4.0, [1.0, 0.5, 0.25]),
+					roundi(k * 0.09 * Synth.MIX_RATE), 0.7)
+			var at := roundi(0.5 * Synth.MIX_RATE)
+			for freq: float in [130.81, 261.63, 329.63, 392.0, 523.25, 783.99]:
+				fan = Synth.mix(fan, Synth.tone(freq, 2.4, 0.02, 1.5, [1.0, 0.35, 0.15]), at, 0.55)
+			fan = Synth.mix(fan, _bell(1046.5, 1.6, 3.5), at, 0.5)
+			fan = Synth.mix(fan, _bell(1568.0, 1.4, 4.0), roundi(0.62 * Synth.MIX_RATE), 0.4)
+			return _one_shot(fan, 0.7)
+		&"boss_hover":
+			var tick := Synth.mix(Synth.tone(330.0, 0.08, 0.003, 30.0, [1.0, 0.3]),
+				Synth.tone(990.0, 0.08, 0.003, 30.0), roundi(0.045 * Synth.MIX_RATE), 0.8)
+			return _one_shot(tick, 0.3)
+		&"boss_press":
+			var thud := Synth.mix(Synth.tone(95.0, 0.35, 0.002, 9.0, [1.0, 0.6], 50.0),
+				Synth.tone(300.0, 0.4, 0.15, 5.0, [1.0, 0.2], 620.0), 0, 0.5)
+			return _one_shot(Synth.mix(thud, Synth.noise_burst(0.1, 40.0, 73), 0, 0.4), 0.55)
 		&"toxic_clear":
 			var first := _bell(880.0, 0.5, 6.0)
 			return _one_shot(Synth.mix(first, _bell(1318.5, 0.6, 6.0), roundi(0.1 * Synth.MIX_RATE), 0.9), 0.4)

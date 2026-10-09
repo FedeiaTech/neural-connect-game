@@ -7,12 +7,26 @@ extends MembraneView
 const LINE_WIDTH := 6.0
 
 var _last_contact := Vector2.INF
+var _boss_look := false
 
 
 func _init() -> void:
 	_amplitude = VisualTuning.BOUNDARY_AMPLITUDE
 	_line_width = LINE_WIDTH
 	_color = Palette.BOUNDARY
+
+
+## Boss look (T8.6): warm white membrane, stronger glow and a livelier undulation. Takes effect at
+## the next setup().
+func set_boss_look(boss: bool) -> void:
+	_color = Palette.BOSS_MEMBRANE if boss else Palette.BOUNDARY
+	_glow_scale = 1.9 if boss else 1.0
+	_amplitude = VisualTuning.BOUNDARY_AMPLITUDE * (1.8 if boss else 1.0)
+	_boss_look = boss
+
+
+func is_boss_look() -> bool:
+	return _boss_look
 
 
 func setup(model: PuzzleModel) -> void:

@@ -10,6 +10,7 @@ extends CanvasLayer
 @onready var _vignette: ColorRect = $Vignette
 
 var _spore_speed := 1.0
+var _boss_look := false
 
 
 func _ready() -> void:
@@ -18,6 +19,20 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_fit_to_viewport)
 	GameState.settings_changed.connect(_apply_motion)
 	_apply_motion()
+
+
+## Boss look (T8.6): a deeper, redder vignette. Visual only.
+func set_boss_look(boss: bool) -> void:
+	_boss_look = boss
+	var material := _vignette.material as ShaderMaterial
+	if material == null:
+		return
+	material.set_shader_parameter(&"tint", Color(0.28, 0.0, 0.02, 0.92) if boss else Color(0.0, 0.0, 0.0, 0.85))
+	material.set_shader_parameter(&"inner", 0.22 if boss else 0.35)
+
+
+func is_boss_look() -> bool:
+	return _boss_look
 
 
 func get_spores() -> CPUParticles2D:

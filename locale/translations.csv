@@ -122,3 +122,5 @@ Untangle them all and the network finally wakes.","Dos hemisferios, una mente, u
 Desenrédalos todos y la red por fin despertará."
 HUD_CONTAMINATED,Contaminated link: move the yellow neuron away,Enlace contaminado: aleja la neurona amarilla
 HUD_DISEASED,Diseased: %d/%d,Dendritas enfermas: %d/%d
+BOSS_TAG,BOSS,JEFE
+HUD_BOSS_DEFEATED,Boss defeated,Jefe derrotado

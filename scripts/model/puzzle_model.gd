@@ -32,6 +32,10 @@ extends RefCounted
 ## never loses the level). A static dendrite between the two does not prevent it. It clears when
 ## the toxic neuron leaves the reach. contamination_formed / contamination_cleared notify changes;
 ## the layout built by from_level() has its contamination set without signals.
+## HARD toxic rule (T8.6, level.hard_toxic, bosses only): a contamination link that FORMS during a
+## drag overloads the toxic neuron instead: toxic_overloaded(neuron_id, receptor_id), then
+## neuron_destroyed (contact on the neuron's rim facing the receptor); get_destroy_cause() is TOXIC
+## and the model ignores all input, like a lethal-wall contact.
 
 signal neuron_moved(id: int, pos: Vector2)
 signal neuron_blocked(id: int, contact: Vector2)
@@ -57,7 +61,13 @@ signal contamination_cleared(receptor_id: int, neuron_id: int)
 ## T8.3: strain ratio (0..1) of a diseased edge changed / the edge snapped.
 signal diseased_strain_changed(edge_id: int, ratio: float)
 signal diseased_broken(edge_id: int)
+## T8.6 (HARD toxic): the grabbed toxic neuron entered a receptor's reach and overloads. Emitted
+## right before neuron_destroyed.
+signal toxic_overloaded(neuron_id: int, receptor_id: int)
 signal solved()
+
+## Why a neuron was destroyed (see get_destroy_cause()).
+enum DestroyCause { NONE, LETHAL_WALL, TOXIC }
 
 const NO_NEURON := -1
 ## Proximity warning range, in neuron radii of surface gap to the nearest lethal wall.
@@ -118,6 +128,8 @@ var _lethal_edges: Dictionary[int, bool] = {}
 var _lethal_obstacles: Dictionary[int, bool] = {}
 var _lethal_segments := PackedVector2Array()
 var _destroyed_id := NO_NEURON
+var _destroy_cause := DestroyCause.NONE
+var _hard_toxic := false
 ## Last notified hazard proximity per neuron.
 var _proximity: Dictionary[int, float] = {}
 
@@ -143,6 +155,7 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 		if index >= 0 and index < level.obstacles.size():
 			model._lethal_obstacles[index] = true
 	model._lethal_segments = lethal_segments_of(level)
+	model._hard_toxic = level.hard_toxic
 	for neuron: NeuronData in level.neurons:
 		model._ids.append(neuron.id)
 		model._positions[neuron.id] = neuron.solution_position if use_solution else neuron.position
@@ -466,6 +479,8 @@ func drag_to(target: Vector2) -> void:
 		_moved_during_grab = true
 		neuron_moved.emit(id, reached)
 		_update_links(id, true)
+		if _destroy_cause == DestroyCause.TOXIC:
+			return
 		_update_diseased(id)
 		_update_crossings(true)
 		_update_proximity(id)
@@ -534,7 +549,16 @@ func is_destroyed() -> bool:
 	return _destroyed_id != NO_NEURON
 
 
-## The neuron destroyed by a lethal wall, or NO_NEURON.
+## What destroyed the neuron: a lethal wall or (HARD toxic rule) a contamination link.
+func get_destroy_cause() -> DestroyCause:
+	return _destroy_cause
+
+
+func is_hard_toxic() -> bool:
+	return _hard_toxic
+
+
+## The neuron destroyed by a lethal wall or by a toxic overload, or NO_NEURON.
 func get_destroyed_id() -> int:
 	return _destroyed_id
 
@@ -932,6 +956,9 @@ func _update_contamination(notify: bool) -> void:
 	for pair in current:
 		if not before.has(pair):
 			contamination_formed.emit(pair.x, pair.y)
+			if _hard_toxic and not is_lost():
+				_overload_toxic(pair.x, pair.y)
+				return
 
 
 func _in_reach(receptor_id: int, neuron_id: int) -> bool:
@@ -956,7 +983,18 @@ func _closest_candidate(receptor_id: int) -> int:
 	return best
 
 
+## HARD toxic rule: the toxic neuron explodes at its rim facing the receptor.
+func _overload_toxic(receptor_id: int, neuron_id: int) -> void:
+	var center: Vector2 = _positions[neuron_id]
+	var contact := center + (_positions[receptor_id] - center).normalized() * _radius
+	_destroy_cause = DestroyCause.TOXIC
+	toxic_overloaded.emit(neuron_id, receptor_id)
+	_destroy(neuron_id, contact)
+
+
 func _destroy(id: int, contact: Vector2) -> void:
+	if _destroy_cause == DestroyCause.NONE:
+		_destroy_cause = DestroyCause.LETHAL_WALL
 	_destroyed_id = id
 	_grabbed_id = NO_NEURON
 	_moved_during_grab = false

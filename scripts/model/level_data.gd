@@ -24,6 +24,14 @@ extends Resource
 @export var lethal_edges: PackedInt32Array = PackedInt32Array()
 ## Lethal obstacles by index in `obstacles`: their whole outline destroys on contact.
 @export var lethal_obstacles: PackedInt32Array = PackedInt32Array()
+## T8.6 HARD toxic rule (boss missions): a toxic neuron that forms a contamination link overloads
+## (explodes) and the level restarts, like a lethal wall. False = the SOFT rule (warning only).
+@export var hard_toxic: bool = false
+
+@export_group("Boss")
+## T8.6: the last mission of a chapter. Shows a boss intro (name card, stinger), a "BOSS" tag in
+## the HUD, a distinct node on the mission map and a bigger completion. The title is mission_name.
+@export var is_boss: bool = false
 
 @export_group("Graph")
 @export var neurons: Array[NeuronData] = []

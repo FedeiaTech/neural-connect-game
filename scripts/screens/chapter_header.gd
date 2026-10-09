@@ -6,8 +6,14 @@ extends Control
 
 const HeaderShader := preload("res://assets/shaders/chapter_header.gdshader")
 const HEIGHT := 150.0
-## Chapter accents cycle through the strict palette: cold white, white, red, light green.
-const ACCENTS: Array[Color] = [Palette.NEURON_GLOW, Palette.NEURON, Palette.NEURON_FIXED_GLOW, Palette.TENSION]
+## Chapter accents by chapter id (T8.4): each chapter wears the color of the mechanic it teaches
+## (cold white, white, red anchors, green tension, ember orange, violet wires, cyan receptors,
+## toxic yellow); the finale burns warm white-red. Ids past the table cycle through it.
+const ACCENTS: Array[Color] = [
+	Palette.NEURON_GLOW, Palette.NEURON, Palette.NEURON_FIXED_GLOW, Palette.TENSION,
+	Palette.DISEASED_HOT, Palette.LETHAL, Palette.RECEPTOR_GLOW, Palette.TOXIC_GLOW,
+	Palette.BOSS_MEMBRANE,
+]
 
 var _backdrop := ColorRect.new()
 var _title := Label.new()

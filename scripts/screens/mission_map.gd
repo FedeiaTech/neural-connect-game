@@ -14,7 +14,6 @@ const MAP_HEIGHT := 300.0
 const MARGIN := 110.0
 const MAX_SPACING := 300.0
 const WAVE_AMPLITUDE := 46.0
-const NAME_OFFSET := 112.0
 const NAME_WIDTH := 220.0
 const PULSE_TIME := 0.45
 const AMBIENT_CYCLE := 3.6
@@ -131,7 +130,7 @@ func _relayout() -> void:
 		# A long (e.g. translated) name may be wider than NAME_WIDTH: keep it centered anyway.
 		var width := maxf(NAME_WIDTH, _names[i].get_combined_minimum_size().x)
 		_names[i].size = Vector2(width, 0)
-		_names[i].position = _points[i] + Vector2(-width * 0.5, NAME_OFFSET)
+		_names[i].position = _points[i] + Vector2(-width * 0.5, node.get_name_offset())
 	queue_redraw()
 
 

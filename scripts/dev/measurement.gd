@@ -151,7 +151,7 @@ func _on_level_completed(result: LevelResult) -> void:
 
 func _on_level_lost(reason: LevelController.LossReason) -> void:
 	if _open:
-		_close_attempt(LOST_OVERLOAD if reason == LevelController.LossReason.OVERLOAD else LOST_TENSION)
+		_close_attempt(LOST_OVERLOAD if reason in [LevelController.LossReason.OVERLOAD, LevelController.LossReason.TOXIC_OVERLOAD] else LOST_TENSION)
 
 
 func _close_attempt(result: String, stars := 0) -> void:

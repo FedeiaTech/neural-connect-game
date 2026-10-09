@@ -22,6 +22,8 @@ signal resume_pressed()
 signal next_mission_pressed()
 signal mission_select_pressed()
 signal star_revealed(index: int)
+## T8.6: the boss intro card finished (or was skipped); the Level then shows the story or starts.
+signal boss_intro_finished()
 
 const COMPLETION := "CompletionOverlay/Center/Panel/Column/"
 const PAUSE := "PauseOverlay/Center/Panel/Column/"
@@ -66,6 +68,10 @@ var _contamination_hint: Label
 ## T8.3: "Diseased: broken/total", shown only in levels that have diseased dendrites.
 var _diseased_counter: Label
 var _diseased_progress := Vector2i.ZERO
+## T8.6 boss missions: "BOSS" tag next to the mission name, intro card and summary title.
+var _boss_tag: Label
+var _boss_intro: BossIntro
+var _boss := false
 var _measure_label: Label  # MEASURE-MODE
 
 
@@ -88,6 +94,7 @@ func _ready() -> void:
 	set_time(0.0)
 	_apply_tooltips()
 	_build_status_labels()
+	_build_boss_widgets()
 	_build_measure_indicator()  # MEASURE-MODE
 
 
@@ -98,6 +105,51 @@ func _notification(what: int) -> void:
 		if not _stats.is_empty():
 			_apply_count(_stats[2], _stats[0], _stats[1])
 		_apply_tooltips()
+
+
+## BOSS tag in the top bar and the intro card above every overlay. Built in code.
+func _build_boss_widgets() -> void:
+	_boss_tag = Label.new()
+	_boss_tag.text = "BOSS_TAG"
+	_boss_tag.visible = false
+	_boss_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_tag.add_theme_font_size_override(&"font_size", 24)
+	_boss_tag.add_theme_color_override(&"font_color", Palette.BOSS)
+	_boss_tag.add_theme_color_override(&"font_outline_color", Color(Palette.BOSS_GLOW, 0.3))
+	_boss_tag.add_theme_constant_override(&"outline_size", 10)
+	_mission_label.get_parent().add_child(_boss_tag)
+	_mission_label.get_parent().move_child(_boss_tag, _mission_label.get_index() + 1)
+	_boss_intro = BossIntro.new()
+	_boss_intro.finished.connect(boss_intro_finished.emit)
+	add_child(_boss_intro)
+
+
+## Marks the HUD as the one of a boss mission: tag visible, summary titled "Boss defeated".
+func set_boss(boss: bool) -> void:
+	_boss = boss
+	_boss_tag.visible = boss
+	_completion_title.text = "HUD_BOSS_DEFEATED" if boss else "SUMMARY_TITLE"
+
+
+func is_boss_tag_visible() -> bool:
+	return _boss_tag.visible
+
+
+## Plays the boss intro card with the mission name (translation key).
+func show_boss_intro(title_key: String) -> void:
+	_boss_intro.play(title_key)
+
+
+func is_boss_intro_visible() -> bool:
+	return _boss_intro.visible
+
+
+func get_boss_intro() -> BossIntro:
+	return _boss_intro
+
+
+func get_completion_title_text() -> String:
+	return _completion_title.get_display_text()
 
 
 ## Bottom-center hints, built in code so the scene stays untouched. Mouse input passes through.
