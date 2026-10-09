@@ -614,8 +614,8 @@ static func _boss_bottleneck() -> Dictionary:
 
 ## Boss 4 (Tension): a crescent; five taut bonds follow its curve.
 static func _boss_crescent() -> Dictionary:
-	var area := Organic.crescent(Vector2(960, 570), 720.0, 430.0, Vector2(1180, 560), 400.0, 240.0)
-	var sol := Layouts.scatter(area, [], 13, 190.0, 60.0, 3401)
+	var area := Organic.crescent(Vector2(960, 570), 720.0, 430.0, Vector2(1560, 570), 470.0, 260.0)
+	var sol := Layouts.scatter(area, [], 13, 160.0, 60.0, 3401)
 	var edges := Layouts.planar_edges(sol, 400.0, 60.0, 0.2, 3401)
 	return {
 		"id": "m34", "name": "MISSION_M34_NAME", "chapter": 4, "boss": true, "par_time": 300.0,

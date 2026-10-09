@@ -66,6 +66,71 @@ TDD: RED observed for the model suites (parse errors on the missing `TOXIC` / `D
 - **Layouts:** `tools/layouts.gd` (best-candidate scatter, Delaunay edges thinned for readability, chords for diseased dendrites, tension/diseased limits, receptor/toxic planning, dense receptor sites); start layouts found by `tools/find_start.gd ... write` into `tools/level_starts.gd` (repairs tension / diseased limits, receptor links and toxic reach).
 - Existing missions changed only in arena (organic), chapter id and, for m14 / m09 / m20 / m26 / m29 / m30, obstacle shapes (moved inside the new arenas; m09 lost its third island). Stories m17, m21, m30 reworded for the new order. Pars of new missions = 2 x planned moves (builder default), the human retunes them.
 
+### Before / after mapping
+Before (30 missions, ids = position): ch1 m01-m05, ch2 m06-m10, ch3 m11-m14, ch4 m15-m18, ch5 Live Wires m19-m21, ch6 Synapses m22-m25, ch7 Convergence m26-m30. After: ids unchanged; chapter ids shift (Live Wires 5 -> 6, Synapses 6 -> 7, Convergence 7 -> 9) and the new chapters/missions slot in as below. Display numbers = position: e.g. m06 shows 7, m19 shows 25.
+
+New order: ch1 m01-m05, **m31**; ch2 m06-m10, **m32**; ch3 m11-m14, **m33**; ch4 m15-m18, **m34**; ch5 (new) m35-m38, **m39**; ch6 m19-m21, m40, **m41**; ch7 m22-m25, **m42**; ch8 (new) m43-m46, **m47**; ch9 m26-m30, **m48** (bold = boss).
+
+### Final campaign table (build_levels.gd report; names are translation keys MISSION_<ID>_NAME)
+Columns: ch, neurons, tension / diseased / toxic counts, lethal edges+obstacles, receptors (reach x links), start crossings, planned moves, par moves / time, story, boss, arena vertices and size.
+
+| id | name | ch | neurons | tension | diseased | toxic | lethal | receptors | start crossings | planned moves | par_moves | par_time | story | boss | area pts | size |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| m01 | MISSION_M01_NAME | 1 | 4 | 0 | 0 | 0 |  |  | 1 | 4 | 6 | 60 | yes |  | 4 | 1600x900 |
+| m02 | MISSION_M02_NAME | 1 | 6 | 0 | 0 | 0 |  |  | 2 | 3 | 8 | 90 |  |  | 4 | 1600x900 |
+| m03 | MISSION_M03_NAME | 1 | 5 | 0 | 0 | 0 |  |  | 5 | 4 | 8 | 60 |  |  | 4 | 1600x900 |
+| m04 | MISSION_M04_NAME | 1 | 6 | 0 | 0 | 0 |  |  | 3 | 5 | 10 | 90 | yes |  | 4 | 1600x900 |
+| m05 | MISSION_M05_NAME | 1 | 7 | 0 | 0 | 0 |  |  | 10 | 7 | 14 | 120 |  |  | 4 | 1600x900 |
+| m31 | MISSION_M31_NAME | 1 | 10 | 0 | 0 | 0 |  |  | 14 | 11 | 22 | 240 | yes | BOSS | 120 | 1254x812 |
+| m06 | MISSION_M06_NAME | 2 | 8 | 0 | 0 | 0 |  |  | 3 | 7 | 14 | 120 | yes |  | 162 | 1612x914 |
+| m07 | MISSION_M07_NAME | 2 | 8 | 0 | 0 | 0 |  |  | 16 | 8 | 16 | 150 |  |  | 181 | 1523x894 |
+| m08 | MISSION_M08_NAME | 2 | 8 | 0 | 0 | 0 |  |  | 3 | 8 | 16 | 150 | yes |  | 209 | 1614x915 |
+| m09 | MISSION_M09_NAME | 2 | 9 | 0 | 0 | 0 |  |  | 7 | 9 | 18 | 150 |  |  | 185 | 1552x902 |
+| m10 | MISSION_M10_NAME | 2 | 9 | 0 | 0 | 0 |  |  | 3 | 8 | 16 | 150 |  |  | 199 | 1617x917 |
+| m32 | MISSION_M32_NAME | 2 | 12 | 0 | 0 | 0 |  |  | 16 | 9 | 18 | 270 | yes | BOSS | 140 | 1592x838 |
+| m11 | MISSION_M11_NAME | 3 | 8 | 0 | 0 | 0 |  |  | 6 | 7 | 14 | 120 | yes |  | 105 | 989x890 |
+| m12 | MISSION_M12_NAME | 3 | 9 | 0 | 0 | 0 |  |  | 12 | 5 | 10 | 150 |  |  | 163 | 1325x897 |
+| m13 | MISSION_M13_NAME | 3 | 10 | 0 | 0 | 0 |  |  | 7 | 7 | 14 | 180 | yes |  | 136 | 1061x899 |
+| m14 | MISSION_M14_NAME | 3 | 11 | 0 | 0 | 0 |  |  | 23 | 6 | 12 | 180 |  |  | 193 | 1534x901 |
+| m33 | MISSION_M33_NAME | 3 | 13 | 0 | 0 | 0 |  |  | 14 | 10 | 20 | 300 | yes | BOSS | 131 | 1398x680 |
+| m15 | MISSION_M15_NAME | 4 | 9 | 2 | 0 | 0 |  |  | 9 | 8 | 16 | 150 | yes |  | 162 | 1564x893 |
+| m16 | MISSION_M16_NAME | 4 | 10 | 3 | 0 | 0 |  |  | 21 | 9 | 18 | 180 |  |  | 144 | 1469x755 |
+| m17 | MISSION_M17_NAME | 4 | 11 | 4 | 0 | 0 |  |  | 29 | 11 | 22 | 210 | yes |  | 137 | 1445x901 |
+| m18 | MISSION_M18_NAME | 4 | 12 | 5 | 0 | 0 |  |  | 31 | 10 | 20 | 240 |  |  | 138 | 1514x782 |
+| m34 | MISSION_M34_NAME | 4 | 13 | 5 | 0 | 0 |  |  | 15 | 16 | 32 | 300 | yes | BOSS | 130 | 1195x868 |
+| m35 | MISSION_M35_NAME | 5 | 7 | 0 | 1 | 0 |  |  | 3 | 7 | 14 | 90 | yes |  | 110 | 1177x583 |
+| m36 | MISSION_M36_NAME | 5 | 8 | 0 | 2 | 0 |  |  | 7 | 7 | 14 | 120 |  |  | 110 | 1024x791 |
+| m37 | MISSION_M37_NAME | 5 | 9 | 0 | 3 | 0 |  |  | 12 | 7 | 14 | 150 | yes |  | 110 | 1180x747 |
+| m38 | MISSION_M38_NAME | 5 | 10 | 3 | 2 | 0 |  |  | 8 | 9 | 18 | 180 |  |  | 110 | 1507x774 |
+| m39 | MISSION_M39_NAME | 5 | 13 | 3 | 4 | 0 |  |  | 12 | 12 | 24 | 300 | yes | BOSS | 160 | 1457x712 |
+| m19 | MISSION_M19_NAME | 6 | 8 | 0 | 0 | 0 | 48+0 |  | 4 | 7 | 14 | 120 | yes |  | 166 | 1287x897 |
+| m20 | MISSION_M20_NAME | 6 | 9 | 0 | 0 | 0 | 41+2 |  | 7 | 8 | 16 | 150 |  |  | 184 | 1569x898 |
+| m21 | MISSION_M21_NAME | 6 | 10 | 0 | 0 | 0 | 53+0 |  | 11 | 10 | 20 | 180 | yes |  | 195 | 1614x914 |
+| m40 | MISSION_M40_NAME | 6 | 11 | 0 | 0 | 0 | 52+0 |  | 14 | 9 | 18 | 210 |  |  | 120 | 1382x820 |
+| m41 | MISSION_M41_NAME | 6 | 14 | 2 | 0 | 0 | 64+0 |  | 15 | 14 | 28 | 300 | yes | BOSS | 125 | 1380x795 |
+| m22 | MISSION_M22_NAME | 7 | 7 | 0 | 0 | 0 |  | 150x1 | 4 | 5 | 10 | 90 | yes |  | 115 | 1075x848 |
+| m23 | MISSION_M23_NAME | 7 | 10 | 0 | 0 | 0 |  | 160x1 160x1 | 6 | 8 | 16 | 120 |  |  | 162 | 1592x896 |
+| m24 | MISSION_M24_NAME | 7 | 11 | 0 | 0 | 0 |  | 140x2 | 9 | 10 | 20 | 150 | yes |  | 142 | 1476x898 |
+| m25 | MISSION_M25_NAME | 7 | 11 | 2 | 0 | 0 |  | 175x2 140x1 | 14 | 7 | 14 | 180 |  |  | 147 | 1404x889 |
+| m42 | MISSION_M42_NAME | 7 | 14 | 2 | 0 | 0 |  | 160x1 205x1 170x2 | 9 | 12 | 24 | 300 | yes | BOSS | 140 | 1501x877 |
+| m43 | MISSION_M43_NAME | 8 | 7 | 0 | 0 | 1 |  | 185x1 | 4 | 6 | 12 | 120 | yes |  | 110 | 1094x653 |
+| m44 | MISSION_M44_NAME | 8 | 9 | 0 | 0 | 2 |  | 200x1 230x1 | 4 | 8 | 16 | 150 |  |  | 110 | 1252x735 |
+| m45 | MISSION_M45_NAME | 8 | 10 | 2 | 0 | 2 |  | 295x2 | 7 | 8 | 16 | 180 | yes |  | 110 | 1450x730 |
+| m46 | MISSION_M46_NAME | 8 | 11 | 2 | 0 | 2 |  | 320x2 195x1 | 7 | 9 | 18 | 210 |  |  | 110 | 1378x799 |
+| m47 | MISSION_M47_NAME | 8 | 14 | 2 | 0 | 3 |  hard | 170x1 160x1 170x2 | 12 | 14 | 28 | 300 | yes | BOSS | 140 | 1446x838 |
+| m26 | MISSION_M26_NAME | 9 | 12 | 0 | 0 | 0 | 0+1 |  | 24 | 10 | 20 | 210 | yes |  | 168 | 1526x902 |
+| m27 | MISSION_M27_NAME | 9 | 13 | 2 | 0 | 0 | 59+0 | 130x2 | 16 | 14 | 28 | 210 |  |  | 177 | 1425x900 |
+| m28 | MISSION_M28_NAME | 9 | 13 | 3 | 0 | 0 | 65+0 |  | 28 | 11 | 22 | 240 | yes |  | 144 | 1591x916 |
+| m29 | MISSION_M29_NAME | 9 | 13 | 0 | 0 | 0 | 0+1 | 140x2 | 28 | 10 | 20 | 240 |  |  | 155 | 1292x899 |
+| m30 | MISSION_M30_NAME | 9 | 16 | 3 | 0 | 0 | 0+1 | 180x1 140x1 | 35 | 11 | 22 | 270 | yes |  | 158 | 1617x918 |
+| m48 | MISSION_M48_NAME | 9 | 16 | 3 | 2 | 2 | 26+1 hard | 170x1 185x2 | 31 | 13 | 26 | 300 | yes | BOSS | 180 | 1556x902 |
+
+### Verification (run B, observed)
+- `./run_tests.ps1` exit 0, 625 test cases, 0 failures, 0 orphans (566 baseline + new suites: stable ids, authoring tools, hard toxic model / level, boss UI; the content suite was rewritten).
+- `godot --headless --path . --import` no errors; `godot --headless --path . --quit-after 300` quits cleanly; `godot --headless --path . -s res://tools/build_levels.gd` OK (48 missions), a second build leaves the tree unchanged.
+- Windowed captures reviewed (`/tests/visual/capture_level.tscn`, `capture_screens.tscn` with new modes `boss`, `toxicboom`, `boss=mXX`): m31 boss intro, m33 hourglass, m34 crescent (+ intro), m41 double bubble with live waist, m47 hard toxic overload, m48 final arena, m07 organic ring, m19, mission map around the m34 boss node (crown, orange Pruning header). Fixes from captures: m34 bay opened to the outside (it was a hole), cell arenas clipped to the view frame, thin hull tips bridged.
+- Pending: human playtest of difficulty, pars (retune from the measurement mode), the boss stinger / fanfare / toxic overload sounds (checked only structurally, not heard), the Spanish stories. Known: the toxic hint stays visible during the 1.2 s overload restart delay.
+
 ## Pending
 - Human playtest of the new look and sounds (the ember crackle, alarm beeps and the yellow / dark orange colors were only checked on captures, not heard).
 - Measurement data: play with `--measure` first, then run the analyzer; pars of existing missions are untouched.
