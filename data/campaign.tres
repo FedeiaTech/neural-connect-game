@@ -8,81 +8,113 @@
 [ext_resource type="Resource" path="res://data/levels/m03.tres" id="6_m03"]
 [ext_resource type="Resource" path="res://data/levels/m04.tres" id="7_m04"]
 [ext_resource type="Resource" path="res://data/levels/m05.tres" id="8_m05"]
-[ext_resource type="Resource" path="res://data/levels/m06.tres" id="9_m06"]
-[ext_resource type="Resource" path="res://data/levels/m07.tres" id="10_m07"]
-[ext_resource type="Resource" path="res://data/levels/m08.tres" id="11_m08"]
-[ext_resource type="Resource" path="res://data/levels/m09.tres" id="12_m09"]
-[ext_resource type="Resource" path="res://data/levels/m10.tres" id="13_m10"]
-[ext_resource type="Resource" path="res://data/levels/m11.tres" id="14_m11"]
-[ext_resource type="Resource" path="res://data/levels/m12.tres" id="15_m12"]
-[ext_resource type="Resource" path="res://data/levels/m13.tres" id="16_m13"]
-[ext_resource type="Resource" path="res://data/levels/m14.tres" id="17_m14"]
-[ext_resource type="Resource" path="res://data/levels/m15.tres" id="18_m15"]
-[ext_resource type="Resource" path="res://data/levels/m16.tres" id="19_m16"]
-[ext_resource type="Resource" path="res://data/levels/m17.tres" id="20_m17"]
-[ext_resource type="Resource" path="res://data/levels/m18.tres" id="21_m18"]
-[ext_resource type="Resource" path="res://data/levels/m19.tres" id="22_m19"]
-[ext_resource type="Resource" path="res://data/levels/m20.tres" id="23_m20"]
-[ext_resource type="Resource" path="res://data/levels/m21.tres" id="24_m21"]
-[ext_resource type="Resource" path="res://data/levels/m22.tres" id="25_m22"]
-[ext_resource type="Resource" path="res://data/levels/m23.tres" id="26_m23"]
-[ext_resource type="Resource" path="res://data/levels/m24.tres" id="27_m24"]
-[ext_resource type="Resource" path="res://data/levels/m25.tres" id="28_m25"]
-[ext_resource type="Resource" path="res://data/levels/m26.tres" id="29_m26"]
-[ext_resource type="Resource" path="res://data/levels/m27.tres" id="30_m27"]
-[ext_resource type="Resource" path="res://data/levels/m28.tres" id="31_m28"]
-[ext_resource type="Resource" path="res://data/levels/m29.tres" id="32_m29"]
-[ext_resource type="Resource" path="res://data/levels/m30.tres" id="33_m30"]
+[ext_resource type="Resource" path="res://data/levels/m31.tres" id="9_m31"]
+[ext_resource type="Resource" path="res://data/levels/m06.tres" id="10_m06"]
+[ext_resource type="Resource" path="res://data/levels/m07.tres" id="11_m07"]
+[ext_resource type="Resource" path="res://data/levels/m08.tres" id="12_m08"]
+[ext_resource type="Resource" path="res://data/levels/m09.tres" id="13_m09"]
+[ext_resource type="Resource" path="res://data/levels/m10.tres" id="14_m10"]
+[ext_resource type="Resource" path="res://data/levels/m32.tres" id="15_m32"]
+[ext_resource type="Resource" path="res://data/levels/m11.tres" id="16_m11"]
+[ext_resource type="Resource" path="res://data/levels/m12.tres" id="17_m12"]
+[ext_resource type="Resource" path="res://data/levels/m13.tres" id="18_m13"]
+[ext_resource type="Resource" path="res://data/levels/m14.tres" id="19_m14"]
+[ext_resource type="Resource" path="res://data/levels/m33.tres" id="20_m33"]
+[ext_resource type="Resource" path="res://data/levels/m15.tres" id="21_m15"]
+[ext_resource type="Resource" path="res://data/levels/m16.tres" id="22_m16"]
+[ext_resource type="Resource" path="res://data/levels/m17.tres" id="23_m17"]
+[ext_resource type="Resource" path="res://data/levels/m18.tres" id="24_m18"]
+[ext_resource type="Resource" path="res://data/levels/m34.tres" id="25_m34"]
+[ext_resource type="Resource" path="res://data/levels/m35.tres" id="26_m35"]
+[ext_resource type="Resource" path="res://data/levels/m36.tres" id="27_m36"]
+[ext_resource type="Resource" path="res://data/levels/m37.tres" id="28_m37"]
+[ext_resource type="Resource" path="res://data/levels/m38.tres" id="29_m38"]
+[ext_resource type="Resource" path="res://data/levels/m39.tres" id="30_m39"]
+[ext_resource type="Resource" path="res://data/levels/m19.tres" id="31_m19"]
+[ext_resource type="Resource" path="res://data/levels/m20.tres" id="32_m20"]
+[ext_resource type="Resource" path="res://data/levels/m21.tres" id="33_m21"]
+[ext_resource type="Resource" path="res://data/levels/m40.tres" id="34_m40"]
+[ext_resource type="Resource" path="res://data/levels/m41.tres" id="35_m41"]
+[ext_resource type="Resource" path="res://data/levels/m22.tres" id="36_m22"]
+[ext_resource type="Resource" path="res://data/levels/m23.tres" id="37_m23"]
+[ext_resource type="Resource" path="res://data/levels/m24.tres" id="38_m24"]
+[ext_resource type="Resource" path="res://data/levels/m25.tres" id="39_m25"]
+[ext_resource type="Resource" path="res://data/levels/m42.tres" id="40_m42"]
+[ext_resource type="Resource" path="res://data/levels/m43.tres" id="41_m43"]
+[ext_resource type="Resource" path="res://data/levels/m44.tres" id="42_m44"]
+[ext_resource type="Resource" path="res://data/levels/m45.tres" id="43_m45"]
+[ext_resource type="Resource" path="res://data/levels/m46.tres" id="44_m46"]
+[ext_resource type="Resource" path="res://data/levels/m47.tres" id="45_m47"]
+[ext_resource type="Resource" path="res://data/levels/m26.tres" id="46_m26"]
+[ext_resource type="Resource" path="res://data/levels/m27.tres" id="47_m27"]
+[ext_resource type="Resource" path="res://data/levels/m28.tres" id="48_m28"]
+[ext_resource type="Resource" path="res://data/levels/m29.tres" id="49_m29"]
+[ext_resource type="Resource" path="res://data/levels/m30.tres" id="50_m30"]
+[ext_resource type="Resource" path="res://data/levels/m48.tres" id="51_m48"]
 
 [sub_resource type="Resource" id="Chapter_1"]
 script = ExtResource("2_chapter")
 chapter_id = 1
 title = "CHAPTER_1_TITLE"
 subtitle = "CHAPTER_1_SUBTITLE"
-missions = Array[ExtResource("3_level")]([ExtResource("4_m01"), ExtResource("5_m02"), ExtResource("6_m03"), ExtResource("7_m04"), ExtResource("8_m05")])
+missions = Array[ExtResource("3_level")]([ExtResource("4_m01"), ExtResource("5_m02"), ExtResource("6_m03"), ExtResource("7_m04"), ExtResource("8_m05"), ExtResource("9_m31")])
 
 [sub_resource type="Resource" id="Chapter_2"]
 script = ExtResource("2_chapter")
 chapter_id = 2
 title = "CHAPTER_2_TITLE"
 subtitle = "CHAPTER_2_SUBTITLE"
-missions = Array[ExtResource("3_level")]([ExtResource("9_m06"), ExtResource("10_m07"), ExtResource("11_m08"), ExtResource("12_m09"), ExtResource("13_m10")])
+missions = Array[ExtResource("3_level")]([ExtResource("10_m06"), ExtResource("11_m07"), ExtResource("12_m08"), ExtResource("13_m09"), ExtResource("14_m10"), ExtResource("15_m32")])
 
 [sub_resource type="Resource" id="Chapter_3"]
 script = ExtResource("2_chapter")
 chapter_id = 3
 title = "CHAPTER_3_TITLE"
 subtitle = "CHAPTER_3_SUBTITLE"
-missions = Array[ExtResource("3_level")]([ExtResource("14_m11"), ExtResource("15_m12"), ExtResource("16_m13"), ExtResource("17_m14")])
+missions = Array[ExtResource("3_level")]([ExtResource("16_m11"), ExtResource("17_m12"), ExtResource("18_m13"), ExtResource("19_m14"), ExtResource("20_m33")])
 
 [sub_resource type="Resource" id="Chapter_4"]
 script = ExtResource("2_chapter")
 chapter_id = 4
 title = "CHAPTER_4_TITLE"
 subtitle = "CHAPTER_4_SUBTITLE"
-missions = Array[ExtResource("3_level")]([ExtResource("18_m15"), ExtResource("19_m16"), ExtResource("20_m17"), ExtResource("21_m18")])
+missions = Array[ExtResource("3_level")]([ExtResource("21_m15"), ExtResource("22_m16"), ExtResource("23_m17"), ExtResource("24_m18"), ExtResource("25_m34")])
 
 [sub_resource type="Resource" id="Chapter_5"]
 script = ExtResource("2_chapter")
 chapter_id = 5
 title = "CHAPTER_5_TITLE"
 subtitle = "CHAPTER_5_SUBTITLE"
-missions = Array[ExtResource("3_level")]([ExtResource("22_m19"), ExtResource("23_m20"), ExtResource("24_m21")])
+missions = Array[ExtResource("3_level")]([ExtResource("26_m35"), ExtResource("27_m36"), ExtResource("28_m37"), ExtResource("29_m38"), ExtResource("30_m39")])
 
 [sub_resource type="Resource" id="Chapter_6"]
 script = ExtResource("2_chapter")
 chapter_id = 6
 title = "CHAPTER_6_TITLE"
 subtitle = "CHAPTER_6_SUBTITLE"
-missions = Array[ExtResource("3_level")]([ExtResource("25_m22"), ExtResource("26_m23"), ExtResource("27_m24"), ExtResource("28_m25")])
+missions = Array[ExtResource("3_level")]([ExtResource("31_m19"), ExtResource("32_m20"), ExtResource("33_m21"), ExtResource("34_m40"), ExtResource("35_m41")])
 
 [sub_resource type="Resource" id="Chapter_7"]
 script = ExtResource("2_chapter")
 chapter_id = 7
 title = "CHAPTER_7_TITLE"
 subtitle = "CHAPTER_7_SUBTITLE"
-missions = Array[ExtResource("3_level")]([ExtResource("29_m26"), ExtResource("30_m27"), ExtResource("31_m28"), ExtResource("32_m29"), ExtResource("33_m30")])
+missions = Array[ExtResource("3_level")]([ExtResource("36_m22"), ExtResource("37_m23"), ExtResource("38_m24"), ExtResource("39_m25"), ExtResource("40_m42")])
+
+[sub_resource type="Resource" id="Chapter_8"]
+script = ExtResource("2_chapter")
+chapter_id = 8
+title = "CHAPTER_8_TITLE"
+subtitle = "CHAPTER_8_SUBTITLE"
+missions = Array[ExtResource("3_level")]([ExtResource("41_m43"), ExtResource("42_m44"), ExtResource("43_m45"), ExtResource("44_m46"), ExtResource("45_m47")])
+
+[sub_resource type="Resource" id="Chapter_9"]
+script = ExtResource("2_chapter")
+chapter_id = 9
+title = "CHAPTER_9_TITLE"
+subtitle = "CHAPTER_9_SUBTITLE"
+missions = Array[ExtResource("3_level")]([ExtResource("46_m26"), ExtResource("47_m27"), ExtResource("48_m28"), ExtResource("49_m29"), ExtResource("50_m30"), ExtResource("51_m48")])
 
 [resource]
 script = ExtResource("1_campaign")
-chapters = Array[ExtResource("2_chapter")]([SubResource("Chapter_1"), SubResource("Chapter_2"), SubResource("Chapter_3"), SubResource("Chapter_4"), SubResource("Chapter_5"), SubResource("Chapter_6"), SubResource("Chapter_7")])
+chapters = Array[ExtResource("2_chapter")]([SubResource("Chapter_1"), SubResource("Chapter_2"), SubResource("Chapter_3"), SubResource("Chapter_4"), SubResource("Chapter_5"), SubResource("Chapter_6"), SubResource("Chapter_7"), SubResource("Chapter_8"), SubResource("Chapter_9")])

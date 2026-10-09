@@ -61,7 +61,7 @@ They use no slot, are not segments for crossing detection and never end the leve
 `get_contamination_links()`. Win on release = zero crossings + every receptor satisfied by
 non-toxic neurons + zero contamination links. A toxic neuron in a level without receptors is a
 harmless decoy (allowed). Validation: start and solution layouts must have no contamination, a toxic
-neuron is never fixed. A HARD variant (explode + restart) is reserved for boss missions.
+neuron is never fixed. The HARD variant (`LevelData.hard_toxic`, boss missions m47 / m48) explodes the toxic neuron instead (see 7).
 
 Diseased dendrite rule (T8.3): `DendriteData.Kind.DISEASED`. When a move leaves an intact diseased
 edge longer than `max_length` it joins the broken set (`diseased_broken(edge_id)`); a broken edge is
@@ -223,11 +223,51 @@ Initial rule (to tune):
 - Start with 4 neurons. Difficulty ramp: more neurons → multi-dendrite neurons → obstacles and
   irregular shapes → fixed red neurons → tension dendrites → lethal walls → receptor neurons →
   combinations.
-- Chapters (30 missions, ids `m01`..`m30` in campaign order): 1 First Signals (m01–m05),
-  2 Shaped Minds (m06–m10), 3 Anchored (m11–m14), 4 Tension (m15–m18), 5 Live Wires (m19–m21),
-  6 Synapses (m22–m25), 7 Convergence (m26–m30, every mechanic including receptors and lethal
-  walls). The old Convergence missions m19/m20/m21 became m26/m28/m30; save format v2 migrates
-  their records.
+- Chapters (T8.4, 48 missions, **stable ids** `m01`..`m48`; the position in the campaign is the
+  number the player sees, never the id). Each chapter ends with its **boss**:
+
+  | Ch | Name | Missions (boss last) | New mechanic |
+  |---|---|---|---|
+  | 1 | First Signals | m01-m05, **m31** | cycles, hubs |
+  | 2 | Shaped Minds | m06-m10, **m32** | irregular areas, obstacles |
+  | 3 | Anchored | m11-m14, **m33** | red fixed neurons |
+  | 4 | Tension | m15-m18, **m34** | tension dendrites |
+  | 5 | Pruning | m35-m38, **m39** | diseased dendrites (break them on purpose) |
+  | 6 | Live Wires | m19-m21, m40, **m41** | lethal walls |
+  | 7 | Synapses | m22-m25, **m42** | receptor neurons |
+  | 8 | Contagion | m43-m46, **m47** | toxic neurons (m47: HARD) |
+  | 9 | Convergence | m26-m30, **m48** | everything (m48: HARD) |
+
+  Order rationale: Pruning follows Tension because a diseased dendrite is the green tension bond
+  turned inside out (same stretch limit, but breaking it is the goal); Contagion follows Synapses
+  because toxic neurons only matter near receptors; Live Wires sits between them so the two
+  "learned" chapters are not adjacent. No mission may use a mechanic a later chapter teaches, and
+  the first mission that uses a mechanic opens its chapter (content tests).
+- **Organic arenas (T8.5):** from chapter 2 on, and in every boss, the play area is a many-vertex
+  outline (a vertex every ~30 px) generated deterministically by `tools/organic_shapes.gd`
+  (`cell()`: the smooth hull of the neuron positions with a bulge around every outer neuron, outward-only
+  membrane wobble; `polar()` lobed blobs, `hourglass()`, `crescent()`, rings with islands and pillars,
+  rounded versions of the hand-drawn L/U/chamber shapes). Outlines stay inside the view fit
+  (about 1600 x 900); lethal sides are chosen by a predicate on the finished outline
+  (`Organic.edges_where`). The membrane resamples the outline anyway, so vertex count costs nothing at runtime.
+- **Bosses (T8.6):** `LevelData.is_boss` (the last mission of each chapter). Intro card (dark
+  vignette, red bars, spinning crown, spread "BOSS" tag, mission name letter by letter, synthesized
+  `boss_stinger`; skippable after 0.6 s, a short still card with reduced motion), then the story
+  (if any), then play. A "BOSS" tag sits in the HUD bar, the boundary membrane turns warm white with
+  a stronger glow and the background vignette turns deep red. Completion: a longer wave, a golden
+  spark burst on every neuron, `boss_fanfare`, summary titled "Boss defeated". On the mission map a
+  boss is a bigger node with a ring of red spikes that turns, opens on hover / focus and kicks when
+  pressed (`boss_hover` / `boss_press` sounds). Bosses combine their chapter's mechanics at a
+  higher intensity (more neurons, tangles up to the chapter's hardest).
+- **HARD toxic rule (T8.6):** `LevelData.hard_toxic` (per level; only the bosses m47 and m48 set
+  it). A contamination link that forms during a drag overloads the toxic neuron: `toxic_overloaded`,
+  then `neuron_destroyed`; the destroy cause is `TOXIC`, the controller loses the level with
+  `LossReason.TOXIC_OVERLOAD` (same restart flow and delay as a lethal-wall overload), a yellow blast
+  and the `toxic_overload` sound. The planner already forbids contamination, so every plan is safe.
+- **Stable ids and saves (T8.4):** ids never encode the position, the 30 original ids keep their
+  meaning and the save stays at **v2** (the format did not change; v1 saves still migrate m19/m20/m21 to
+  m26/m28/m30). Unlocking follows campaign order, so a new boss or chapter opener may wait for the
+  mission before it; completed missions always stay playable.
 - Difficulty curve (content tests): a start may have at most 14 crossings more than the hardest
   of the three missions before it; the first mission of a new-mechanic chapter starts with at
   most 6; the most tangled start is in Convergence. New-mechanic chapters may restart with
@@ -241,7 +281,7 @@ missions; there are no randomly generated levels.
 Structure:
 - Missions are numbered and played in a fixed order, grouped into **chapters** (themed sets,
   each introducing or combining mechanics: multi-dendrite, obstacles/shapes, red fixed neurons,
-  tension dendrites, lethal walls, receptor neurons).
+  tension dendrites, lethal walls, receptor neurons, toxic neurons, diseased dendrites) and ends with a boss.
 - Each mission has an id, a name, its chapter, and its own `LevelData` (see 8.2).
 - A mission selection screen shows completion state and stars per mission.
 - Completing a mission unlocks the next one. Chapter unlock rules beyond that are undecided.

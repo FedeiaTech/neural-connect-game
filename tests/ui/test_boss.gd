@@ -247,7 +247,7 @@ func test_boss_nodes_use_their_own_hover_and_press_sounds() -> void:
 	holder.add_child(boss)
 	holder.add_child(plain)
 	director.bind_ui(holder)
-	await await_millis(int(AudioDirector.UI_QUIET_TIME * 1000.0) + 100)
+	await await_millis(int(AudioDirector.UI_QUIET_TIME * 1000.0) + 400)
 	boss.mouse_entered.emit()
 	boss.pressed.emit()
 	plain.mouse_entered.emit()

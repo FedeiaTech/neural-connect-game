@@ -39,12 +39,16 @@ CHAPTER_3_TITLE,Anchored,Anclados
 CHAPTER_3_SUBTITLE,Some memories will not move. Build the network around the red anchors.,Algunos recuerdos no se mueven. Construye la red alrededor de los anclajes rojos.
 CHAPTER_4_TITLE,Tension,Tensión
 CHAPTER_4_SUBTITLE,Strained bonds glow green. Pull them too far apart and they snap.,"Los enlaces tensos brillan en verde. Si los separas demasiado, se rompen."
-CHAPTER_5_TITLE,Live Wires,Cables vivos
-CHAPTER_5_SUBTITLE,Violet walls carry raw current. Touch one and the neuron burns out.,"Los muros violetas llevan corriente pura. Si una neurona los toca, se quema."
-CHAPTER_6_TITLE,Synapses,Sinapsis
-CHAPTER_6_SUBTITLE,Cyan receptors reach for partners. Feed every one of them without a single crossing.,Los receptores cian buscan compañeras. Satisface a cada uno sin un solo cruce.
-CHAPTER_7_TITLE,Convergence,Convergencia
-CHAPTER_7_SUBTITLE,"Walls, anchors, fragile bonds, live wires and hungry receptors. Everything the network has learned, at once.","Muros, anclajes, enlaces frágiles, cables vivos y receptores ávidos. Todo lo que la red ha aprendido, a la vez."
+CHAPTER_5_TITLE,Pruning,Poda
+CHAPTER_5_SUBTITLE,Diseased dendrites glow ember orange. Stretch them until they snap.,Las dendritas enfermas brillan en naranja brasa. Estíralas hasta que se rompan.
+CHAPTER_6_TITLE,Live Wires,Cables vivos
+CHAPTER_6_SUBTITLE,Violet walls carry raw current. Touch one and the neuron burns out.,"Los muros violetas llevan corriente pura. Si una neurona los toca, se quema."
+CHAPTER_7_TITLE,Synapses,Sinapsis
+CHAPTER_7_SUBTITLE,Cyan receptors reach for partners. Feed every one of them without a single crossing.,Los receptores cian buscan compañeras. Satisface a cada uno sin un solo cruce.
+CHAPTER_8_TITLE,Contagion,Contagio
+CHAPTER_8_SUBTITLE,Yellow neurons carry a toxin. Keep them out of every receptor's reach.,Las neuronas amarillas llevan una toxina. Mantenlas fuera del alcance de todo receptor.
+CHAPTER_9_TITLE,Convergence,Convergencia
+CHAPTER_9_SUBTITLE,"Walls, anchors, fragile bonds, ember threads, live wires, hungry receptors and toxins. Everything the network has learned, at once.","Muros, anclajes, enlaces frágiles, hilos de brasa, cables vivos, receptores ávidos y toxinas. Todo lo que la red ha aprendido, a la vez."
 MISSION_M01_NAME,First Spark,Primera chispa
 MISSION_M01_STORY,"In the dark, a first spark is looking for a way through.
 Untangle the threads so the signal can pass.","En la oscuridad, una primera chispa busca un camino.
@@ -84,8 +88,8 @@ Los hilos verdes se rompen si sus neuronas se alejan demasiado."
 MISSION_M16_NAME,Elastic Bond,Enlace elástico
 MISSION_M17_NAME,Tight Weave,Trama ajustada
 MISSION_M17_STORY,"Pairs that must stay close, tangled with pairs that must not touch.
-Move them together. Somewhere ahead, the walls begin to hum.","Parejas que deben ir juntas, enredadas con otras que no deben tocarse.
-Muévelas a la vez. Más adelante, los muros empiezan a zumbar."
+Move them together. Somewhere ahead, a sickness creeps along the threads.","Parejas que deben ir juntas, enredadas con otras que no deben tocarse.
+Muévelas a la vez. Más adelante, una enfermedad avanza por los hilos."
 MISSION_M18_NAME,Breaking Point,Punto de ruptura
 MISSION_M19_NAME,Live Wire,Cable vivo
 MISSION_M19_STORY,"Violet walls carry raw current: touch one and the neuron burns out.
@@ -94,8 +98,8 @@ Siente cómo crece el zumbido al acercarte y mantén la distancia."
 MISSION_M20_NAME,Arc Flash,Arco eléctrico
 MISSION_M21_NAME,Short Circuit,Cortocircuito
 MISSION_M21_STORY,"The live wire folds into the heart of the field.
-Beyond it, cyan cells reach out, waiting for an answer.","El cable vivo se pliega hacia el centro del campo.
-Más allá, células cian se extienden esperando una respuesta."
+There is no safe wall left: only distance.","El cable vivo se pliega hacia el centro del campo.
+Ya no queda un muro seguro: solo la distancia."
 MISSION_M22_NAME,First Synapse,Primera sinapsis
 MISSION_M22_STORY,"A cyan receptor cannot move, but it can reach.
 Bring a neuron into its halo and a new link will grow.","Un receptor cian no puede moverse, pero sí alcanzar.
@@ -118,9 +122,66 @@ Mantén firme el centro y deja que las parejas vuelvan a su lugar."
 MISSION_M29_NAME,Charged Core,Núcleo cargado
 MISSION_M30_NAME,Awakening,Despertar
 MISSION_M30_STORY,"Two hemispheres, one mind, a live core and two receptors waiting.
-Untangle them all and the network finally wakes.","Dos hemisferios, una mente, un núcleo vivo y dos receptores esperando.
-Desenrédalos todos y la red por fin despertará."
+Untangle them all and the core begins to stir.","Dos hemisferios, una mente, un núcleo vivo y dos receptores esperando.
+Desenrédalos todos y el núcleo comenzará a despertar."
 HUD_CONTAMINATED,Contaminated link: move the yellow neuron away,Enlace contaminado: aleja la neurona amarilla
 HUD_DISEASED,Diseased: %d/%d,Dendritas enfermas: %d/%d
 BOSS_TAG,BOSS,JEFE
 HUD_BOSS_DEFEATED,Boss defeated,Jefe derrotado
+MISSION_M31_NAME,The Gatekeeper,El guardián de la puerta
+MISSION_M31_STORY,"A gate of living membrane bars the way, woven from a great web.
+Untangle it and the keeper lets you through.","Una puerta de membrana viva cierra el paso, tejida con una gran red.
+Desenrédala y el guardián te dejará pasar."
+MISSION_M32_NAME,Labyrinth Cell,Célula laberinto
+MISSION_M32_STORY,"The cell folds around a hollow heart, and pillars narrow every path.
+Wind the signal through the corridors.","La célula se pliega alrededor de un corazón hueco y los pilares estrechan cada paso.
+Guía la señal por los corredores."
+MISSION_M33_NAME,The Bottleneck,El cuello de botella
+MISSION_M33_STORY,"Everything must squeeze through one narrow neck, pinned by three red anchors.
+Two halves, one signal.","Todo debe pasar por un único cuello estrecho, sujeto por tres anclajes rojos.
+Dos mitades, una señal."
+MISSION_M34_NAME,Taut Crescent,Creciente tenso
+MISSION_M34_STORY,"A curved cell strains against five taut threads.
+One careless pull and they snap.","Una célula curva tira de cinco hilos tensos.
+Un tirón descuidado y se rompen."
+MISSION_M35_NAME,Overgrowth,Sobrecrecimiento
+MISSION_M35_STORY,"Some threads have turned dark orange: they are sick.
+Stretch a diseased dendrite past its limit and it snaps for good.","Algunos hilos se han vuelto naranja oscuro: están enfermos.
+Estira una dendrita enferma más allá de su límite y se romperá para siempre."
+MISSION_M36_NAME,First Cut,Primer corte
+MISSION_M37_NAME,Rotten Root,Raíz podrida
+MISSION_M37_STORY,"The sickness runs through more roots now.
+Prune it all, but keep the anchor and the healthy threads whole.","La enfermedad recorre más raíces.
+Poda todo, pero mantén intactos el anclaje y los hilos sanos."
+MISSION_M38_NAME,Thorn and Thread,Espina e hilo
+MISSION_M39_NAME,The Bramble King,El rey zarza
+MISSION_M39_STORY,"The Bramble King wears the sickness like a crown.
+Prune every ember thread without snapping a healthy one.","El rey zarza lleva la enfermedad como una corona.
+Poda cada hilo de brasa sin romper ninguno sano."
+MISSION_M40_NAME,Crossfire,Fuego cruzado
+MISSION_M41_NAME,The Arc Warden,El guardián del arco
+MISSION_M41_STORY,"Two bubbles joined at a live waist, and the caps hum with current.
+Slip through the middle and keep your distance.","Dos burbujas unidas por una cintura viva, y los extremos zumban de corriente.
+Pasa por el medio y mantén la distancia."
+MISSION_M42_NAME,Receptor Queen,La reina receptora
+MISSION_M42_STORY,"Three receptors hunger at once, one of them for two partners.
+Every new link counts as a dendrite.","Tres receptores tienen hambre a la vez, uno de ellos de dos compañeras.
+Cada enlace nuevo cuenta como una dendrita."
+MISSION_M43_NAME,Bad Signal,Mala señal
+MISSION_M43_STORY,"Yellow neurons carry a toxin.
+If one drifts into a receptor's reach, the link is contaminated: lead it away.","Las neuronas amarillas llevan una toxina.
+Si una se acerca al alcance de un receptor, el enlace se contamina: aléjala."
+MISSION_M44_NAME,Tainted Pair,Pareja contaminada
+MISSION_M45_NAME,Quarantine,Cuarentena
+MISSION_M45_STORY,"The yellow ones spread: two toxic neurons and a hungry double receptor.
+Keep them outside the halo, however tempting the shortcut.","Las amarillas se propagan: dos neuronas tóxicas y un receptor doble hambriento.
+Mantenlas fuera del halo, por tentador que sea el atajo."
+MISSION_M46_NAME,Carrier,Portador
+MISSION_M47_NAME,Patient Zero,Paciente cero
+MISSION_M47_STORY,"Patient Zero: here the toxin is lethal.
+A yellow neuron that touches a halo overloads and the level restarts.","Paciente cero: aquí la toxina es mortal.
+Una neurona amarilla que toca un halo se sobrecarga y el nivel se reinicia."
+MISSION_M48_NAME,The Core,El núcleo
+MISSION_M48_STORY,"Anchors, taut bonds, ember threads, live arcs, receptors and toxins, all at once.
+Wake the core.","Anclajes, enlaces tensos, hilos de brasa, arcos vivos, receptores y toxinas, todo a la vez.
+Despierta el núcleo."

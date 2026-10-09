@@ -1,0 +1,194 @@
+[gd_resource type="Resource" script_class="LevelData" format=3]
+
+[ext_resource type="Script" path="res://scripts/model/level_data.gd" id="1_level"]
+[ext_resource type="Script" path="res://scripts/model/neuron_data.gd" id="2_neuron"]
+[ext_resource type="Script" path="res://scripts/model/dendrite_data.gd" id="3_dendrite"]
+
+[sub_resource type="Resource" id="Neuron_0"]
+script = ExtResource("2_neuron")
+id = 0
+position = Vector2(1382, 540)
+solution_position = Vector2(1407, 482)
+
+[sub_resource type="Resource" id="Neuron_1"]
+script = ExtResource("2_neuron")
+id = 1
+position = Vector2(792, 635)
+solution_position = Vector2(743, 589)
+
+[sub_resource type="Resource" id="Neuron_2"]
+script = ExtResource("2_neuron")
+id = 2
+position = Vector2(1148, 310)
+solution_position = Vector2(886, 789)
+
+[sub_resource type="Resource" id="Neuron_3"]
+script = ExtResource("2_neuron")
+id = 3
+position = Vector2(455, 518)
+solution_position = Vector2(412, 528)
+
+[sub_resource type="Resource" id="Neuron_4"]
+script = ExtResource("2_neuron")
+id = 4
+position = Vector2(923, 324)
+solution_position = Vector2(942, 322)
+
+[sub_resource type="Resource" id="Neuron_5"]
+script = ExtResource("2_neuron")
+id = 5
+position = Vector2(1019, 711)
+solution_position = Vector2(1064, 665)
+
+[sub_resource type="Resource" id="Neuron_6"]
+script = ExtResource("2_neuron")
+id = 6
+position = Vector2(917, 830)
+solution_position = Vector2(1160, 373)
+
+[sub_resource type="Resource" id="Neuron_7"]
+script = ExtResource("2_neuron")
+id = 7
+position = Vector2(1293, 679)
+solution_position = Vector2(1317, 675)
+
+[sub_resource type="Resource" id="Neuron_8"]
+script = ExtResource("2_neuron")
+id = 8
+position = Vector2(786, 499)
+solution_position = Vector2(671, 399)
+
+[sub_resource type="Resource" id="Neuron_9"]
+script = ExtResource("2_neuron")
+id = 9
+position = Vector2(1509, 620)
+solution_position = Vector2(1546, 629)
+
+[sub_resource type="Resource" id="Dendrite_0"]
+script = ExtResource("3_dendrite")
+a = 0
+b = 6
+
+[sub_resource type="Resource" id="Dendrite_1"]
+script = ExtResource("3_dendrite")
+a = 0
+b = 7
+kind = 1
+max_length = 260.0
+rest_length = 160.0
+
+[sub_resource type="Resource" id="Dendrite_2"]
+script = ExtResource("3_dendrite")
+a = 0
+b = 9
+
+[sub_resource type="Resource" id="Dendrite_3"]
+script = ExtResource("3_dendrite")
+a = 1
+b = 2
+
+[sub_resource type="Resource" id="Dendrite_4"]
+script = ExtResource("3_dendrite")
+a = 1
+b = 3
+kind = 1
+max_length = 420.0
+rest_length = 260.0
+
+[sub_resource type="Resource" id="Dendrite_5"]
+script = ExtResource("3_dendrite")
+a = 1
+b = 4
+
+[sub_resource type="Resource" id="Dendrite_6"]
+script = ExtResource("3_dendrite")
+a = 1
+b = 5
+
+[sub_resource type="Resource" id="Dendrite_7"]
+script = ExtResource("3_dendrite")
+a = 1
+b = 8
+kind = 1
+max_length = 250.0
+rest_length = 150.0
+
+[sub_resource type="Resource" id="Dendrite_8"]
+script = ExtResource("3_dendrite")
+a = 2
+b = 5
+
+[sub_resource type="Resource" id="Dendrite_9"]
+script = ExtResource("3_dendrite")
+a = 2
+b = 7
+
+[sub_resource type="Resource" id="Dendrite_10"]
+script = ExtResource("3_dendrite")
+a = 3
+b = 8
+
+[sub_resource type="Resource" id="Dendrite_11"]
+script = ExtResource("3_dendrite")
+a = 4
+b = 5
+
+[sub_resource type="Resource" id="Dendrite_12"]
+script = ExtResource("3_dendrite")
+a = 4
+b = 6
+
+[sub_resource type="Resource" id="Dendrite_13"]
+script = ExtResource("3_dendrite")
+a = 4
+b = 8
+
+[sub_resource type="Resource" id="Dendrite_14"]
+script = ExtResource("3_dendrite")
+a = 5
+b = 6
+
+[sub_resource type="Resource" id="Dendrite_15"]
+script = ExtResource("3_dendrite")
+a = 5
+b = 7
+
+[sub_resource type="Resource" id="Dendrite_16"]
+script = ExtResource("3_dendrite")
+a = 6
+b = 7
+
+[sub_resource type="Resource" id="Dendrite_17"]
+script = ExtResource("3_dendrite")
+a = 7
+b = 9
+
+[sub_resource type="Resource" id="Dendrite_18"]
+script = ExtResource("3_dendrite")
+a = 5
+b = 8
+kind = 2
+max_length = 370.0
+rest_length = 260.0
+
+[sub_resource type="Resource" id="Dendrite_19"]
+script = ExtResource("3_dendrite")
+a = 1
+b = 6
+kind = 2
+max_length = 370.0
+rest_length = 250.0
+
+[resource]
+script = ExtResource("1_level")
+mission_id = &"m38"
+mission_name = "MISSION_M38_NAME"
+chapter_id = 5
+play_area = PackedVector2Array(1713.92431640625, 570, 1707.85888671875, 595.391174316406, 1695.72094726563, 620.1220703125, 1678.05810546875, 643.7822265625, 1655.6201171875, 666.044738769531, 1629.30676269531, 686.687438964844, 1600.1064453125, 705.606323242188, 1569.03076171875, 722.818481445313, 1537.04736328125, 738.455810546875, 1505.01977539063, 752.748413085938, 1473.65625, 766, 1443.47106933594, 778.56201171875, 1414.76293945313, 790.790588378906, 1387.61022949219, 803.021423339844, 1361.88330078125, 815.532348632813, 1337.27319335938, 828.516723632813, 1313.33276367188, 842.062194824219, 1289.52770996094, 856.139343261719, 1265.29321289063, 870.598937988281, 1240.09008789063, 885.18017578125, 1213.45715332031, 899.527526855469, 1185.05493164063, 913.216552734375, 1154.697265625, 925.784912109375, 1122.36840820313, 936.767456054688, 1088.22424316406, 945.731811523438, 1052.57800292969, 952.311950683594, 1015.87182617188, 956.23681640625, 978.637084960938, 957.351928710938, 941.445739746094, 955.631469726563, 904.859436035156, 951.181518554688, 869.378662109375, 944.23193359375, 835.397338867188, 935.11962890625, 803.167602539063, 924.262329101563, 772.776306152344, 912.127868652344, 744.137329101563, 899.198120117188, 716, 885.932922363281, 690.968505859375, 872.736083984375, 665.546752929688, 859.925659179688, 640.177856445313, 847.711669921875, 614.30322265625, 836.1826171875, 587.41845703125, 825.301879882813, 559.12841796875, 814.914184570313, 529.195068359375, 804.762329101563, 497.573822021484, 794.511108398438, 464.436431884766, 783.778503417969, 430.176147460938, 772.170166015625, 395.396423339844, 759.315002441406, 360.881896972656, 744.898864746094, 327.554931640625, 728.693664550781, 296.419738769531, 710.579223632813, 268.498596191406, 690.556884765625, 244.765380859375, 668.7529296875, 226.080322265625, 645.412048339844, 213.132080078125, 620.881469726563, 206.390747070313, 595.58642578125, 206.075744628906, 570, 212.14111328125, 544.608825683594, 224.279052734375, 519.8779296875, 241.94189453125, 496.217742919922, 264.379821777344, 473.955261230469, 290.693237304688, 453.312561035156, 319.893493652344, 434.393707275391, 350.96923828125, 417.181488037109, 382.952697753906, 401.544189453125, 414.980224609375, 387.251586914063, 446.34375, 373, 476.528961181641, 361.438018798828, 505.237060546875, 349.209411621094, 532.389770507813, 336.978576660156, 558.116638183594, 324.467651367188, 582.726745605469, 311.483306884766, 606.667236328125, 297.937805175781, 630.472290039063, 283.860656738281, 654.706787109375, 269.401062011719, 679.909912109375, 254.819854736328, 706.542846679688, 240.472473144531, 734.945068359375, 226.783447265625, 765.302673339844, 214.215087890625, 797.631591796875, 203.232543945313, 831.775756835938, 194.268188476563, 867.422058105469, 187.688049316406, 904.128173828125, 183.763153076172, 941.362915039063, 182.648101806641, 978.554260253906, 184.368560791016, 1015.14056396484, 188.818511962891, 1050.62133789063, 195.768035888672, 1084.60266113281, 204.880401611328, 1116.83239746094, 215.737670898438, 1147.22375488281, 227.872131347656, 1175.86267089844, 240.801910400391, 1203, 254.067077636719, 1229.03149414063, 267.263916015625, 1254.45324707031, 280.074310302734, 1279.82214355469, 292.288299560547, 1305.69677734375, 303.817352294922, 1332.58154296875, 314.698150634766, 1360.87158203125, 325.085784912109, 1390.80493164063, 335.237670898438, 1422.42614746094, 345.488891601563, 1455.56359863281, 356.221496582031, 1489.82385253906, 367.829833984375, 1524.603515625, 380.684997558594, 1559.1181640625, 395.101135253906, 1592.44506835938, 411.306335449219, 1623.58032226563, 429.420776367188, 1651.50146484375, 449.443145751953, 1675.23461914063, 471.247100830078, 1693.91967773438, 494.587951660156, 1706.86791992188, 519.118530273438, 1713.60925292969, 544.41357421875)
+obstacles = Array[PackedVector2Array]([])
+neuron_radius = 28.0
+show_crossing_feedback = true
+neurons = Array[ExtResource("2_neuron")]([SubResource("Neuron_0"), SubResource("Neuron_1"), SubResource("Neuron_2"), SubResource("Neuron_3"), SubResource("Neuron_4"), SubResource("Neuron_5"), SubResource("Neuron_6"), SubResource("Neuron_7"), SubResource("Neuron_8"), SubResource("Neuron_9")])
+dendrites = Array[ExtResource("3_dendrite")]([SubResource("Dendrite_0"), SubResource("Dendrite_1"), SubResource("Dendrite_2"), SubResource("Dendrite_3"), SubResource("Dendrite_4"), SubResource("Dendrite_5"), SubResource("Dendrite_6"), SubResource("Dendrite_7"), SubResource("Dendrite_8"), SubResource("Dendrite_9"), SubResource("Dendrite_10"), SubResource("Dendrite_11"), SubResource("Dendrite_12"), SubResource("Dendrite_13"), SubResource("Dendrite_14"), SubResource("Dendrite_15"), SubResource("Dendrite_16"), SubResource("Dendrite_17"), SubResource("Dendrite_18"), SubResource("Dendrite_19")])
+par_moves = 18
+par_time = 180.0

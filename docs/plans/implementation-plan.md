@@ -106,7 +106,10 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
   Skills: `godot-prompter:math-essentials`, `godot-prompter:shader-basics`, `godot-prompter:audio-system`, `godot-prompter:localization`
 - [x] **T8.3 Diseased dendrites** — `DendriteData.Kind.DISEASED`, broken set and win rule, validation, dark orange ember line with cracks, ember sparks and snap effect, crack / snap sounds, HUD counter, planner breaks them.
   Skills: `godot-prompter:particles-vfx`, `godot-prompter:shader-basics`, `godot-prompter:audio-system`
-- [ ] T8.4-T8.7 (campaign reorganization, organic arenas, bosses, docs): run B.
+- [x] **T8.4 Campaign reorganization** — nine chapters (Pruning after Tension, Contagion after Synapses), 48 missions with stable ids (m31..m48 new, nothing renumbered, save stays v2), content tests pin the order, teaching rules and difficulty curve; stories en/es.
+- [x] **T8.5 Organic arenas** — `tools/organic_shapes.gd` + `tools/layouts.gd` (seeded, planar layouts) + `tools/level_starts.gd`; every mission from chapter 2 on has a many-vertex outline.
+- [x] **T8.6 Bosses** — last mission of each chapter: intro card, tag, boss look, fanfare, map crown nodes, HARD toxic (`hard_toxic`, `TOXIC_OVERLOAD`).
+- [x] **T8.7 Docs** — SDD 3 / 7 and the feature document.
   (Evidence in `odd/tasks/measure-toxic-bosses.md`.)
 
 ## Open items (SDD section 10)

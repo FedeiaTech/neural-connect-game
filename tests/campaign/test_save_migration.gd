@@ -90,8 +90,8 @@ func test_loading_a_v1_save_keeps_progress_under_the_new_ids() -> void:
 	# The new Live Wires and Synapses missions are not completed...
 	for id in [&"m19", &"m20", &"m21", &"m22", &"m25", &"m27", &"m29"]:
 		assert_bool(progress.is_completed(id)).override_failure_message(String(id)).is_false()
-	# ...but the first one is unlocked (m18 done) and the migrated ones stay playable.
-	assert_bool(state.is_unlocked(&"m19")).is_true()
+	# ...m19 now follows the Pruning boss (T8.4), so it waits for it, and the migrated ones stay playable.
+	assert_bool(state.is_unlocked(&"m19")).is_false()
 	assert_bool(state.is_unlocked(&"m20")).is_false()
 	assert_bool(state.is_unlocked(&"m26")).is_true()
 	assert_bool(state.is_unlocked(&"m27")).is_true()

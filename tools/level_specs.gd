@@ -28,38 +28,80 @@ extends RefCounted
 ## order (m01..m30); the old Convergence missions m19/m20/m21 became m26/m28/m30 (see
 ## GameState save migration v2).
 
+const Organic := preload("res://tools/organic_shapes.gd")
+const Layouts := preload("res://tools/layouts.gd")
+const Starts := preload("res://tools/level_starts.gd")
 const DEFAULT_AREA := [160, 120, 1760, 120, 1760, 1020, 160, 1020]
 
 
 static func chapters() -> Array[Dictionary]:
-	return [
-		{"id": 1, "title": "CHAPTER_1_TITLE",
-			"subtitle": "CHAPTER_1_SUBTITLE"},
-		{"id": 2, "title": "CHAPTER_2_TITLE",
-			"subtitle": "CHAPTER_2_SUBTITLE"},
-		{"id": 3, "title": "CHAPTER_3_TITLE",
-			"subtitle": "CHAPTER_3_SUBTITLE"},
-		{"id": 4, "title": "CHAPTER_4_TITLE",
-			"subtitle": "CHAPTER_4_SUBTITLE"},
-		{"id": 5, "title": "CHAPTER_5_TITLE",
-			"subtitle": "CHAPTER_5_SUBTITLE"},
-		{"id": 6, "title": "CHAPTER_6_TITLE",
-			"subtitle": "CHAPTER_6_SUBTITLE"},
-		{"id": 7, "title": "CHAPTER_7_TITLE",
-			"subtitle": "CHAPTER_7_SUBTITLE"},
-	]
+	var result: Array[Dictionary] = []
+	for id in range(1, 10):
+		result.append({"id": id, "title": "CHAPTER_%d_TITLE" % id, "subtitle": "CHAPTER_%d_SUBTITLE" % id})
+	return result
 
 
+## Every mission in campaign order: each chapter's missions, its boss last. Mission ids are stable
+## (they never depend on the position): the 30 original ids keep their meaning, the new missions
+## are m31..m48.
 static func missions() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	result.append_array(_chapter_1())
+	result.append(_boss_gatekeeper())
 	result.append_array(_chapter_2())
+	result.append(_boss_labyrinth())
 	result.append_array(_chapter_3())
+	result.append(_boss_bottleneck())
 	result.append_array(_chapter_4())
+	result.append(_boss_crescent())
+	result.append_array(_chapter_pruning())
 	result.append_array(_chapter_5())
+	result.append_array(_chapter_live_wires_extra())
+	result.append(_boss_arc_warden())
 	result.append_array(_chapter_6())
+	result.append(_boss_receptor_queen())
+	result.append_array(_chapter_contagion())
 	result.append_array(_chapter_7())
+	result.append(_boss_core())
+	for spec in result:
+		_finish(spec)
 	return result
+
+
+## Spec post-processing: "cell" builds the organic arena around every neuron position of the
+## mission, "lethal_where" picks the lethal edges of the finished arena.
+static func _finish(spec: Dictionary) -> void:
+	if not spec.has("start") and not spec.has("perm") and Starts.STARTS.has(spec["id"]):
+		spec["start"] = pts(Starts.STARTS[spec["id"]])
+	if spec.has("cell"):
+		var c: Array = spec["cell"]
+		spec["area"] = Organic.cell(_all_points(spec), c[0], c[1], 40.0, c[2], c[3], c[4], Rect2(170, 130, 1580, 880))
+	if spec.has("lethal_where"):
+		spec["lethal_edges"] = Organic.edges_where(spec["area"], spec["lethal_where"])
+
+
+## Start positions of a spec (explicit, derived from perm + offset, or the solution).
+static func start_of(spec: Dictionary) -> PackedVector2Array:
+	var sol: PackedVector2Array = spec["sol"]
+	if spec.has("start"):
+		return spec["start"]
+	if not spec.has("perm"):
+		return sol
+	var result := PackedVector2Array()
+	for id in sol.size():
+		var anchored: bool = spec.get("fixed", []).has(id) or spec.get("receptors", {}).has(id)
+		if anchored:
+			result.append(sol[id])
+		else:
+			result.append(sol[spec["perm"][id]] + spec["offset"] + spec.get("nudge", {}).get(id, Vector2.ZERO))
+	return result
+
+
+static func _all_points(spec: Dictionary) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	points.append_array(spec["sol"])
+	points.append_array(start_of(spec))
+	return points
 
 
 ## Pairs a flat list of numbers into points: [x0, y0, x1, y1, ...].
@@ -127,7 +169,8 @@ static func _chapter_2() -> Array[Dictionary]:
 			# L-shaped area: neurons must travel around the inner corner.
 			"id": "m06", "name": "MISSION_M06_NAME", "chapter": 2, "par_time": 120.0,
 			"story": "MISSION_M06_STORY",
-			"area": pts([160, 120, 900, 120, 900, 640, 1760, 640, 1760, 1020, 160, 1020]),
+			"area": Organic.wobble(Organic.rounded(
+				pts([160, 120, 900, 120, 900, 640, 1760, 640, 1760, 1020, 160, 1020]), 52.0), 9.0, 5.0, 0.4),
 			"sol": pts([330, 260, 720, 260, 330, 600, 720, 560, 450, 880, 1000, 860, 1300, 730, 1600, 900]),
 			"perm": [6, 4, 7, 5, 1, 2, 0, 3], "offset": Vector2(50, 50), "nudge": {0: Vector2(-18, 24)},
 			"edges": [[0, 1], [0, 2], [1, 3], [2, 3], [0, 3], [2, 4], [3, 4], [3, 5], [4, 5],
@@ -137,7 +180,8 @@ static func _chapter_2() -> Array[Dictionary]:
 			# A ring around a solid hollow: square antiprism, inner square around the hole.
 			"id": "m07", "name": "MISSION_M07_NAME", "chapter": 2, "par_time": 150.0,
 			"story": "",
-			"obstacles": [pts([760, 450, 1160, 450, 1160, 690, 760, 690])],
+			"cell": [175.0, 120.0, 10.0, 6.0, 1.1],
+			"obstacles": [Organic.polar(Vector2(960, 570), 200.0, 118.0, [[3, 0.07, 0.5]], 60)],
 			"sol": pts([960, 300, 1420, 570, 960, 840, 500, 570, 400, 230, 1520, 230, 1520, 910, 400, 910]),
 			"perm": [2, 7, 0, 5, 1, 3, 6, 4], "offset": Vector2(50, 50),
 			"edges": [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4],
@@ -147,8 +191,8 @@ static func _chapter_2() -> Array[Dictionary]:
 			# Two chambers and a corridor one neuron wide; neuron 4 starts inside it.
 			"id": "m08", "name": "MISSION_M08_NAME", "chapter": 2, "par_time": 150.0,
 			"story": "MISSION_M08_STORY",
-			"area": pts([160, 120, 760, 120, 760, 500, 1160, 500, 1160, 120, 1760, 120,
-				1760, 1020, 1160, 1020, 1160, 640, 760, 640, 760, 1020, 160, 1020]),
+			"area": Organic.wobble(Organic.rounded(pts([160, 120, 760, 120, 760, 500, 1160, 500, 1160, 120,
+				1760, 120, 1760, 1020, 1160, 1020, 1160, 640, 760, 640, 760, 1020, 160, 1020]), 46.0), 8.0, 6.0, 1.0),
 			"sol": pts([320, 280, 620, 560, 320, 860, 600, 250, 1300, 570, 1600, 280, 1600, 860, 1320, 880]),
 			"start": pts([1650, 600, 1450, 300, 1250, 300, 1450, 850, 960, 570, 400, 350, 550, 900, 400, 600]),
 			"edges": [[0, 3], [3, 1], [1, 2], [2, 0], [0, 1], [1, 4], [4, 5], [5, 6], [6, 4],
@@ -158,10 +202,10 @@ static func _chapter_2() -> Array[Dictionary]:
 			# A triangulated 3x3 lattice whose empty cells hold solid islands.
 			"id": "m09", "name": "MISSION_M09_NAME", "chapter": 2, "par_time": 150.0,
 			"story": "",
+			"cell": [185.0, 105.0, 12.0, 5.0, 2.0],
 			"obstacles": [
-				pts([600, 330, 760, 330, 760, 490, 600, 490]),
-				pts([1160, 650, 1320, 650, 1320, 810, 1160, 810]),
-				pts([170, 700, 260, 700, 260, 780, 170, 780]),
+				Organic.polar(Vector2(680, 410), 96.0, 90.0, [[3, 0.08, 0.2]], 48),
+				Organic.polar(Vector2(1240, 730), 96.0, 90.0, [[3, 0.08, 1.4]], 48),
 			],
 			"sol": pts([400, 250, 960, 250, 1520, 250, 400, 570, 960, 570, 1520, 570, 400, 890, 960, 890, 1520, 890]),
 			"perm": [5, 7, 3, 8, 0, 6, 1, 2, 4], "offset": Vector2(50, 50),
@@ -173,7 +217,8 @@ static func _chapter_2() -> Array[Dictionary]:
 			# U-shaped area: the two arms only meet through the bottom fold.
 			"id": "m10", "name": "MISSION_M10_NAME", "chapter": 2, "par_time": 150.0,
 			"story": "",
-			"area": pts([160, 120, 620, 120, 620, 700, 1300, 700, 1300, 120, 1760, 120, 1760, 1020, 160, 1020]),
+			"area": Organic.wobble(Organic.rounded(
+				pts([160, 120, 620, 120, 620, 700, 1300, 700, 1300, 120, 1760, 120, 1760, 1020, 160, 1020]), 50.0), 9.0, 6.0, 2.2),
 			"sol": pts([390, 250, 390, 600, 390, 900, 800, 880, 1120, 880, 1530, 900, 1530, 600, 1530, 250, 960, 800]),
 			"perm": [7, 5, 6, 8, 0, 1, 3, 2, 4], "offset": Vector2(50, 50), "nudge": {2: Vector2(70, 0)},
 			"edges": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [1, 3], [4, 6],
@@ -190,6 +235,7 @@ static func _chapter_3() -> Array[Dictionary]:
 			# A fixed hub: the hexagon must close around it.
 			"id": "m11", "name": "MISSION_M11_NAME", "chapter": 3, "par_time": 120.0,
 			"story": "MISSION_M11_STORY",
+			"cell": [150.0, 95.0, 10.0, 7.0, 0.3],
 			"sol": pts([960, 570, 1280, 570, 1120, 847, 800, 847, 640, 570, 800, 293, 1120, 293, 960, 960]),
 			"fixed": [0],
 			"perm": [0, 4, 6, 7, 2, 1, 3, 5], "offset": Vector2(50, -50), "nudge": {3: Vector2(-90, -10)},
@@ -200,6 +246,7 @@ static func _chapter_3() -> Array[Dictionary]:
 			# Triangulated lattice pinned at two opposite corners.
 			"id": "m12", "name": "MISSION_M12_NAME", "chapter": 3, "par_time": 150.0,
 			"story": "",
+			"cell": [165.0, 110.0, 9.0, 5.0, 1.9],
 			"sol": pts([500, 250, 960, 250, 1420, 250, 500, 570, 960, 570, 1420, 570, 500, 890, 960, 890, 1420, 890]),
 			"fixed": [2, 6],
 			# T7.4 rebalance: start calmed from 24 to 12 crossings.
@@ -211,6 +258,7 @@ static func _chapter_3() -> Array[Dictionary]:
 			# Pentagonal prism with three anchors, inner and outer.
 			"id": "m13", "name": "MISSION_M13_NAME", "chapter": 3, "par_time": 180.0,
 			"story": "MISSION_M13_STORY",
+			"cell": [150.0, 100.0, 11.0, 6.0, 0.9],
 			"sol": pts([960, 190, 1321, 453, 1183, 877, 737, 877, 599, 453,
 				960, 400, 1122, 517, 1060, 708, 860, 708, 798, 517]),
 			"fixed": [0, 4, 7],
@@ -222,9 +270,10 @@ static func _chapter_3() -> Array[Dictionary]:
 			# Four anchored corners pull on a hexagonal wheel; side walls narrow the field.
 			"id": "m14", "name": "MISSION_M14_NAME", "chapter": 3, "par_time": 180.0,
 			"story": "",
+			"cell": [165.0, 100.0, 12.0, 8.0, 2.6],
 			"obstacles": [
-				pts([160, 520, 260, 520, 260, 620, 160, 620]),
-				pts([1660, 520, 1760, 520, 1760, 620, 1660, 620]),
+				Organic.polar(Vector2(440, 570), 62.0, 62.0, [[2, 0.1, 0.4]], 40),
+				Organic.polar(Vector2(1480, 570), 62.0, 62.0, [[2, 0.1, 1.9]], 40),
 			],
 			"sol": pts([960, 570, 1260, 570, 1110, 830, 810, 830, 660, 570, 810, 310, 1110, 310,
 				360, 230, 1560, 230, 1560, 910, 360, 910]),
@@ -248,6 +297,7 @@ static func _chapter_4() -> Array[Dictionary]:
 			# side of the hub, near breaking, and must swing around it instead of across.
 			"id": "m15", "name": "MISSION_M15_NAME", "chapter": 4, "par_time": 150.0,
 			"story": "MISSION_M15_STORY",
+			"cell": [160.0, 100.0, 11.0, 6.0, 0.7],
 			"sol": pts([960, 570, 1220, 570, 1090, 795, 830, 795, 700, 570, 830, 345, 1090, 345, 360, 570, 1560, 570]),
 			"start": pts([960, 570, 680, 640, 1130, 230, 1150, 880, 1240, 500, 780, 850, 720, 360, 1600, 420, 360, 300]),
 			"edges": [[0, 1, 200.0, 330.0], [0, 2], [0, 3], [0, 4, 200.0, 330.0], [0, 5], [0, 6],
@@ -258,6 +308,7 @@ static func _chapter_4() -> Array[Dictionary]:
 			# Ladder whose three tension rungs start flipped upside down.
 			"id": "m16", "name": "MISSION_M16_NAME", "chapter": 4, "par_time": 180.0,
 			"story": "",
+			"cell": [150.0, 90.0, 10.0, 9.0, 2.1],
 			"sol": pts([400, 380, 680, 380, 960, 380, 1240, 380, 1520, 380,
 				400, 760, 680, 760, 960, 760, 1240, 760, 1520, 760]),
 			"start": pts([450, 700, 1170, 830, 970, 640, 740, 820, 1460, 700,
@@ -270,6 +321,7 @@ static func _chapter_4() -> Array[Dictionary]:
 			# Triangular lattice: four tension pairs start swapped as units.
 			"id": "m17", "name": "MISSION_M17_NAME", "chapter": 4, "par_time": 210.0,
 			"story": "MISSION_M17_STORY",
+			"cell": [165.0, 105.0, 12.0, 5.0, 1.2],
 			"sol": pts([640, 250, 960, 250, 1280, 250, 480, 570, 800, 570, 1120, 570, 1440, 570,
 				640, 890, 960, 890, 1280, 890, 1600, 890]),
 			"start": pts([1010, 300, 620, 340, 1230, 830, 580, 830, 1170, 630, 800, 690, 1560, 840,
@@ -282,6 +334,7 @@ static func _chapter_4() -> Array[Dictionary]:
 			# Two wheels joined by a tension bridge; both rims start as pentagrams.
 			"id": "m18", "name": "MISSION_M18_NAME", "chapter": 4, "par_time": 240.0,
 			"story": "",
+			"cell": [150.0, 85.0, 13.0, 7.0, 0.2],
 			"sol": pts([600, 570, 830, 570, 671, 789, 414, 705, 414, 435, 671, 351,
 				1320, 570, 1090, 570, 1249, 351, 1506, 435, 1506, 705, 1249, 789]),
 			"start": pts([600, 570, 786, 705, 529, 321, 529, 789, 786, 432, 360, 587,
@@ -302,10 +355,10 @@ static func _chapter_5() -> Array[Dictionary]:
 	return [
 		{
 			# A cube between two live side walls: plenty of room, one wrong swing is fatal.
-			"id": "m19", "name": "MISSION_M19_NAME", "chapter": 5, "par_time": 120.0,
+			"id": "m19", "name": "MISSION_M19_NAME", "chapter": 6, "par_time": 120.0,
 			"story": "MISSION_M19_STORY",
-			"area": pts([300, 120, 1620, 120, 1620, 1020, 300, 1020]),
-			"lethal_edges": [1, 3],
+			"cell": [190.0, 130.0, 9.0, 6.0, 2.2],
+			"lethal_where": func(mid: Vector2, n: Vector2) -> bool: return absf(n.x) > 0.55 and absf(mid.x - 960.0) > 450.0,
 			"sol": pts([520, 250, 1400, 250, 1400, 890, 520, 890, 760, 430, 1160, 430, 1160, 710, 760, 710]),
 			"start": pts([568, 312, 489, 829, 1348, 927, 1395, 268, 819, 417, 1098, 691, 1124, 378, 704, 732]),
 			"edges": [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4],
@@ -313,12 +366,13 @@ static func _chapter_5() -> Array[Dictionary]:
 		},
 		{
 			# Lattice with two live islands in its empty cells and a live floor.
-			"id": "m20", "name": "MISSION_M20_NAME", "chapter": 5, "par_time": 150.0,
+			"id": "m20", "name": "MISSION_M20_NAME", "chapter": 6, "par_time": 150.0,
 			"story": "",
-			"lethal_edges": [2],
+			"cell": [185.0, 115.0, 10.0, 5.0, 2.4],
+			"lethal_where": func(mid: Vector2, n: Vector2) -> bool: return n.y > 0.55 and mid.y > 880.0,
 			"obstacles": [
-				pts([600, 330, 760, 330, 760, 490, 600, 490]),
-				pts([1160, 650, 1320, 650, 1320, 810, 1160, 810]),
+				Organic.polar(Vector2(680, 410), 96.0, 90.0, [[3, 0.08, 0.7]], 48),
+				Organic.polar(Vector2(1240, 730), 96.0, 90.0, [[3, 0.08, 2.1]], 48),
 			],
 			"lethal_obstacles": [0, 1],
 			"sol": pts([400, 250, 960, 250, 1520, 250, 400, 570, 960, 570, 1520, 570, 400, 870, 960, 870, 1520, 870]),
@@ -328,10 +382,11 @@ static func _chapter_5() -> Array[Dictionary]:
 		},
 		{
 			# U-shaped field whose inner fold is a live wire: everything bends around the core.
-			"id": "m21", "name": "MISSION_M21_NAME", "chapter": 5, "par_time": 180.0,
+			"id": "m21", "name": "MISSION_M21_NAME", "chapter": 6, "par_time": 180.0,
 			"story": "MISSION_M21_STORY",
-			"area": pts([160, 120, 620, 120, 620, 640, 1300, 640, 1300, 120, 1760, 120, 1760, 1020, 160, 1020]),
-			"lethal_edges": [1, 2, 3],
+			"area": Organic.wobble(Organic.rounded(
+				pts([160, 120, 620, 120, 620, 640, 1300, 640, 1300, 120, 1760, 120, 1760, 1020, 160, 1020]), 50.0), 8.0, 6.0, 0.6),
+			"lethal_where": func(mid: Vector2, _n: Vector2) -> bool: return mid.x > 590.0 and mid.x < 1330.0 and mid.y > 165.0 and mid.y < 700.0,
 			"sol": pts([390, 250, 390, 560, 390, 880, 760, 880, 1160, 880, 1530, 880, 1530, 560, 1530, 250,
 				960, 790, 560, 800]),
 			"start": pts([598, 858, 370, 531, 400, 916, 777, 916, 1142, 926, 1496, 895, 404, 201, 1587, 563,
@@ -348,8 +403,9 @@ static func _chapter_6() -> Array[Dictionary]:
 	return [
 		{
 			# One receptor inside a ring: bring a single neuron into its halo.
-			"id": "m22", "name": "MISSION_M22_NAME", "chapter": 6, "par_time": 90.0,
+			"id": "m22", "name": "MISSION_M22_NAME", "chapter": 7, "par_time": 90.0,
 			"story": "MISSION_M22_STORY",
+			"cell": [160.0, 100.0, 10.0, 6.0, 0.5],
 			"receptors": {6: [150.0, 1]},
 			"sol": pts([960, 400, 1260, 420, 1300, 720, 960, 860, 620, 720, 660, 420, 960, 570]),
 			"start": pts([1210, 471, 1000, 332, 1330, 759, 581, 781, 1011, 824, 652, 448, 960, 570]),
@@ -357,8 +413,9 @@ static func _chapter_6() -> Array[Dictionary]:
 		},
 		{
 			# Two receptors guard the flanks; each needs one partner.
-			"id": "m23", "name": "MISSION_M23_NAME", "chapter": 6, "par_time": 120.0,
+			"id": "m23", "name": "MISSION_M23_NAME", "chapter": 7, "par_time": 120.0,
 			"story": "",
+			"cell": [155.0, 95.0, 11.0, 7.0, 1.7],
 			"receptors": {8: [160.0, 1], 9: [160.0, 1]},
 			"sol": pts([560, 300, 480, 570, 560, 840, 1360, 300, 1440, 570, 1360, 840, 960, 420, 960, 720,
 				300, 570, 1620, 570]),
@@ -369,8 +426,9 @@ static func _chapter_6() -> Array[Dictionary]:
 		},
 		{
 			# A double receptor at the heart of two diamonds: it wants one neuron from each.
-			"id": "m24", "name": "MISSION_M24_NAME", "chapter": 6, "par_time": 150.0,
+			"id": "m24", "name": "MISSION_M24_NAME", "chapter": 7, "par_time": 150.0,
 			"story": "MISSION_M24_STORY",
+			"cell": [150.0, 90.0, 12.0, 5.0, 2.8],
 			"receptors": {10: [140.0, 2]},
 			"sol": pts([800, 570, 1120, 570, 600, 300, 600, 840, 1320, 300, 1320, 840, 960, 250, 960, 890,
 				400, 570, 1520, 570, 960, 570]),
@@ -381,8 +439,9 @@ static func _chapter_6() -> Array[Dictionary]:
 		},
 		{
 			# Receptors above and below a ladder with fragile rungs.
-			"id": "m25", "name": "MISSION_M25_NAME", "chapter": 6, "par_time": 180.0,
+			"id": "m25", "name": "MISSION_M25_NAME", "chapter": 7, "par_time": 180.0,
 			"story": "",
+			"cell": [150.0, 95.0, 10.0, 8.0, 0.4],
 			"receptors": {9: [175.0, 2], 10: [140.0, 1]},
 			"sol": pts([500, 330, 780, 330, 1060, 330, 1340, 330, 500, 810, 780, 810, 1060, 810, 1340, 810,
 				1600, 570, 920, 190, 980, 950]),
@@ -401,11 +460,12 @@ static func _chapter_7() -> Array[Dictionary]:
 	return [
 		{
 			# 4x3 lattice with a live island, a solid island and two anchors (was m19).
-			"id": "m26", "name": "MISSION_M26_NAME", "chapter": 7, "par_time": 210.0,
+			"id": "m26", "name": "MISSION_M26_NAME", "chapter": 9, "par_time": 210.0,
 			"story": "MISSION_M26_STORY",
+			"cell": [165.0, 110.0, 12.0, 6.0, 1.3],
 			"obstacles": [
-				pts([880, 355, 1040, 355, 1040, 465, 880, 465]),
-				pts([1253, 675, 1413, 675, 1413, 785, 1253, 785]),
+				Organic.polar(Vector2(960, 410), 92.0, 66.0, [[3, 0.06, 0.4]], 44),
+				Organic.polar(Vector2(1333, 730), 94.0, 68.0, [[3, 0.06, 1.7]], 44),
 			],
 			"lethal_obstacles": [0],
 			"sol": pts([400, 250, 773, 250, 1146, 250, 1520, 250, 400, 570, 773, 570, 1146, 570, 1520, 570,
@@ -419,10 +479,10 @@ static func _chapter_7() -> Array[Dictionary]:
 		},
 		{
 			# A double receptor in a hexagon between live walls; two spokes are fragile.
-			"id": "m27", "name": "MISSION_M27_NAME", "chapter": 7, "par_time": 210.0,
+			"id": "m27", "name": "MISSION_M27_NAME", "chapter": 9, "par_time": 210.0,
 			"story": "",
-			"area": pts([260, 120, 1660, 120, 1660, 1020, 260, 1020]),
-			"lethal_edges": [1, 3],
+			"cell": [175.0, 115.0, 11.0, 7.0, 2.0],
+			"lethal_where": func(mid: Vector2, n: Vector2) -> bool: return absf(n.x) > 0.55 and absf(mid.x - 960.0) > 400.0,
 			"receptors": {12: [130.0, 2]},
 			"sol": pts([960, 450, 1180, 500, 1180, 700, 960, 750, 740, 700, 740, 500,
 				960, 200, 1460, 300, 1460, 840, 960, 940, 460, 840, 460, 300, 960, 600]),
@@ -435,10 +495,11 @@ static func _chapter_7() -> Array[Dictionary]:
 		{
 			# Hexagonal field with live slanted walls, a fixed hub and three folded tension pairs
 			# (was m20; start calmed).
-			"id": "m28", "name": "MISSION_M28_NAME", "chapter": 7, "par_time": 240.0,
+			"id": "m28", "name": "MISSION_M28_NAME", "chapter": 9, "par_time": 240.0,
 			"story": "MISSION_M28_STORY",
-			"area": pts([360, 120, 1560, 120, 1760, 570, 1560, 1020, 360, 1020, 160, 570]),
-			"lethal_edges": [1, 2, 4, 5],
+			"area": Organic.wobble(Organic.rounded(
+				pts([360, 120, 1560, 120, 1760, 570, 1560, 1020, 360, 1020, 160, 570]), 70.0), 9.0, 7.0, 1.4),
+			"lethal_where": func(_mid: Vector2, n: Vector2) -> bool: return absf(n.x) > 0.6,
 			"sol": pts([960, 570, 1190, 570, 1075, 769, 845, 769, 730, 570, 845, 371, 1075, 371,
 				1306, 770, 960, 970, 614, 770, 614, 370, 960, 170, 1306, 370]),
 			"fixed": [0, 8],
@@ -452,9 +513,10 @@ static func _chapter_7() -> Array[Dictionary]:
 		},
 		{
 			# Anchored lattice around a live core; a double receptor waits below.
-			"id": "m29", "name": "MISSION_M29_NAME", "chapter": 7, "par_time": 240.0,
+			"id": "m29", "name": "MISSION_M29_NAME", "chapter": 9, "par_time": 240.0,
 			"story": "",
-			"obstacles": [pts([900, 420, 1020, 420, 1020, 540, 900, 540])],
+			"cell": [160.0, 100.0, 11.0, 5.0, 0.8],
+			"obstacles": [Organic.polar(Vector2(960, 480), 66.0, 62.0, [[3, 0.08, 0.9]], 40)],
 			"lethal_obstacles": [0],
 			"receptors": {12: [140.0, 2]},
 			"sol": pts([500, 260, 960, 230, 1420, 260, 500, 560, 1420, 560, 500, 860, 1420, 860,
@@ -469,10 +531,11 @@ static func _chapter_7() -> Array[Dictionary]:
 		{
 			# Two hemispheres around a live core, bridged by tension, anchored top and bottom; a
 			# receptor in each hemisphere (was m21).
-			"id": "m30", "name": "MISSION_M30_NAME", "chapter": 7, "par_time": 270.0,
+			"id": "m30", "name": "MISSION_M30_NAME", "chapter": 9, "par_time": 270.0,
 			"story": "MISSION_M30_STORY",
-			"area": pts([260, 120, 1660, 120, 1760, 220, 1760, 920, 1660, 1020, 260, 1020, 160, 920, 160, 220]),
-			"obstacles": [pts([900, 500, 1020, 500, 1020, 640, 900, 640])],
+			"area": Organic.wobble(Organic.rounded(
+				pts([260, 120, 1660, 120, 1760, 220, 1760, 920, 1660, 1020, 260, 1020, 160, 920, 160, 220]), 90.0), 10.0, 7.0, 2.9),
+			"obstacles": [Organic.polar(Vector2(960, 570), 66.0, 82.0, [[2, 0.07, 0.3]], 44)],
 			"lethal_obstacles": [0],
 			"receptors": {14: [180.0, 1], 15: [140.0, 1]},
 			"sol": pts([580, 310, 805, 440, 805, 700, 580, 830, 355, 700, 355, 440,
@@ -490,3 +553,302 @@ static func _chapter_7() -> Array[Dictionary]:
 				[5, 1], [4, 2], [11, 7], [10, 8]],
 		},
 	]
+
+
+# =============================================================================
+# T8.4 / T8.5 / T8.6: new missions m31..m48. Layouts come from tools/layouts.gd (seeded, planar by
+# start layout that tools/find_start.gd searches (pasted so the data stays reviewable).
+# Pars: about twice the planned moves, generous times (the human retunes them from the
+# measurement mode).
+# =============================================================================
+
+# --- Bosses of the first chapters --------------------------------------------
+
+## Boss 1 (First Signals): plain cycles at scale in a tri-lobed cell.
+static func _boss_gatekeeper() -> Dictionary:
+	var area := Organic.polar(Vector2(960, 570), 600.0, 380.0, [[3, 0.16, 0.5]], 120)
+	var sol := Layouts.scatter(area, [], 10, 190.0, 60.0, 3101)
+	return {
+		"id": "m31", "name": "MISSION_M31_NAME", "chapter": 1, "boss": true, "par_time": 240.0,
+		"story": "MISSION_M31_STORY",
+		"area": area,
+		"sol": sol,
+		"edges": Layouts.planar_edges(sol, 430.0, 60.0, 0.25, 3101),
+	}
+
+
+## Boss 2 (Shaped Minds): a ring around a lobed island, two pillars split it into corridors.
+static func _boss_labyrinth() -> Dictionary:
+	var area := Organic.polar(Vector2(960, 570), 760.0, 440.0, [[2, 0.05, 0.3]], 140)
+	var obstacles := [
+		Organic.polar(Vector2(960, 570), 330.0, 150.0, [[3, 0.08, 1.0]], 64),
+		Organic.polar(Vector2(430, 570), 62.0, 70.0, [[2, 0.1, 0.4]], 36),
+		Organic.polar(Vector2(1490, 570), 62.0, 70.0, [[2, 0.1, 1.9]], 36),
+	]
+	var sol := Layouts.scatter(area, obstacles, 12, 190.0, 60.0, 3201)
+	return {
+		"id": "m32", "name": "MISSION_M32_NAME", "chapter": 2, "boss": true, "par_time": 270.0,
+		"story": "MISSION_M32_STORY",
+		"area": area,
+		"obstacles": obstacles,
+		"sol": sol,
+		"edges": Layouts.planar_edges(sol, 400.0, 60.0, 0.25, 3201),
+	}
+
+
+## Boss 3 (Anchored): an hourglass; three red anchors pin the tips and the neck.
+static func _boss_bottleneck() -> Dictionary:
+	var area := Organic.hourglass(Vector2(960, 570), 700.0, 135.0, 340.0)
+	var sol := Layouts.scatter(area, [], 13, 165.0, 60.0, 3301)
+	var fixed := [Layouts.nearest_index(sol, Vector2(330, 570)), Layouts.nearest_index(sol, Vector2(1590, 570)),
+		Layouts.nearest_index(sol, Vector2(960, 570))]
+	return {
+		"id": "m33", "name": "MISSION_M33_NAME", "chapter": 3, "boss": true, "par_time": 300.0,
+		"story": "MISSION_M33_STORY",
+		"area": area,
+		"sol": sol,
+		"fixed": fixed,
+		"edges": Layouts.planar_edges(sol, 400.0, 60.0, 0.2, 3301),
+	}
+
+
+## Boss 4 (Tension): a crescent; five taut bonds follow its curve.
+static func _boss_crescent() -> Dictionary:
+	var area := Organic.crescent(Vector2(960, 570), 720.0, 430.0, Vector2(1180, 560), 400.0, 240.0)
+	var sol := Layouts.scatter(area, [], 13, 190.0, 60.0, 3401)
+	var edges := Layouts.planar_edges(sol, 400.0, 60.0, 0.2, 3401)
+	return {
+		"id": "m34", "name": "MISSION_M34_NAME", "chapter": 4, "boss": true, "par_time": 300.0,
+		"story": "MISSION_M34_STORY",
+		"area": area,
+		"sol": sol,
+		"edges": Layouts.with_tension(sol, edges, 5, 200.0, 2),
+	}
+
+
+# --- Chapter 5: Pruning (diseased dendrites) -----------------------------------
+
+static func _chapter_pruning() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	result.append(_pruning_spec("m35", 7, 3501, 1, 0, 0, 520.0, 330.0, [[2, 0.14, 0.4]], 90.0, "MISSION_M35_STORY"))
+	result.append(_pruning_spec("m36", 8, 3601, 2, 0, 0, 640.0, 330.0, [[2, -0.2, 0.0]], 120.0, ""))
+	result.append(_pruning_spec("m37", 9, 3701, 3, 1, 0, 560.0, 360.0, [[3, 0.14, 1.0]], 150.0, "MISSION_M37_STORY"))
+	result.append(_pruning_spec("m38", 10, 3801, 2, 0, 3, 640.0, 380.0, [[4, 0.1, 0.2], [2, 0.08, 0.0]], 180.0, ""))
+	result.append(_boss_bramble())
+	return result
+
+
+## A Pruning mission: neuron count, seed, diseased chords, anchors and tension bonds.
+static func _pruning_spec(id: String, count: int, seed_value: int, chords: int, anchors: int,
+		tension_count: int, rx: float, ry: float, harmonics: Array, par_time: float, story: String) -> Dictionary:
+	var area := Organic.polar(Vector2(960, 570), rx, ry, harmonics, 110)
+	var sol := Layouts.scatter(area, [], count, 200.0, 60.0, seed_value)
+	var edges := Layouts.planar_edges(sol, 480.0, 58.0, 0.15, seed_value)
+	var fixed := []
+	if anchors > 0:
+		fixed.append(Layouts.nearest_index(sol, Vector2(960 - rx * 0.8, 570)))
+	edges = Layouts.with_tension(sol, edges, tension_count, 200.0, 1)
+	var diseased := Layouts.chords(sol, edges, chords, 280.0, 480.0, 58.0, seed_value + 7, fixed)
+	for pair: Array in diseased:
+		edges.append(Layouts.diseased(sol, pair))
+	var spec := {
+		"id": id, "name": "MISSION_%s_NAME" % id.to_upper(), "chapter": 5, "par_time": par_time,
+		"story": story,
+		"area": area,
+		"sol": sol,
+		"edges": edges,
+	}
+	if not fixed.is_empty():
+		spec["fixed"] = fixed
+	return spec
+
+
+## Boss 5 (Pruning): an amoeba; four diseased chords, three taut bonds and two anchors.
+static func _boss_bramble() -> Dictionary:
+	var area := Organic.polar(Vector2(960, 570), 600.0, 400.0, [[2, 0.16, 0.3], [5, 0.08, 1.2], [3, 0.07, 2.0]], 160)
+	var sol := Layouts.scatter(area, [], 13, 170.0, 60.0, 3901)
+	var fixed := [Layouts.nearest_index(sol, Vector2(300, 570)), Layouts.nearest_index(sol, Vector2(1620, 570))]
+	var edges := Layouts.with_tension(sol, Layouts.planar_edges(sol, 400.0, 60.0, 0.2, 3901), 3, 200.0, 2)
+	for pair: Array in Layouts.chords(sol, edges, 4, 280.0, 480.0, 58.0, 3908, fixed):
+		edges.append(Layouts.diseased(sol, pair))
+	return {
+		"id": "m39", "name": "MISSION_M39_NAME", "chapter": 5, "boss": true, "par_time": 300.0,
+		"story": "MISSION_M39_STORY",
+		"area": area,
+		"sol": sol,
+		"fixed": fixed,
+		"edges": edges,
+	}
+
+
+# --- Chapter 6: Live Wires (one more regular mission and the boss) ---------------
+
+static func _chapter_live_wires_extra() -> Array[Dictionary]:
+	var area := Organic.polar(Vector2(960, 570), 640.0, 380.0, [[4, 0.08, 0.0]], 120)
+	var lethal := Organic.edges_where(area, func(mid: Vector2, n: Vector2) -> bool:
+		return absf(n.x) > 0.5 and absf(mid.x - 960.0) > 380.0)
+	var sol := Layouts.scatter(area, [], 11, 200.0, 60.0, 4001, Organic.edge_segments(area, lethal), 60.0)
+	var fixed := [Layouts.nearest_index(sol, Vector2(960, 570))]
+	return [{
+		"id": "m40", "name": "MISSION_M40_NAME", "chapter": 6, "par_time": 210.0,
+		"story": "",
+		"area": area,
+		"lethal_edges": lethal,
+		"sol": sol,
+		"fixed": fixed,
+		"edges": Layouts.planar_edges(sol, 420.0, 60.0, 0.2, 4001),
+	}]
+
+
+## Boss 6 (Live Wires): two bubbles joined by a live waist, live caps at both ends.
+static func _boss_arc_warden() -> Dictionary:
+	var left := Organic.polar(Vector2(690, 570), 430.0, 390.0, [[3, 0.05, 0.4]], 100)
+	var right := Organic.polar(Vector2(1230, 570), 430.0, 390.0, [[3, 0.05, 1.8]], 100)
+	var area := Organic.union(left, right)
+	var lethal := Organic.edges_where(area, func(mid: Vector2, n: Vector2) -> bool:
+		return (absf(n.y) > 0.45 and absf(mid.x - 960.0) < 150.0) or (absf(n.x) > 0.7 and absf(mid.x - 960.0) > 560.0))
+	var sol := Layouts.scatter(area, [], 14, 190.0, 60.0, 4101, Organic.edge_segments(area, lethal), 60.0)
+	var edges := Layouts.with_tension(sol, Layouts.planar_edges(sol, 410.0, 60.0, 0.2, 4101), 2, 200.0, 3)
+	return {
+		"id": "m41", "name": "MISSION_M41_NAME", "chapter": 6, "boss": true, "par_time": 300.0,
+		"story": "MISSION_M41_STORY",
+		"area": area,
+		"lethal_edges": lethal,
+		"sol": sol,
+		"fixed": [Layouts.nearest_index(sol, Vector2(960, 570))],
+		"edges": edges,
+	}
+
+
+# --- Chapter 7: Synapses boss ---------------------------------------------------------
+
+## Boss 7 (Synapses): a quatrefoil with three receptors (one needs two partners) and taut bonds.
+static func _boss_receptor_queen() -> Dictionary:
+	var area := Organic.polar(Vector2(960, 570), 650.0, 380.0, [[4, 0.16, 0.4]], 140)
+	var sol := Layouts.scatter(area, [], 14, 170.0, 60.0, 4201)
+	var required := [2, 1, 1]
+	var sites := Layouts.dense_sites(sol, required, 380.0)
+	var defs: Array = []
+	for k in sites.size():
+		defs.append([sites[k], required[k], 0])
+	var receptors: Dictionary = Layouts.receptor_plans(sol, defs)["receptors"]
+	var edges := Layouts.planar_edges(sol, 480.0, 58.0, 0.0, 4201)
+	edges = edges.filter(func(e: Array) -> bool: return not receptors.has(e[0]) and not receptors.has(e[1]))
+	return {
+		"id": "m42", "name": "MISSION_M42_NAME", "chapter": 7, "boss": true, "par_time": 300.0,
+		"story": "MISSION_M42_STORY",
+		"area": area,
+		"sol": sol,
+		"receptors": receptors,
+		"edges": Layouts.with_tension(sol, edges, 2, 200.0, 1),
+	}
+
+
+# --- Chapter 8: Contagion (toxic neurons) ------------------------------------------------
+
+static func _chapter_contagion() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	result.append(_contagion_spec("m43", 7, 4301, [[1, 1]], 0, 520.0, 330.0,
+		[[2, 0.1, 1.2], [3, 0.05, 0.0]], 120.0, "MISSION_M43_STORY"))
+	result.append(_contagion_spec("m44", 9, 4401, [[1, 1], [1, 1]], 0, 600.0, 360.0,
+		[[3, 0.12, 2.0]], 150.0, ""))
+	result.append(_contagion_spec("m45", 10, 4501, [[2, 2]], 2, 640.0, 380.0,
+		[[5, 0.09, 0.7], [2, 0.1, 0.0]], 180.0, "MISSION_M45_STORY"))
+	result.append(_contagion_spec("m46", 11, 4601, [[1, 1], [2, 1]], 2, 660.0, 400.0,
+		[[3, 0.1, 0.4], [2, 0.08, 1.1]], 210.0, ""))
+	result.append(_boss_patient_zero())
+	return result
+
+
+## A Contagion mission: a blob arena, receptor_defs [[required_links, toxic_count], ...] (the
+## receptors are the points nearest to evenly spread spots), taut bonds when asked.
+static func _contagion_spec(id: String, count: int, seed_value: int, receptor_defs: Array,
+		tension_count: int, rx: float, ry: float, harmonics: Array, par_time: float,
+		story: String) -> Dictionary:
+	var center := Vector2(960, 570)
+	var area := Organic.polar(center, rx, ry, harmonics, 110)
+	var sol := Layouts.scatter(area, [], count, 190.0, 60.0, seed_value)
+	var defs: Array = []
+	for k in receptor_defs.size():
+		var angle := TAU * (k + 0.35) / receptor_defs.size()
+		var target := center + Vector2(cos(angle) * rx * 0.45, sin(angle) * ry * 0.45)
+		defs.append([Layouts.nearest_index(sol, target), receptor_defs[k][0], receptor_defs[k][1]])
+	var plan := Layouts.receptor_plans(sol, defs)
+	var receptors: Dictionary = plan["receptors"]
+	var edges := Layouts.planar_edges(sol, 480.0, 58.0, 0.0, seed_value)
+	edges = edges.filter(func(e: Array) -> bool: return not receptors.has(e[0]) and not receptors.has(e[1]))
+	return {
+		"id": id, "name": "MISSION_%s_NAME" % id.to_upper(), "chapter": 8, "par_time": par_time,
+		"story": story,
+		"area": area,
+		"sol": sol,
+		"receptors": receptors,
+		"toxic": plan["toxic"],
+		"edges": Layouts.with_tension(sol, edges, tension_count, 200.0, 1),
+	}
+
+
+## Boss 8 (Contagion), HARD toxic: a ring around a lobed island, three receptors, three toxic
+## neurons: one contamination link and the toxic neuron explodes.
+static func _boss_patient_zero() -> Dictionary:
+	var area := Organic.polar(Vector2(960, 570), 690.0, 440.0, [[2, 0.05, 0.3]], 140)
+	var obstacles := [Organic.polar(Vector2(960, 570), 230.0, 130.0, [[3, 0.1, 0.0]], 56)]
+	var sol := Layouts.scatter(area, obstacles, 14, 170.0, 60.0, 4701)
+	var required := [2, 1, 1]
+	var sites := Layouts.dense_sites(sol, required, 380.0)
+	var defs: Array = []
+	for k in 3:
+		defs.append([sites[k], required[k], 1])
+	var plan := Layouts.receptor_plans(sol, defs)
+	var receptors: Dictionary = plan["receptors"]
+	var edges := Layouts.planar_edges(sol, 480.0, 58.0, 0.0, 4701)
+	edges = edges.filter(func(e: Array) -> bool: return not receptors.has(e[0]) and not receptors.has(e[1]))
+	return {
+		"id": "m47", "name": "MISSION_M47_NAME", "chapter": 8, "boss": true, "hard_toxic": true,
+		"par_time": 300.0,
+		"story": "MISSION_M47_STORY",
+		"area": area,
+		"obstacles": obstacles,
+		"sol": sol,
+		"receptors": receptors,
+		"toxic": plan["toxic"],
+		"edges": Layouts.with_tension(sol, edges, 2, 200.0, 2),
+	}
+
+
+# --- Chapter 9: Convergence boss -----------------------------------------------------------
+
+## Final boss: every mechanic on a big lobed cell with a live island and live arcs: anchors, taut
+## bonds, diseased chords, receptors, toxic neurons (HARD).
+static func _boss_core() -> Dictionary:
+	var area := Organic.polar(Vector2(960, 570), 760.0, 440.0, [[3, 0.1, 0.2], [2, 0.07, 1.4]], 180)
+	var obstacles := [Organic.polar(Vector2(960, 570), 120.0, 90.0, [[3, 0.08, 0.6]], 48)]
+	var lethal := Organic.edges_where(area, func(mid: Vector2, n: Vector2) -> bool:
+		return n.y < -0.6 and absf(mid.x - 960.0) < 330.0)
+	var sol := Layouts.scatter(area, obstacles, 16, 180.0, 60.0, 4801, Organic.edge_segments(area, lethal), 60.0)
+	var fixed := [Layouts.nearest_index(sol, Vector2(330, 570)), Layouts.nearest_index(sol, Vector2(1590, 570))]
+	var sites := Layouts.dense_sites(sol, [2, 1], 400.0, fixed)
+	var defs := [[sites[0], 2, 1], [sites[1], 1, 1]]
+	var plan := Layouts.receptor_plans(sol, defs, fixed)
+	var receptors: Dictionary = plan["receptors"]
+	var toxic: Array = plan["toxic"]
+	var receptor_ids: Array = receptors.keys()
+	var edges := Layouts.planar_edges(sol, 480.0, 58.0, 0.1, 4801)
+	edges = edges.filter(func(e: Array) -> bool: return not receptors.has(e[0]) and not receptors.has(e[1]))
+	edges = Layouts.with_tension(sol, edges, 3, 200.0, 2)
+	for pair: Array in Layouts.chords(sol, edges, 2, 280.0, 480.0, 58.0, 4808, fixed + receptor_ids + toxic):
+		edges.append(Layouts.diseased(sol, pair))
+	return {
+		"id": "m48", "name": "MISSION_M48_NAME", "chapter": 9, "boss": true, "hard_toxic": true,
+		"par_time": 300.0,
+		"story": "MISSION_M48_STORY",
+		"area": area,
+		"obstacles": obstacles,
+		"lethal_edges": lethal,
+		"lethal_obstacles": [0],
+		"sol": sol,
+		"fixed": fixed,
+		"receptors": receptors,
+		"toxic": toxic,
+		"edges": edges,
+	}
