@@ -98,6 +98,17 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
 - [x] **T7.5 Docs** — SDD 2/3/4/5.4/7/8 and this plan.
   (Evidence in `odd/tasks/sparks-hazards-synapses.md`.)
 
+## Phase 8 — Measurement, toxic neurons and diseased dendrites (run A)
+
+- [x] **T8.1 Measurement mode** — developer-only, off by default (`--measure` user arg or F9, small MEASURE tag); `scripts/dev/measurement.gd` logs one CSV row per attempt to `user://measurements.csv`; `tools/analyze_measurements.gd` summarizes per mission and proposes pars (3 stars ~ best x 1.15), `--apply` rewrites `tools/level_specs.gd`. Removal list in `odd/tasks/measure-toxic-bosses.md`.
+  Skills: `godot-prompter:godot-testing`, `godot-prompter:save-load`
+- [x] **T8.2 Toxic neurons** — `NeuronData.Kind.TOXIC`, contamination links (soft rule), validation, yellow soma and warning glow, yellow dashed contamination link, HUD hint, alarm / clear sounds, planner keeps toxic neurons out of reach.
+  Skills: `godot-prompter:math-essentials`, `godot-prompter:shader-basics`, `godot-prompter:audio-system`, `godot-prompter:localization`
+- [x] **T8.3 Diseased dendrites** — `DendriteData.Kind.DISEASED`, broken set and win rule, validation, dark orange ember line with cracks, ember sparks and snap effect, crack / snap sounds, HUD counter, planner breaks them.
+  Skills: `godot-prompter:particles-vfx`, `godot-prompter:shader-basics`, `godot-prompter:audio-system`
+- [ ] T8.4-T8.7 (campaign reorganization, organic arenas, bosses, docs): run B.
+  (Evidence in `odd/tasks/measure-toxic-bosses.md`.)
+
 ## Open items (SDD section 10)
 
 - GDScript only; restart button in every level; local save format; chapter unlock rules. (Test framework decided: gdUnit4.)

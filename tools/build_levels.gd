@@ -116,8 +116,8 @@ static func build_level(spec: Dictionary) -> LevelData:
 		var dendrite := DendriteData.new()
 		dendrite.a = edge[0]
 		dendrite.b = edge[1]
-		if edge.size() == 4:
-			dendrite.kind = DendriteData.Kind.TENSION
+		if edge.size() >= 4:
+			dendrite.kind = DendriteData.Kind.DISEASED if edge.size() == 5 else DendriteData.Kind.TENSION
 			dendrite.rest_length = edge[2]
 			dendrite.max_length = edge[3]
 		dendrites.append(dendrite)
@@ -160,7 +160,7 @@ static func level_text(level: LevelData) -> String:
 		lines.append('script = ExtResource("3_dendrite")')
 		lines.append("a = %d" % dendrite.a)
 		lines.append("b = %d" % dendrite.b)
-		if dendrite.is_tension():
+		if dendrite.is_tension() or dendrite.is_diseased():
 			lines.append("kind = %d" % dendrite.kind)
 			lines.append("max_length = %s" % _float(dendrite.max_length))
 			lines.append("rest_length = %s" % _float(dendrite.rest_length))

@@ -84,6 +84,15 @@ const TOXIC_WARN_IDLE := 0.3
 ## Warning glow eases at this rate (amount per second).
 const TOXIC_WARN_RATE := 5.0
 
+# --- Diseased dendrites (T8.3) --------------------------------------------------------
+## Cracks start opening at this strain ratio and peak at 1.
+const DISEASED_CRACK_START := 0.35
+const DISEASED_SNAP_TIME := 0.5
+const DISEASED_WIDTH_REST := 3.8
+const DISEASED_WIDTH_BREAK := 1.7
+## Light shake of a snap (a fraction of the tension break shake).
+const DISEASED_SHAKE_FACTOR := 0.45
+
 const GOLDEN_ANGLE := 2.39996323
 
 
@@ -108,6 +117,17 @@ static func tension_width(ratio: float) -> float:
 ## Sideways tremble amplitude in px: 0 below TENSION_WARNING_START, MAX_TREMBLE at the limit.
 static func tension_tremble(ratio: float) -> float:
 	return MAX_TREMBLE * _warning(ratio)
+
+
+## Line width of a diseased dendrite: thick and rotten at rest, thinning towards the break.
+static func diseased_width(ratio: float) -> float:
+	return lerpf(DISEASED_WIDTH_REST, DISEASED_WIDTH_BREAK, clampf(ratio, 0.0, 1.0))
+
+
+## Crack amount 0..1 of a diseased dendrite: 0 below DISEASED_CRACK_START, 1 at its break length.
+static func diseased_crack(ratio: float) -> float:
+	var t := clampf((ratio - DISEASED_CRACK_START) / (1.0 - DISEASED_CRACK_START), 0.0, 1.0)
+	return t * t
 
 
 ## Warning flicker depth 0..MAX_FLICKER, rising towards the limit.

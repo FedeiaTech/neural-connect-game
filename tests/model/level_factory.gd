@@ -39,6 +39,14 @@ static func tension_edge(a: int, b: int, rest_length: float, max_length: float) 
 	return data
 
 
+static func diseased_edge(a: int, b: int, rest_length: float, max_length: float) -> DendriteData:
+	var data := edge(a, b)
+	data.kind = DendriteData.Kind.DISEASED
+	data.rest_length = rest_length
+	data.max_length = max_length
+	return data
+
+
 ## An immovable cyan receptor (solution position = position).
 static func receptor(id: int, position: Vector2, reach := 120.0, required := 1) -> NeuronData:
 	var data := neuron(id, position)

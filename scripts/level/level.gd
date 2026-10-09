@@ -30,6 +30,7 @@ func _ready() -> void:
 	_controller.move_count_changed.connect(_hud.set_moves)
 	_controller.time_changed.connect(_hud.set_time)
 	_controller.contamination_changed.connect(_hud.set_contaminated)
+	_controller.diseased_progress_changed.connect(_hud.set_diseased_progress)
 	_controller.level_completed.connect(_on_level_completed)
 	_controller.level_restart_requested.connect(_on_level_restarted)
 	_hud.restart_pressed.connect(_on_restart_pressed)

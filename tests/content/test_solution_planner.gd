@@ -66,6 +66,21 @@ func test_plans_around_a_receptor_reach_for_a_toxic_neuron() -> void:
 	assert_bool(model.is_solved()).is_true()
 
 
+## T8.3: the plan stretches a diseased dendrite past its limit on purpose; the replay ends solved
+## with it broken (the solution layout has it stretched, so validation passes too).
+func test_plans_the_break_of_a_diseased_dendrite() -> void:
+	var neurons: Array[NeuronData] = [
+		LevelFactory.neuron(20, Vector2(200, 300)),
+		LevelFactory.neuron(21, Vector2(350, 300), Vector2(650, 300)),
+	]
+	var dendrites: Array[DendriteData] = []
+	_x_tangle(neurons, dendrites)
+	dendrites.append(LevelFactory.diseased_edge(20, 21, 100.0, 300.0))
+	var model := _assert_solves(LevelFactory.level(neurons, dendrites))
+	assert_bool(model.is_edge_broken(2)).is_true()
+	assert_bool(model.are_diseased_broken()).is_true()
+
+
 func test_keeps_away_from_lethal_walls() -> void:
 	var neurons: Array[NeuronData] = []
 	var dendrites: Array[DendriteData] = []

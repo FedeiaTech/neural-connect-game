@@ -13,7 +13,9 @@ extends Node
 ## neuron into the first receptor's reach (fresh link growing / near the reach limit).
 ## T8: mission ids fixture_toxic / fixture_diseased load the test levels of
 ## tests/visual/fixtures.gd. contam (fixture_toxic): the toxic neuron is dragged into the first
-## receptor's reach (contamination link, alarm glow, HUD hint). measure: the developer measurement
+## receptor's reach (contamination link, alarm glow, HUD hint). dstrain / dsnap (fixture_diseased):
+## the first diseased dendrite is stretched to 90 % of its strain range (cracks, tremble, embers) /
+## past its break length (snap effect, captured shortly after). measure: the developer measurement
 ## tag is shown (rows go to a throwaway CSV).
 
 const LevelScene := preload("res://scenes/level/level.tscn")
@@ -60,9 +62,9 @@ func _ready() -> void:
 	if _mode == "explode":
 		_target = maxi(_target, 90)
 	_level.load_level(data)
-	if _mode == "measure":
-		_level.get_measurement().csv_path = "user://capture_measure.csv"
-		_level.get_measurement().set_enabled(true)
+	if _mode == "measure":  # MEASURE-MODE
+		_level.get_measurement().csv_path = "user://capture_measure.csv"  # MEASURE-MODE
+		_level.get_measurement().set_enabled(true)  # MEASURE-MODE
 	_level.get_hud().hide_story()
 	_level.get_controller().start_playing()
 
@@ -162,6 +164,8 @@ func _trigger() -> void:
 			_drive_to_receptor(model, 0.45 if _mode == "link" else 0.96)
 		"contam":
 			_drive_toxic_into_reach(model)
+		"dstrain", "dsnap":
+			_drive_diseased(model, 0.9 if _mode == "dstrain" else 1.2)
 
 
 ## Pulls the movable neuron closest to the first receptor into its reach, ending at the given
@@ -232,3 +236,21 @@ func _drive_toxic_into_reach(model: PuzzleModel) -> void:
 		model.drag_to(center + direction * (model.get_neuron_radius() + model.get_receptor_reach(receptor) * 0.9))
 		_frames = maxi(_frames, _target - 20)
 		return
+
+
+## Stretches the first diseased dendrite along its own direction to rest + ratio * (max - rest);
+## a ratio above 1 breaks it. The grabbed end is the second endpoint.
+func _drive_diseased(model: PuzzleModel, ratio: float) -> void:
+	var edges := model.get_diseased_edges()
+	if edges.is_empty():
+		return
+	var edge_id := edges[0]
+	var data: DendriteData = _level.get_controller().get_level().dendrites[edge_id]
+	var ends := model.get_edge_endpoints(edge_id)
+	var anchor := model.get_neuron_position(ends.x)
+	var direction := (model.get_neuron_position(ends.y) - anchor).normalized()
+	model.grab(ends.y)
+	_level.get_controller().get_neuron_view(ends.y).set_grabbed(true)
+	model.drag_to(anchor + direction * (data.rest_length + ratio * (data.max_length - data.rest_length)))
+	if _mode == "dsnap":
+		_frames = _target - 9

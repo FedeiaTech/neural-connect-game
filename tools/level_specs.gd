@@ -18,7 +18,9 @@ extends RefCounted
 ##   toxic: ids of movable yellow toxic neurons (T8.2): they must end outside every receptor's reach
 ##   lethal_edges: play-area edge indices that destroy on contact (edge i = point i -> i + 1)
 ##   lethal_obstacles: indices into obstacles that destroy on contact (T7.2)
-##   edges: [a, b] normal dendrite, [a, b, rest_length, max_length] tension dendrite
+##   edges: [a, b] normal dendrite, [a, b, rest_length, max_length] tension dendrite,
+##          [a, b, rest_length, max_length, "diseased"] diseased dendrite (T8.3): intact within
+##          max_length at start, stretched past it in the solution (that is how it breaks)
 ## Coordinates are playfield units; the level view fits them into 1920x1080.
 ##
 ## Campaign layout (T7.4): 1 First Signals, 2 Shaped Minds, 3 Anchored, 4 Tension, 5 Live Wires

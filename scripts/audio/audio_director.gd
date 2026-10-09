@@ -14,6 +14,8 @@ extends Node
 ##     capped; fades out when resolved); hazard_proximity_changed -> alarm loop whose pitch and
 ##     volume follow the highest proximity (stops on release); neuron_destroyed -> explode;
 ##     link_formed -> link (ascending synaptic click); link_broken -> unlink (small snap);
+##     diseased_strain_changed -> crack loop whose pitch and volume follow the highest strain of an
+##     intact diseased dendrite (stops on release); diseased_broken -> diseased_snap;
 ##     contamination_formed -> toxic alarm loop (dry beeps, stays on until every contamination is
 ##     cleared, also after release); contamination_cleared (last one) -> toxic_clear chime.
 ##   LevelController.level_completed -> complete. Hud.star_revealed(i) -> star, pitched up per star.
@@ -37,6 +39,7 @@ const VOLUMES: Dictionary[StringName, float] = {
 	&"grab": -8.0, &"release": -10.0, &"blocked": -14.0, &"snap": -4.0, &"chime": -10.0,
 	&"complete": -6.0, &"star": -8.0, &"ui_hover": -18.0, &"ui_click": -12.0,
 	&"explode": -3.0, &"link": -9.0, &"unlink": -11.0, &"toxic_alarm": -16.0, &"toxic_clear": -8.0,
+	&"diseased_snap": -5.0,
 }
 const POLYPHONY := 4
 ## The tension tone is silent below this ratio and rises to TENSION_MAX_DB at the limit.
@@ -59,6 +62,12 @@ const ALARM_PITCH_MIN := 0.8
 const ALARM_PITCH_MAX := 1.6
 const ALARM_MIN_DB := -32.0
 const ALARM_MAX_DB := -11.0
+## Diseased crack loop (T8.3): audible from DISEASED_AUDIBLE_START strain, rising towards the snap.
+const DISEASED_AUDIBLE_START := 0.35
+const DISEASED_PITCH_MIN := 0.8
+const DISEASED_PITCH_MAX := 1.7
+const DISEASED_MIN_DB := -30.0
+const DISEASED_MAX_DB := -12.0
 const BLOCKED_COOLDOWN := 0.12
 const CHIME_COOLDOWN := 0.25
 const HOVER_COOLDOWN := 0.04
@@ -83,6 +92,9 @@ var _buzz_target_db := SILENT_DB
 var _buzz_tween: Tween
 var _alarm_on := false
 var _toxic_alarm_on := false
+var _diseased_on := false
+## Strain ratio per intact diseased edge (only strained ones report it).
+var _diseased_ratios: Dictionary[int, float] = {}
 ## Hazard proximity per neuron (only moved neurons report it).
 var _hazard: Dictionary[int, float] = {}
 ## False under --headless: the Dummy audio driver never mixes, so a started playback would never
@@ -126,6 +138,19 @@ static func alarm_volume_db(proximity: float) -> float:
 	return lerpf(ALARM_MIN_DB, ALARM_MAX_DB, sqrt(t))
 
 
+static func is_diseased_audible(ratio: float) -> bool:
+	return ratio >= DISEASED_AUDIBLE_START
+
+
+static func diseased_pitch(ratio: float) -> float:
+	return lerpf(DISEASED_PITCH_MIN, DISEASED_PITCH_MAX, clampf(ratio, 0.0, 1.0))
+
+
+static func diseased_volume_db(ratio: float) -> float:
+	var t := clampf((ratio - DISEASED_AUDIBLE_START) / (1.0 - DISEASED_AUDIBLE_START), 0.0, 1.0)
+	return lerpf(DISEASED_MIN_DB, DISEASED_MAX_DB, t)
+
+
 static func star_pitch(index: int) -> float:
 	return STAR_PITCHES[clampi(index, 0, STAR_PITCHES.size() - 1)]
 
@@ -160,6 +185,7 @@ func _exit_tree() -> void:
 	_buzz_target_db = SILENT_DB
 	_alarm_on = false
 	_toxic_alarm_on = false
+	_diseased_on = false
 	for player: AudioStreamPlayer in _players.values():
 		player.stop()
 	_tension_on = false
@@ -206,6 +232,11 @@ func get_buzz_target_db() -> float:
 
 func is_alarm_playing() -> bool:
 	return _alarm_on
+
+
+## True while a strained diseased dendrite cracks (T8.3).
+func is_diseased_crack_playing() -> bool:
+	return _diseased_on
 
 
 ## True while any toxic neuron contaminates a receptor (T8.2).
@@ -328,6 +359,7 @@ func _bind_model(model: PuzzleModel) -> void:
 	_stop_tension()
 	_stop_alarm()
 	_stop_toxic_alarm()
+	_stop_diseased_crack()
 	_crossing_count = model.get_crossing_edges().size()
 	_set_buzz(model.get_crossing_count())
 	model.neuron_blocked.connect(_on_neuron_blocked)
@@ -340,6 +372,8 @@ func _bind_model(model: PuzzleModel) -> void:
 	model.contamination_formed.connect(_on_contamination_formed.bind(model).unbind(2))
 	model.contamination_cleared.connect(_on_contamination_cleared.bind(model).unbind(2))
 	_set_toxic_alarm(model.is_contaminated())
+	model.diseased_strain_changed.connect(_on_diseased_strain_changed)
+	model.diseased_broken.connect(_on_diseased_broken)
 	model.tension_changed.connect(_on_tension_changed)
 	model.edge_broke.connect(_on_edge_broke)
 
@@ -361,6 +395,7 @@ func _on_grab_started(_id: int) -> void:
 
 func _on_grab_ended(_id: int) -> void:
 	_stop_tension()
+	_stop_diseased_crack()
 	_stop_alarm()
 	play(&"release")
 
@@ -444,6 +479,42 @@ func _on_link_broken(_receptor_id: int, _neuron_id: int) -> void:
 	play(&"unlink")
 
 
+func _on_diseased_strain_changed(edge_id: int, ratio: float) -> void:
+	_diseased_ratios[edge_id] = ratio
+	_update_diseased_crack()
+
+
+func _on_diseased_broken(edge_id: int) -> void:
+	_diseased_ratios.erase(edge_id)
+	_update_diseased_crack()
+	play(&"diseased_snap")
+
+
+func _update_diseased_crack() -> void:
+	var highest := 0.0
+	for value: float in _diseased_ratios.values():
+		highest = maxf(highest, value)
+	var player: AudioStreamPlayer = _players[&"diseased_crack"]
+	if not is_diseased_audible(highest):
+		if _diseased_on:
+			player.stop()
+			_diseased_on = false
+		return
+	_ensure_stream(&"diseased_crack")
+	player.pitch_scale = diseased_pitch(highest)
+	player.volume_db = diseased_volume_db(highest)
+	if not _diseased_on:
+		_diseased_on = true
+		_start(player)
+
+
+func _stop_diseased_crack() -> void:
+	_diseased_ratios.clear()
+	if _diseased_on:
+		_players[&"diseased_crack"].stop()
+		_diseased_on = false
+
+
 func _on_contamination_formed(model: PuzzleModel) -> void:
 	_set_toxic_alarm(model.is_contaminated())
 
@@ -475,6 +546,7 @@ func _on_neuron_destroyed(_id: int, _contact: Vector2) -> void:
 	_stop_alarm()
 	_stop_tension()
 	_stop_toxic_alarm()
+	_stop_diseased_crack()
 	play(&"explode")
 
 
@@ -517,6 +589,7 @@ func _on_level_completed(_result: LevelResult) -> void:
 	_stop_tension()
 	_stop_alarm()
 	_stop_toxic_alarm()
+	_stop_diseased_crack()
 	play(&"complete")
 
 

@@ -17,6 +17,14 @@ extends RefCounted
 ## Win (on release): zero crossings, every receptor holding required_links links and no
 ## contamination link.
 ##
+## Diseased dendrites (T8.3): a DISEASED edge (rest_length / max_length like TENSION) breaks when a
+## move stretches it past max_length: it joins the broken set (edge ids stay stable, but a broken
+## edge is no longer a segment, so it never crosses again), diseased_broken(edge_id) fires and the
+## move continues: breaking is required, never a loss. A broken edge stays broken for this model
+## (a restart rebuilds it). The win also needs every diseased edge broken. Strain notifications use
+## diseased_strain_changed, separate from tension_changed (tension listeners never see them).
+## Models built for validation with use_solution start with the stretched diseased edges broken.
+##
 ## Toxic neurons (T8.2, SOFT rule): a TOXIC neuron is movable and never a link candidate. Whenever
 ## it is within a receptor's reach (same distance rule as links) it forms a contamination link,
 ## keyed Vector2i(receptor_id, neuron_id) in a separate sorted set: it uses no slot, does not count
@@ -46,6 +54,9 @@ signal link_strain_changed(receptor_id: int, neuron_id: int, ratio: float)
 ## T8.2: toxic neuron entered / left a receptor's reach.
 signal contamination_formed(receptor_id: int, neuron_id: int)
 signal contamination_cleared(receptor_id: int, neuron_id: int)
+## T8.3: strain ratio (0..1) of a diseased edge changed / the edge snapped.
+signal diseased_strain_changed(edge_id: int, ratio: float)
+signal diseased_broken(edge_id: int)
 signal solved()
 
 const NO_NEURON := -1
@@ -93,6 +104,13 @@ var _tension_ratios: Dictionary[int, float] = {}
 ## Neuron id -> ids of the TENSION edges attached to it.
 var _tension_edges_by_neuron: Dictionary[int, Array] = {}
 var _broken := false
+
+## DISEASED edges only (T8.3): edge id -> Vector2(rest_length, max_length), strain ratio, edges per
+## neuron and the set of edges already broken.
+var _diseased_limits: Dictionary[int, Vector2] = {}
+var _diseased_ratios: Dictionary[int, float] = {}
+var _diseased_by_neuron: Dictionary[int, Array] = {}
+var _broken_edges: Dictionary[int, bool] = {}
 
 ## Lethal geometry (T7.2): valid play-area edge and obstacle indices, and every lethal segment
 ## as consecutive point pairs (edges first, then obstacle outlines).
@@ -149,6 +167,15 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 					model._tension_edges_by_neuron[neuron_id] = []
 				model._tension_edges_by_neuron[neuron_id].append(edge_id)
 			model._tension_ratios[edge_id] = model._compute_tension_ratio(edge_id)
+		if dendrite.is_diseased():
+			model._diseased_limits[edge_id] = Vector2(dendrite.rest_length, dendrite.max_length)
+			for neuron_id in [dendrite.a, dendrite.b]:
+				if not model._diseased_by_neuron.has(neuron_id):
+					model._diseased_by_neuron[neuron_id] = []
+				model._diseased_by_neuron[neuron_id].append(edge_id)
+			model._diseased_ratios[edge_id] = model._diseased_ratio_of(edge_id)
+			if use_solution and model.get_edge_length(edge_id) > dendrite.max_length:
+				model._broken_edges[edge_id] = true
 	model._update_links(PuzzleModel.NO_NEURON, false)
 	model._update_crossings(false)
 	for id in model._ids:
@@ -219,6 +246,8 @@ static func validate_level(level: LevelData) -> PackedStringArray:
 			seen_pairs[key] = i
 		if dendrite.is_tension():
 			_validate_tension(i, dendrite, by_id, errors)
+		elif dendrite.is_diseased():
+			_validate_diseased(i, dendrite, by_id, errors)
 
 	for index in level.lethal_edges:
 		if index < 0 or index >= level.play_area.size():
@@ -239,7 +268,7 @@ static func validate_level(level: LevelData) -> PackedStringArray:
 		if start.is_contaminated():
 			errors.append("Start layout has contamination link(s) %s: a toxic neuron starts inside a receptor's reach." % [
 				start.get_contamination_links()])
-		elif start.get_crossing_count() == 0:
+		elif start.get_crossing_count() == 0 and start.are_diseased_broken():
 			if start.get_receptor_ids().is_empty():
 				errors.append("Start layout has no crossings: a level must start tangled.")
 			elif start.are_receptors_satisfied():
@@ -265,6 +294,29 @@ static func _validate_receptor(neuron: NeuronData, errors: PackedStringArray) ->
 		errors.append("Receptor %d: required_links must be 1 or 2 (got %d)." % [neuron.id, neuron.required_links])
 	if neuron.solution_position != neuron.position:
 		errors.append("Receptor %d: solution_position must equal position (receptors never move)." % neuron.id)
+
+
+## T8.3: a diseased dendrite must be intact at start (within max_length) and stretched past
+## max_length in the reference solution, which is how the player breaks it.
+static func _validate_diseased(
+	edge_id: int,
+	dendrite: DendriteData,
+	by_id: Dictionary[int, NeuronData],
+	errors: PackedStringArray,
+) -> void:
+	if dendrite.max_length <= dendrite.rest_length:
+		errors.append("Diseased dendrite %d: max_length must be greater than rest_length." % edge_id)
+		return
+	var a := by_id[dendrite.a]
+	var b := by_id[dendrite.b]
+	var start_length := a.position.distance_to(b.position)
+	var solution_length := a.solution_position.distance_to(b.solution_position)
+	if start_length > dendrite.max_length:
+		errors.append("Diseased dendrite %d exceeds max_length at start positions (%.1f > %.1f)." % [
+			edge_id, start_length, dendrite.max_length])
+	if solution_length <= dendrite.max_length:
+		errors.append("Diseased dendrite %d cannot break in the solution: solution length %.1f must exceed max_length %.1f." % [
+			edge_id, solution_length, dendrite.max_length])
 
 
 static func _validate_tension(
@@ -414,6 +466,7 @@ func drag_to(target: Vector2) -> void:
 		_moved_during_grab = true
 		neuron_moved.emit(id, reached)
 		_update_links(id, true)
+		_update_diseased(id)
 		_update_crossings(true)
 		_update_proximity(id)
 		if lethal_contact == null:
@@ -435,7 +488,8 @@ func release() -> void:
 		_move_count += 1
 	_grabbed_id = NO_NEURON
 	_moved_during_grab = false
-	if not _solved and _crossing_count == 0 and are_receptors_satisfied() and _contamination.is_empty():
+	if not _solved and _crossing_count == 0 and are_receptors_satisfied() \
+			and _contamination.is_empty() and are_diseased_broken():
 		_solved = true
 		solved.emit()
 
@@ -523,6 +577,41 @@ func is_tension_edge(edge_id: int) -> bool:
 ## 0 at (or below) rest length, 1 at max length. Always 0 for NORMAL edges.
 func get_tension_ratio(edge_id: int) -> float:
 	return _tension_ratios.get(edge_id, 0.0)
+
+
+## True for a DISEASED edge (T8.3), broken or not.
+func is_diseased_edge(edge_id: int) -> bool:
+	return _diseased_limits.has(edge_id)
+
+
+## True once a diseased edge snapped (always false for other edges).
+func is_edge_broken(edge_id: int) -> bool:
+	return _broken_edges.has(edge_id)
+
+
+## 0 at (or below) rest length, 1 at max length; 0 for non-diseased edges.
+func get_diseased_ratio(edge_id: int) -> float:
+	return _diseased_ratios.get(edge_id, 0.0)
+
+
+## Ids of every diseased edge (broken or not), in edge order.
+func get_diseased_edges() -> Array[int]:
+	var ids: Array[int] = []
+	ids.assign(_diseased_limits.keys())
+	return ids
+
+
+func get_diseased_count() -> int:
+	return _diseased_limits.size()
+
+
+func get_diseased_broken_count() -> int:
+	return _broken_edges.size()
+
+
+## True when every diseased edge snapped (true without diseased edges).
+func are_diseased_broken() -> bool:
+	return _broken_edges.size() >= _diseased_limits.size()
 
 
 func get_neuron_ids() -> Array[int]:
@@ -714,6 +803,29 @@ func _compute_tension_ratio(edge_id: int) -> float:
 	return clampf((get_edge_length(edge_id) - limits.x) / span, 0.0, 1.0)
 
 
+## ratio = clamp((length - rest) / (max - rest), 0, 1) of a diseased edge; 0 when max <= rest.
+func _diseased_ratio_of(edge_id: int) -> float:
+	var limits := _diseased_limits[edge_id]
+	var span := limits.y - limits.x
+	if span <= 0.0:
+		return 0.0
+	return clampf((get_edge_length(edge_id) - limits.x) / span, 0.0, 1.0)
+
+
+## Refreshes the intact DISEASED edges attached to the moved neuron; snaps the ones past max.
+func _update_diseased(moved_id: int) -> void:
+	for edge_id: int in _diseased_by_neuron.get(moved_id, []):
+		if _broken_edges.has(edge_id):
+			continue
+		var ratio := _diseased_ratio_of(edge_id)
+		if ratio != _diseased_ratios[edge_id]:
+			_diseased_ratios[edge_id] = ratio
+			diseased_strain_changed.emit(edge_id, ratio)
+		if get_edge_length(edge_id) > _diseased_limits[edge_id].y:
+			_broken_edges[edge_id] = true
+			diseased_broken.emit(edge_id)
+
+
 ## Refreshes the TENSION edges attached to the moved neuron; breaks the first one past max.
 func _update_tension(moved_id: int) -> void:
 	for edge_id: int in _tension_edges_by_neuron.get(moved_id, []):
@@ -871,10 +983,14 @@ func _find_crossings() -> Array:
 	var pairs := 0
 	var points := PackedVector2Array()
 	for i in segments.size():
+		if _broken_edges.has(i):
+			continue
 		var e1 := segments[i]
 		var a1 := _positions[e1.x]
 		var a2 := _positions[e1.y]
 		for j in range(i + 1, segments.size()):
+			if _broken_edges.has(j):
+				continue
 			var e2 := segments[j]
 			if e2.x == e1.x or e2.x == e1.y or e2.y == e1.x or e2.y == e1.y:
 				continue

@@ -6,6 +6,9 @@ extends Node2D
 ## Crossing involvement (T7.1): a NORMAL dendrite fades to red (Palette.CROSSING_DENDRITE) while
 ## it crosses and back to white when resolved; a TENSION dendrite keeps its green. Either way it
 ## stays a plain solid line with its normal glow (shader `crossing` blends to `cross_color`).
+## DISEASED (T8.3): a dark orange ember line that thins, heats, trembles, flickers and cracks (the
+## shader's `crack`) as it nears its break length; it keeps its own color while crossing and
+## disappears when it snaps (the DiseasedView layer plays the snap effect).
 ## The look (core, glow, travelling electrical pulse, tremble, completion wave) lives in
 ## assets/shaders/dendrite.gdshader; this script only feeds it parameters.
 ##
@@ -26,6 +29,7 @@ var _b_id := PuzzleModel.NO_NEURON
 var _a_pos := Vector2.ZERO
 var _b_pos := Vector2.ZERO
 var _tension := false
+var _diseased := false
 var _ratio := 0.0
 var _show_feedback := true
 var _highlighted := false
@@ -53,7 +57,8 @@ func setup(id: int, model: PuzzleModel, show_feedback := true) -> void:
 	_a_pos = model.get_neuron_position(_a_id)
 	_b_pos = model.get_neuron_position(_b_id)
 	_tension = model.is_tension_edge(id)
-	_ratio = model.get_tension_ratio(id)
+	_diseased = model.is_diseased_edge(id)
+	_ratio = model.get_diseased_ratio(id) if _diseased else model.get_tension_ratio(id)
 	_show_feedback = show_feedback
 	_highlighted = show_feedback and model.get_crossing_edges().has(id)
 	_highlight_amount = 1.0 if _highlighted else 0.0
@@ -61,6 +66,10 @@ func setup(id: int, model: PuzzleModel, show_feedback := true) -> void:
 	model.crossings_changed.connect(_on_crossings_changed)
 	model.tension_changed.connect(_on_tension_changed)
 	model.edge_broke.connect(_on_edge_broke)
+	model.diseased_strain_changed.connect(_on_tension_changed)
+	model.diseased_broken.connect(_on_diseased_broken)
+	_broken = model.is_edge_broken(id)
+	visible = not _broken
 	_configure_material()
 	queue_redraw()
 
@@ -77,11 +86,17 @@ func is_highlighted() -> bool:
 	return _highlighted
 
 
+func is_diseased() -> bool:
+	return _diseased
+
+
 func is_broken() -> bool:
 	return _broken
 
 
 func get_line_width() -> float:
+	if _diseased:
+		return VisualTuning.diseased_width(_ratio)
 	if _tension:
 		return VisualTuning.tension_width(_ratio)
 	return WIDTH
@@ -93,11 +108,15 @@ func get_line_color() -> Color:
 
 
 func get_base_color() -> Color:
+	if _diseased:
+		return Palette.DISEASED.lerp(Palette.DISEASED_HOT, _ratio * _ratio)
 	return Palette.TENSION if _tension else Palette.DENDRITE
 
 
 ## Color shown while crossing: red for a normal dendrite, its own green for a tension one.
 func get_crossing_color() -> Color:
+	if _diseased:
+		return get_base_color()
 	return Palette.TENSION if _tension else Palette.CROSSING_DENDRITE
 
 
@@ -187,9 +206,14 @@ func _configure_material() -> void:
 
 func _apply_tension_params() -> void:
 	var m := _shader_material
+	var strained := _tension or _diseased
 	m.set_shader_parameter(&"core_width_px", get_line_width())
-	m.set_shader_parameter(&"tremble_px", VisualTuning.tension_tremble(_ratio) if _tension else 0.0)
-	m.set_shader_parameter(&"flicker", VisualTuning.tension_flicker(_ratio) if _tension else 0.0)
+	m.set_shader_parameter(&"tremble_px", VisualTuning.tension_tremble(_ratio) if strained else 0.0)
+	m.set_shader_parameter(&"flicker", VisualTuning.tension_flicker(_ratio) if strained else 0.0)
+	m.set_shader_parameter(&"crack", VisualTuning.diseased_crack(_ratio) if _diseased else 0.0)
+	if _diseased:
+		m.set_shader_parameter(&"line_color", get_base_color())
+		m.set_shader_parameter(&"cross_color", get_crossing_color())
 
 
 ## Called every frame: only pushes values that changed (an idle dendrite keeps its material
@@ -230,6 +254,12 @@ func _on_tension_changed(id: int, ratio: float) -> void:
 
 
 func _on_edge_broke(id: int) -> void:
+	if id == edge_id:
+		_broken = true
+		visible = false
+
+
+func _on_diseased_broken(id: int) -> void:
 	if id == edge_id:
 		_broken = true
 		visible = false

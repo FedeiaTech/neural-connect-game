@@ -47,5 +47,22 @@ static func toxic_level() -> LevelData:
 	return level
 
 
+## A tangled X (0-3) and two diseased dendrites (4-5, 6-7; rest 120, break length 320): both start
+## at length 160 and must be stretched to 460 to break.
 static func diseased_level() -> LevelData:
-	return null
+	var neurons: Array[NeuronData] = [
+		LevelFactory.neuron(0, Vector2(360, 300), Vector2(360, 300)),
+		LevelFactory.neuron(1, Vector2(760, 700), Vector2(760, 300)),
+		LevelFactory.neuron(2, Vector2(760, 300), Vector2(360, 700)),
+		LevelFactory.neuron(3, Vector2(360, 700), Vector2(760, 700)),
+		LevelFactory.neuron(4, Vector2(1100, 300), Vector2(1100, 300)),
+		LevelFactory.neuron(5, Vector2(1260, 300), Vector2(1560, 300)),
+		LevelFactory.neuron(6, Vector2(1100, 700), Vector2(1100, 700)),
+		LevelFactory.neuron(7, Vector2(1260, 700), Vector2(1560, 700)),
+	]
+	var dendrites: Array[DendriteData] = [LevelFactory.edge(0, 1), LevelFactory.edge(2, 3),
+		LevelFactory.diseased_edge(4, 5, 120.0, 320.0), LevelFactory.diseased_edge(6, 7, 120.0, 320.0)]
+	var level := LevelFactory.level(neurons, dendrites, [], _area())
+	level.mission_id = &"fixture_diseased"
+	level.mission_name = "Diseased fixture"
+	return level

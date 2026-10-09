@@ -37,6 +37,11 @@ const LINK := Color(0.45, 0.96, 1.0)
 ## tension dendrites. Warning glow and contamination line use TOXIC_GLOW.
 const TOXIC := Color(1.0, 0.95, 0.1)
 const TOXIC_GLOW := Color(1.0, 0.86, 0.1)
+## Diseased dendrites (T8.3): a dark orange ember line (darker and browner than the bright red of
+## crossing dendrites), heating to DISEASED_HOT as it nears its break length; snap sparks.
+const DISEASED := Color(0.84, 0.39, 0.05)
+const DISEASED_HOT := Color(1.0, 0.56, 0.14)
+const DISEASED_SPARK := Color(1.0, 0.66, 0.24)
 const CONTACT := Color(1.0, 1.0, 1.0, 0.6)
 const BOUNDARY := Color(1.0, 1.0, 1.0)
 const OBSTACLE := Color(1.0, 1.0, 1.0)

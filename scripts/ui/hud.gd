@@ -63,6 +63,9 @@ var _stats: Array = []
 ## Bottom-center status hints (T8.2): shown only while they apply.
 var _status_box: VBoxContainer
 var _contamination_hint: Label
+## T8.3: "Diseased: broken/total", shown only in levels that have diseased dendrites.
+var _diseased_counter: Label
+var _diseased_progress := Vector2i.ZERO
 var _measure_label: Label  # MEASURE-MODE
 
 
@@ -91,6 +94,7 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
 		set_moves(_moves)
+		_refresh_diseased_counter()
 		if not _stats.is_empty():
 			_apply_count(_stats[2], _stats[0], _stats[1])
 		_apply_tooltips()
@@ -105,6 +109,7 @@ func _build_status_labels() -> void:
 	_status_box.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_status_box.alignment = BoxContainer.ALIGNMENT_END
 	add_child(_status_box)
+	_diseased_counter = _make_status_label("", Palette.DISEASED_HOT)
 	_contamination_hint = _make_status_label("HUD_CONTAMINATED", Palette.TOXIC)
 
 
@@ -125,6 +130,27 @@ func _make_status_label(key: String, color: Color) -> Label:
 ## T8.2: shows the contamination hint while a toxic neuron sits inside a receptor's reach.
 func set_contaminated(contaminated: bool) -> void:
 	_contamination_hint.visible = contaminated
+
+
+## T8.3: shows "Diseased: broken/total" when the level has diseased dendrites, hides it otherwise.
+func set_diseased_progress(broken: int, total: int) -> void:
+	_diseased_progress = Vector2i(broken, total)
+	_refresh_diseased_counter()
+
+
+func _refresh_diseased_counter() -> void:
+	if _diseased_counter == null:
+		return
+	_diseased_counter.visible = _diseased_progress.y > 0
+	_diseased_counter.text = text_for(&"HUD_DISEASED") % [_diseased_progress.x, _diseased_progress.y]
+
+
+func is_diseased_counter_visible() -> bool:
+	return _diseased_counter.visible
+
+
+func get_diseased_counter_text() -> String:
+	return _diseased_counter.text
 
 
 func is_contamination_hint_visible() -> bool:

@@ -38,10 +38,13 @@ static func graph_distances(ids: Array[int], edges: Array[Vector2i], origin: int
 ##  "duration": seconds until the wave has fully faded}.
 static func schedule(model: PuzzleModel, origin: int) -> Dictionary:
 	var edges: Array[Vector2i] = []
+	var graph: Array[Vector2i] = []
 	for edge_id in model.get_edge_count():
 		edges.append(model.get_edge_endpoints(edge_id))
+		# A broken diseased dendrite (T8.3) no longer carries the wave.
+		if not model.is_edge_broken(edge_id):
+			graph.append(edges[edge_id])
 	var links := model.get_link_pairs()
-	var graph: Array[Vector2i] = edges.duplicate()
 	graph.append_array(links)
 	var distances := graph_distances(model.get_neuron_ids(), graph, origin)
 	var neuron_delays := {}

@@ -45,11 +45,30 @@ Visual identity: black background, white neurons and white boundary, red fixed n
 | Lethal wall | Electric violet membrane with magenta crackle | Play-area side (`LevelData.lethal_edges`) or obstacle (`lethal_obstacles`); touching it destroys the neuron → level lost, quick restart; glows and an alarm rises as a grabbed neuron approaches (warning range 2 radii) | Chapter 5 Live Wires |
 | Receptor neuron | Cyan soma, pulsing reach halo, searching stub, one dot per required link | Immovable; `reach` and `required_links` (1 or 2); links the closest movable neuron(s) in reach | Chapter 6 Synapses |
 | Receptor link | Cyan line grown from the receptor | Dynamic: forms when a movable neuron enters reach (center distance − radius ≤ reach), breaks when it leaves (not a loss); thins and flickers near the limit; counts as a dendrite for crossings | Chapter 6 Synapses |
+| Toxic neuron | Lemon-yellow soma with a faint pulsing warning glow | Movable like a normal neuron; never a link candidate. Inside a receptor's reach it forms a **contamination link** (yellow dashed line with a warning triangle, alarm beeps, HUD hint) that does not count towards `required_links`, is only a warning (never a crossing, never a loss) and blocks the win until the toxic neuron leaves the reach | Content in run B (T8.4+) |
+| Diseased dendrite | Dark orange ember line that thins, heats, trembles and cracks near its limit | `max_length` / `rest_length` like a tension dendrite, but **stretching it past `max_length` breaks it on purpose**: it disappears (no more crossings), sparks and a snap sound play, never a loss; broken stays broken until restart; the win needs every diseased dendrite broken (HUD counter "Diseased: n/m") | Content in run B (T8.4+) |
 
 Receptor link rule: after every move each receptor drops links whose neuron left its reach, then
 links the closest in-reach candidates (ties: lower id) until it has `required_links`. Candidates
 are movable (not fixed, not receptors), not yet linked to that receptor and not statically
 connected to it. Links are identified as `(receptor_id, neuron_id)`; they never get an edge id.
+
+Toxic neuron rule (T8.2, SOFT): after every move the model recomputes, per receptor, the toxic
+neurons in reach (same distance rule as links). They form a separate sorted set of contamination
+links keyed `(receptor_id, neuron_id)`; a static dendrite between the two does not prevent it.
+They use no slot, are not segments for crossing detection and never end the level. Signals:
+`contamination_formed` / `contamination_cleared`; queries `is_contaminated()`,
+`get_contamination_links()`. Win on release = zero crossings + every receptor satisfied by
+non-toxic neurons + zero contamination links. A toxic neuron in a level without receptors is a
+harmless decoy (allowed). Validation: start and solution layouts must have no contamination, a toxic
+neuron is never fixed. A HARD variant (explode + restart) is reserved for boss missions.
+
+Diseased dendrite rule (T8.3): `DendriteData.Kind.DISEASED`. When a move leaves an intact diseased
+edge longer than `max_length` it joins the broken set (`diseased_broken(edge_id)`); a broken edge is
+skipped by crossing detection, keeps its edge id and stays broken for this model (restart rebuilds
+it). Strain uses `diseased_strain_changed`, separate from `tension_changed`. Validation: start
+length <= `max_length` and solution length > `max_length` (the models built with `use_solution`
+start with those edges broken, so solution crossings of a broken edge do not count).
 
 Tension dendrite details:
 - Thickness interpolates from normal to a minimum as length goes from rest length to max length.
@@ -305,6 +324,9 @@ Progress (Resource)              # stars and completed missions (local save)
 | `crossings_changed` | `crossing_edges: Array[int], involved_neurons: Array[int]` | `DendriteView`, `NeuronView` | Highlight or calm feedback |
 | `tension_changed` | `edge_id: int, ratio: float` | `DendriteView` | Thin and tremble the green dendrite |
 | `edge_broke` | `edge_id: int` | `LevelController` | Trigger restart |
+| `contamination_formed` / `contamination_cleared` | `receptor_id: int, neuron_id: int` | `NeuronView`, `ReceptorView`, `LinksView`, `LevelController`, `AudioDirector` | Warning glow, yellow link, HUD hint, toxic alarm |
+| `diseased_strain_changed` | `edge_id: int, ratio: float` | `DendriteView`, `AudioDirector` | Thin, crack and tremble the ember dendrite; crack loop |
+| `diseased_broken` | `edge_id: int` | `DendriteView`, `DiseasedView`, `LevelFx`, `LevelController`, `AudioDirector` | Hide the line, snap effect and sound, HUD counter |
 | `solved` | none | `LevelController` | Close the level |
 
 `InputController` → model (direct calls, not signals): `model.grab(id)`, `model.drag_to(pos)`,

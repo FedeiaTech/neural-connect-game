@@ -3,6 +3,7 @@ extends Node2D
 ## One-off playfield effects (SDD 5.4 "juice"), drawn above the neurons with additive blending:
 ## - Tension break: a snap flash along the broken dendrite, a particle burst and a light screen
 ##   shake of shake_target (shake only on break).
+## - Diseased snap (T8.3): a spark burst and a light shake (the line effect is DiseasedView's).
 ## - Lethal-wall overload (T7.2): after the neuron's OVERLOAD_TIME tremble, a white-violet
 ##   flash with a shock ring, two particle bursts and a stronger shake.
 ## - Level complete: a wave of light through the network (NetworkWave schedule, starting at the
@@ -51,6 +52,7 @@ func setup(model: PuzzleModel, neuron_views: Dictionary[int, NeuronView],
 	_pending_explosions.clear()
 	model.neuron_moved.connect(_on_neuron_moved)
 	model.edge_broke.connect(_on_edge_broke)
+	model.diseased_broken.connect(_on_diseased_broken)
 	model.neuron_destroyed.connect(_on_neuron_destroyed)
 
 
@@ -173,6 +175,15 @@ func _on_edge_broke(edge_id: int) -> void:
 	if VisualTuning.is_motion_enabled():
 		_spawn_burst(a, b)
 		_shake()
+
+
+func _on_diseased_broken(edge_id: int) -> void:
+	if not VisualTuning.is_motion_enabled():
+		return
+	var ends := _model.get_edge_endpoints(edge_id)
+	_spawn_burst(_model.get_neuron_position(ends.x), _model.get_neuron_position(ends.y),
+		Palette.DISEASED_SPARK, 24, 170.0)
+	_shake(VisualTuning.SHAKE_STRENGTH * VisualTuning.DISEASED_SHAKE_FACTOR)
 
 
 func _on_neuron_destroyed(_id: int, contact: Vector2) -> void:

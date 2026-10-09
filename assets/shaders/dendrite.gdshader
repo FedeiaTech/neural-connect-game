@@ -25,6 +25,8 @@ uniform float crossing = 0.0;
 uniform float tremble_px = 0.0;
 uniform vec2 normal = vec2(0.0, 1.0);
 uniform float flicker = 0.0;
+// Diseased dendrite (T8.3): 0..1 share of short dark gaps cutting the core (cracks).
+uniform float crack = 0.0;
 uniform float brightness = 1.0;
 // Completion wave: light front position along UV.x and its strength.
 uniform float wave_pos = -1.0;
@@ -50,6 +52,14 @@ void fragment() {
 	// with a small floor so very thin tension lines still read as a soft line, never jagged.
 	float aa = max(fwidth(d), 0.001) * 0.75 + 0.3;
 	float core = 1.0 - smoothstep(hw - aa, hw + aa, d);
+	if (crack > 0.001) {
+		// Cracks: cells along the line randomly lose their core, more of them as `crack` grows.
+		float cell_x = x / 16.0;
+		float cell = floor(cell_x);
+		float flick = floor(TIME * 5.0 * motion);
+		float cut = step(1.0 - crack * 0.55, hash(cell * 3.17 + phase * 7.0 + flick * 0.37));
+		core *= 1.0 - 0.9 * cut * smoothstep(0.1, 0.3, fract(cell_x)) * (1.0 - smoothstep(0.45, 0.65, fract(cell_x)));
+	}
 	float sigma = hw * 2.0 + 3.0;
 	float glow = exp(-(d * d) / (2.0 * sigma * sigma));
 

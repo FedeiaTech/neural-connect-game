@@ -20,15 +20,19 @@ extends RefCounted
 ##   alarm     1 s loop: two-tone warble whose pitch and volume follow the lethal-wall proximity
 ##   explode   overload burst: low noise boom, crackle and a falling whine
 ##   link      ascending synaptic click: two ticks and a rising chirp (receptor link formed)
+##   diseased_crack  1 s loop: wooden crackle over a thin 140 Hz buzz, rising with the strain of a
+##                   diseased dendrite (T8.3)
+##   diseased_snap   dry crack: noise burst, a falling split tone and embers
 ##   toxic_alarm  1 s loop: four short dry 1250 Hz beeps (contamination warning; not the warble)
 ##   toxic_clear  two ascending bell notes when the contamination is cleared
 ##   unlink    small snap: noise tick and a falling chirp (receptor link broken; not a loss)
 
 const NAMES: Array[StringName] = [&"ambient", &"grab", &"release", &"blocked", &"tension", &"snap",
 	&"chime", &"complete", &"star", &"ui_hover", &"ui_click", &"buzz", &"alarm", &"explode",
-	&"link", &"unlink", &"toxic_alarm", &"toxic_clear"]
+	&"link", &"unlink", &"toxic_alarm", &"toxic_clear",
+	&"diseased_crack", &"diseased_snap"]
 ## Sounds that loop (the AudioDirector keeps one voice for each).
-const LOOPS: Array[StringName] = [&"ambient", &"tension", &"buzz", &"alarm", &"toxic_alarm"]
+const LOOPS: Array[StringName] = [&"ambient", &"tension", &"buzz", &"alarm", &"toxic_alarm", &"diseased_crack"]
 
 static var _cache: Dictionary[StringName, AudioStreamWAV] = {}
 
@@ -115,6 +119,15 @@ static func build(sound: StringName) -> AudioStreamWAV:
 			return _one_shot(unlink, 0.45)
 		&"toxic_alarm":
 			return Synth.to_stream(Synth.normalize(_beeps(1250.0, 4, 0.11), 0.35), true)
+		&"diseased_crack":
+			var buzz := Synth.loop_tone(140.0, 1.0, [1.0, 0.45, 0.2], 11.0, 0.75)
+			return Synth.to_stream(Synth.normalize(Synth.mix(buzz, Synth.crackle(1.0, 56, 41), 0, 0.9), 0.4), true)
+		&"diseased_snap":
+			var crack := Synth.mix(Synth.noise_burst(0.32, 16.0, 29),
+				Synth.tone(1100.0, 0.22, 0.001, 14.0, [1.0, 0.5], 180.0), 0, 0.8)
+			crack = Synth.mix(crack, Synth.tone(620.0, 0.2, 0.001, 18.0, [1.0, 0.3], 140.0), roundi(0.035 * Synth.MIX_RATE), 0.6)
+			crack = Synth.mix(crack, Synth.crackle(0.4, 22, 53), 0, 0.5)
+			return _one_shot(crack, 0.75)
 		&"toxic_clear":
 			var first := _bell(880.0, 0.5, 6.0)
 			return _one_shot(Synth.mix(first, _bell(1318.5, 0.6, 6.0), roundi(0.1 * Synth.MIX_RATE), 0.9), 0.4)

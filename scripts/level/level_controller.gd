@@ -20,6 +20,9 @@ signal level_restart_requested()
 ## T8.2: a toxic neuron entered / left a receptor's reach (true while any contamination exists);
 ## also emitted once per (re)build with the initial state.
 signal contamination_changed(contaminated: bool)
+## T8.3: diseased dendrites broken so far and in total (emitted once per (re)build and on every
+## snap; total is 0 in levels without them).
+signal diseased_progress_changed(broken: int, total: int)
 ## Emitted after every (re)build with the new model, so listeners (e.g. AudioDirector) can rebind.
 signal model_built(model: PuzzleModel)
 ## The level was lost; it restarts by itself after the reason's delay.
@@ -51,6 +54,8 @@ const ObstacleScene := preload("res://scenes/views/obstacle_view.tscn")
 @export var sparks: CrossingSparksView
 ## Optional lethal-wall crackle layer (T7.2).
 @export var lethal_walls: LethalWallView
+## Optional diseased dendrite layer: ember sparks and the snap effect (T8.3).
+@export var diseased: DiseasedView
 ## Optional dynamic receptor links layer and receptor halos container (T7.3).
 @export var links: LinksView
 @export var receptors_root: Node2D
@@ -183,6 +188,7 @@ func _build() -> void:
 	_model.neuron_destroyed.connect(_on_neuron_destroyed)
 	_model.contamination_formed.connect(_on_contamination_changed.unbind(2))
 	_model.contamination_cleared.connect(_on_contamination_changed.unbind(2))
+	_model.diseased_broken.connect(_on_diseased_broken.unbind(1))
 	_loss_reason = LossReason.NONE
 	if input_controller != null:
 		input_controller.bind(_model)
@@ -193,6 +199,7 @@ func _build() -> void:
 	move_count_changed.emit(_move_count)
 	time_changed.emit(_elapsed)
 	contamination_changed.emit(_model.is_contaminated())
+	diseased_progress_changed.emit(_model.get_diseased_broken_count(), _model.get_diseased_count())
 	model_built.emit(_model)
 
 
@@ -233,6 +240,8 @@ func _build_views() -> void:
 			receptor.setup(id, _model)
 	if links != null:
 		links.setup(_model)
+	if diseased != null:
+		diseased.setup(_model)
 	if sparks != null:
 		sparks.setup(_model, feedback)
 	if fx != null:
@@ -278,6 +287,10 @@ func _on_solved() -> void:
 	_sync_move_count()
 	_set_state(State.COMPLETE)
 	level_completed.emit(LevelResult.create(_move_count, _elapsed, _level.par_moves, _level.par_time))
+
+
+func _on_diseased_broken() -> void:
+	diseased_progress_changed.emit(_model.get_diseased_broken_count(), _model.get_diseased_count())
 
 
 func _on_contamination_changed() -> void:
