@@ -100,7 +100,7 @@ The pure model (`PuzzleModel`) is built and tested first, before any visuals.
 
 ## Phase 8 — Measurement, toxic neurons and diseased dendrites (run A)
 
-- [x] **T8.1 Measurement mode** — developer-only, off by default (`--measure` user arg or F9, small MEASURE tag); `scripts/dev/measurement.gd` logs one CSV row per attempt to `user://measurements.csv`; `tools/analyze_measurements.gd` summarizes per mission and proposes pars (3 stars ~ best x 1.15), `--apply` rewrites `tools/level_specs.gd`. Removal list in `odd/tasks/measure-toxic-bosses.md`.
+- [x] **T8.1 Measurement mode** — implemented, used once (streak 20261009-231045, 15 missions), then REMOVED; pars now fixed in `tools/level_specs.gd` (`MEASURED_PAR_MOVES`), raw CSV in `docs/data/measurements-2026-10-09.csv`. Recover the code from commit `96c58f0` if needed. See `odd/tasks/measure-toxic-bosses.md`.
   Skills: `godot-prompter:godot-testing`, `godot-prompter:save-load`
 - [x] **T8.2 Toxic neurons** — `NeuronData.Kind.TOXIC`, contamination links (soft rule), validation, yellow soma and warning glow, yellow dashed contamination link, HUD hint, alarm / clear sounds, planner keeps toxic neurons out of reach.
   Skills: `godot-prompter:math-essentials`, `godot-prompter:shader-basics`, `godot-prompter:audio-system`, `godot-prompter:localization`

@@ -1,17 +1,17 @@
-# Neural Connect
+﻿# Neural Connect
 
 2D puzzle game in Godot 4.7 (GL Compatibility, GDScript). The player drags neurons so that
 dendrites (straight segments) do not cross. Design: `docs/SDD.md`. Plan: `docs/plans/implementation-plan.md`.
 
 ## Handoff (read first)
 
-Status (2026-10-07): **MVP implemented** on branch `feat/mvp-foundation` — phases 0–5 of
-`docs/plans/implementation-plan.md` done; Phases 6–7 add reset, en/es, crossing sparks, lethal walls and
+Status (2026-10-07): **MVP implemented** on branch `feat/mvp-foundation` â€” phases 0â€“5 of
+`docs/plans/implementation-plan.md` done; Phases 6â€“7 add reset, en/es, crossing sparks, lethal walls and
 receptor neurons (30 missions in 7 chapters, 457 tests, save format v2 with id migration). Per-feature evidence in `odd/tasks/*.md`.
 Phase 8 (2026-10-09): 48 missions in 9 chapters with a boss at the end of each (stable ids: m01..m30 unchanged,
 m31..m48 new; order = explicit list in `tools/level_specs.gd`), toxic neurons, diseased dendrites, organic arenas,
-dev measurement mode (`--measure` / F9; `rg MEASURE-MODE` to remove), 625 tests. See `odd/tasks/measure-toxic-bosses.md`.
-Next step: play with `--measure`, run `tools/analyze_measurements.gd`, set pars; human playtest (grab radius, difficulty); retune via `tools/level_specs.gd` +
+the temporary measurement mode was used once and removed (pars are now fixed from the measured streak plus designer estimates in `MEASURED_PAR_MOVES`; to measure again, recover the code from git history commit 96c58f0), 604 tests. See `odd/tasks/measure-toxic-bosses.md`.
+Next step: human playtest (grab radius, difficulty, pars); retune via `tools/level_specs.gd` +
 `godot --headless --path . -s res://tools/build_levels.gd`. Not pushed; no remote configured.
 
 Decisions already made (all details in `docs/SDD.md`, do not re-ask):

@@ -578,8 +578,7 @@ static func _chapter_7() -> Array[Dictionary]:
 # =============================================================================
 # T8.4 / T8.5 / T8.6: new missions m31..m48. Layouts come from tools/layouts.gd (seeded, planar by
 # start layout that tools/find_start.gd searches (pasted so the data stays reviewable).
-# Pars: about twice the planned moves, generous times (the human retunes them from the
-# measurement mode).
+# Pars: about twice the planned moves, generous times (the designer retunes them).
 # =============================================================================
 
 # --- Bosses of the first chapters --------------------------------------------

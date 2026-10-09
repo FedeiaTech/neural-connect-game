@@ -26,7 +26,6 @@ signal boss_intro_started()
 @onready var _input: InputController = $InputController
 @onready var _background: BackgroundView = $Background
 
-var _measurement: Measurement  # MEASURE-MODE
 var _paused := false
 var _next_mission_available := false
 ## Bumped on every completion, restart and load; a pending summary only shows if unchanged.
@@ -47,12 +46,6 @@ func _ready() -> void:
 	_hud.resume_pressed.connect(resume)
 	_hud.next_mission_pressed.connect(next_mission_requested.emit)
 	_hud.mission_select_pressed.connect(_on_mission_select_pressed)
-	_measurement = Measurement.new()  # MEASURE-MODE
-	add_child(_measurement)  # MEASURE-MODE
-	_measurement.setup(_controller)  # MEASURE-MODE
-	_measurement.streak_changed.connect(_hud.set_measure_state)  # MEASURE-MODE
-	_measurement.toggled.connect(_hud.show_measure_toast)  # MEASURE-MODE
-	_measurement.publish_state()  # MEASURE-MODE
 
 
 func _exit_tree() -> void:
@@ -80,8 +73,6 @@ func get_controller() -> LevelController:
 	return _controller
 
 
-func get_measurement() -> Measurement:  # MEASURE-MODE
-	return _measurement  # MEASURE-MODE
 
 
 func get_hud() -> Hud:
