@@ -73,6 +73,9 @@ var _boss_tag: Label
 var _boss_intro: BossIntro
 var _boss := false
 var _measure_label: Label  # MEASURE-MODE
+var _measure_toast: Label  # MEASURE-MODE
+var _measure_pulse: Tween  # MEASURE-MODE
+var _measure_toast_tween: Tween  # MEASURE-MODE
 
 
 func _ready() -> void:
@@ -463,25 +466,76 @@ func _dismiss_story() -> void:
 	story_dismissed.emit()
 
 
-# MEASURE-MODE begin: small corner tag shown while the developer measurement mode is on.
+# MEASURE-MODE begin: bottom-left ON/OFF indicator of the developer measurement streaks (debug
+# builds only) and a short toast when a streak starts or closes. English only, no translation keys.
 func _build_measure_indicator() -> void:
-	_measure_label = Label.new()
-	_measure_label.text = "MEASURE"
-	_measure_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_measure_label.add_theme_font_size_override(&"font_size", 16)
-	_measure_label.add_theme_color_override(&"font_color", Color(1.0, 0.45, 0.85, 0.7))
-	_measure_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	_measure_label.offset_left = 12.0
+	_measure_label = _measure_text_label(16)
 	_measure_label.offset_top = -34.0
-	_measure_label.visible = false
-	add_child(_measure_label)
+	_measure_toast = _measure_text_label(16)
+	_measure_toast.offset_top = -60.0
+	_measure_toast.add_theme_color_override(&"font_color", Color(1.0, 1.0, 1.0, 0.9))
+	_measure_toast.visible = false
+	set_measure_state(false, "", 0)
 
 
-func set_measure_indicator(visible_now: bool) -> void:
-	if _measure_label != null:
-		_measure_label.visible = visible_now
+func _measure_text_label(size: int) -> Label:
+	var label := Label.new()
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override(&"font_size", size)
+	label.add_theme_color_override(&"font_outline_color", Color(0.0, 0.0, 0.0, 0.8))
+	label.add_theme_constant_override(&"outline_size", 4)
+	label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	label.offset_left = 12.0
+	add_child(label)
+	return label
+
+
+## ON: "● REC streak <id> · <n> runs" in bright magenta with a gentle pulse (still with reduced
+## motion). OFF: "○ MEASURE OFF (F9)" dim grey. Hidden outside debug builds.
+func set_measure_state(active: bool, streak: String, runs: int) -> void:
+	if _measure_label == null:
+		return
+	if _measure_pulse != null:
+		_measure_pulse.kill()
+		_measure_pulse = null
+	_measure_label.modulate.a = 1.0
+	_measure_label.visible = Measurement.indicator_allowed()
+	if not active:
+		_measure_label.text = "○ MEASURE OFF (F9)"
+		_measure_label.add_theme_color_override(&"font_color", Color(0.6, 0.62, 0.68, 0.7))
+		return
+	_measure_label.text = "● REC streak %s · %d run%s" % [streak, runs, "" if runs == 1 else "s"]
+	_measure_label.add_theme_color_override(&"font_color", Color(1.0, 0.25, 0.7))
+	if _measure_label.visible and not GameState.reduced_motion and _measure_label.is_inside_tree():
+		_measure_pulse = _measure_label.create_tween().set_loops()
+		_measure_pulse.tween_property(_measure_label, "modulate:a", 0.55, 0.9).set_trans(Tween.TRANS_SINE)
+		_measure_pulse.tween_property(_measure_label, "modulate:a", 1.0, 0.9).set_trans(Tween.TRANS_SINE)
+
+
+func show_measure_toast(message: String) -> void:
+	if _measure_toast == null or not Measurement.indicator_allowed():
+		return
+	if _measure_toast_tween != null:
+		_measure_toast_tween.kill()
+	_measure_toast.text = message
+	_measure_toast.modulate.a = 1.0
+	_measure_toast.visible = true
+	if not _measure_toast.is_inside_tree():
+		return
+	_measure_toast_tween = _measure_toast.create_tween()
+	_measure_toast_tween.tween_interval(2.0)
+	_measure_toast_tween.tween_property(_measure_toast, "modulate:a", 0.0, 0.5)
+	_measure_toast_tween.tween_callback(_measure_toast.hide)
+
+
+func get_measure_text() -> String:
+	return _measure_label.text if _measure_label != null else ""
 
 
 func is_measure_indicator_visible() -> bool:
 	return _measure_label != null and _measure_label.visible
+
+
+func get_measure_toast_text() -> String:
+	return _measure_toast.text if _measure_toast != null and _measure_toast.visible else ""
 # MEASURE-MODE end

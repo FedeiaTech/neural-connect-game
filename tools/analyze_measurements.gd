@@ -37,6 +37,11 @@ func _init() -> void:
 	var ids := stats.keys()
 	ids.sort()
 	print("analyze_measurements: %d rows from %s" % [rows.size(), csv_path])
+	var streak_runs := Analysis.streak_runs(rows)
+	var streak_ids := streak_runs.keys()
+	streak_ids.sort()
+	print("streaks (%d): %s" % [streak_ids.size(), ", ".join(streak_ids.map(
+		func(id: String) -> String: return "%s=%d runs" % [id, streak_runs[id]]))])
 	for mission: String in ids:
 		var stat: Dictionary = stats[mission]
 		var proposal := Analysis.propose(stat)
@@ -44,6 +49,11 @@ func _init() -> void:
 			print("%s  no data (no completed run)" % mission)
 			continue
 		proposals[mission] = proposal
+		var contributing: Dictionary = stat["streaks"]
+		var contributing_ids := contributing.keys()
+		contributing_ids.sort()
+		print("%s  streaks: %s" % [mission, ", ".join(contributing_ids.map(
+			func(id: String) -> String: return "%s (%d)" % [id, contributing[id]]))])
 		print("%s  runs=%d  moves best/median=%d/%.1f  time best/median=%.1f/%.1f  ->  \"par_moves\": %d, \"par_time\": %.1f,  (2 stars up to %.1f moves / %.1f s)" % [
 			mission, stat["runs"], stat["best_moves"], stat["median_moves"], stat["best_time"], stat["median_time"],
 			proposal["par_moves"], proposal["par_time"], proposal["two_star_moves"], proposal["two_star_time"]])

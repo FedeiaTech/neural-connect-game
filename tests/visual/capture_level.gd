@@ -15,8 +15,8 @@ extends Node
 ## tests/visual/fixtures.gd. contam (fixture_toxic): the toxic neuron is dragged into the first
 ## receptor's reach (contamination link, alarm glow, HUD hint). dstrain / dsnap (fixture_diseased):
 ## the first diseased dendrite is stretched to 90 % of its strain range (cracks, tremble, embers) /
-## past its break length (snap effect, captured shortly after). measure: the developer measurement
-## tag is shown (rows go to a throwaway CSV).
+## past its break length (snap effect, captured shortly after). measure: a measurement streak
+## is started (ON indicator and toast; rows go to a throwaway CSV); measureoff: plain play, the OFF indicator.
 ## T8.6: boss keeps the boss intro card on screen (capture about 1 s after the load); toxicboom
 ## (hard toxic missions) drags a toxic neuron into a receptor's reach and captures the overload.
 

@@ -50,8 +50,9 @@ func _ready() -> void:
 	_measurement = Measurement.new()  # MEASURE-MODE
 	add_child(_measurement)  # MEASURE-MODE
 	_measurement.setup(_controller)  # MEASURE-MODE
-	_measurement.enabled_changed.connect(_hud.set_measure_indicator)  # MEASURE-MODE
-	_hud.set_measure_indicator(_measurement.enabled)  # MEASURE-MODE
+	_measurement.streak_changed.connect(_hud.set_measure_state)  # MEASURE-MODE
+	_measurement.toggled.connect(_hud.show_measure_toast)  # MEASURE-MODE
+	_measurement.publish_state()  # MEASURE-MODE
 
 
 func _exit_tree() -> void:

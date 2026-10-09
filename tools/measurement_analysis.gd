@@ -12,51 +12,75 @@ extends RefCounted
 
 const BEST_FACTOR := 1.15
 const TWO_STAR_FACTOR := 1.5
-const COLUMNS := 8
+const COLUMNS := 9
+## Files written before streaks existed have no `streak` column (8 columns).
+const LEGACY_COLUMNS := 8
+const LEGACY_STREAK := "(legacy)"
 
 
-## Rows as dictionaries {timestamp, mission_id, result, first_move (-1 when blank), total_seconds,
-## moves, restarts_before, stars}. The header, blank lines and malformed rows are skipped.
+## Rows as dictionaries {timestamp, streak, mission_id, result, first_move (-1 when blank),
+## total_seconds, moves, restarts_before, stars}. Rows of the old 8-column format get the streak
+## LEGACY_STREAK. The header, blank lines and malformed rows are skipped.
 static func parse_csv(text: String) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	for line in text.split("\n"):
-		var cells := line.strip_edges().split(",")
-		if cells.size() != COLUMNS or cells[0] == "timestamp":
+		var cells := Array(line.strip_edges().split(","))
+		if cells[0] == "timestamp" or (cells.size() != COLUMNS and cells.size() != LEGACY_COLUMNS):
 			continue
-		if not cells[4].is_valid_float() or not cells[5].is_valid_int():
+		if cells.size() == LEGACY_COLUMNS:
+			cells.insert(1, LEGACY_STREAK)
+		if not cells[5].is_valid_float() or not cells[6].is_valid_int():
 			continue
 		rows.append({
-			"timestamp": cells[0], "mission_id": cells[1], "result": cells[2],
-			"first_move": cells[3].to_float() if cells[3].is_valid_float() else -1.0,
-			"total_seconds": cells[4].to_float(), "moves": cells[5].to_int(),
-			"restarts_before": cells[6].to_int() if cells[6].is_valid_int() else 0,
-			"stars": cells[7].to_int() if cells[7].is_valid_int() else 0,
+			"timestamp": cells[0], "streak": cells[1] if cells[1] != "" else LEGACY_STREAK,
+			"mission_id": cells[2], "result": cells[3],
+			"first_move": cells[4].to_float() if cells[4].is_valid_float() else -1.0,
+			"total_seconds": cells[5].to_float(), "moves": cells[6].to_int(),
+			"restarts_before": cells[7].to_int() if cells[7].is_valid_int() else 0,
+			"stars": cells[8].to_int() if cells[8].is_valid_int() else 0,
 		})
 	return rows
 
 
+## Streak id -> completed runs, over all missions (streaks without a completed run are listed
+## with 0).
+static func streak_runs(rows: Array[Dictionary]) -> Dictionary:
+	var runs := {}
+	for row in rows:
+		var streak: String = row["streak"]
+		runs[streak] = int(runs.get(streak, 0)) + (1 if row["result"] == "completed" else 0)
+	return runs
+
+
 ## Mission id -> {"runs": completed runs, "best_moves", "median_moves", "best_time",
-## "median_time"} (the last four are 0 without runs). Missions seen in any row are listed.
+## "median_time", "streaks"} over ALL streaks (the middle four are 0 without runs; "streaks" maps
+## each contributing streak to its completed runs of that mission). Missions seen in any row are
+## listed.
 static func analyze(rows: Array[Dictionary]) -> Dictionary:
 	var moves_by_mission := {}
 	var times_by_mission := {}
+	var streaks_by_mission := {}
 	var stats := {}
 	for row in rows:
 		var mission: String = row["mission_id"]
 		if not stats.has(mission):
-			stats[mission] = {"runs": 0, "best_moves": 0, "median_moves": 0.0, "best_time": 0.0, "median_time": 0.0}
+			stats[mission] = {"runs": 0, "best_moves": 0, "median_moves": 0.0, "best_time": 0.0,
+				"median_time": 0.0, "streaks": {}}
 			moves_by_mission[mission] = []
 			times_by_mission[mission] = []
+			streaks_by_mission[mission] = {}
 		if row["result"] == "completed":
 			moves_by_mission[mission].append(row["moves"])
 			times_by_mission[mission].append(row["total_seconds"])
+			var per_streak: Dictionary = streaks_by_mission[mission]
+			per_streak[row["streak"]] = int(per_streak.get(row["streak"], 0)) + 1
 	for mission: String in stats:
 		var moves: Array = moves_by_mission[mission]
 		var times: Array = times_by_mission[mission]
 		if moves.is_empty():
 			continue
 		stats[mission] = {"runs": moves.size(), "best_moves": moves.min(), "median_moves": median(moves),
-			"best_time": times.min(), "median_time": median(times)}
+			"best_time": times.min(), "median_time": median(times), "streaks": streaks_by_mission[mission]}
 	return stats
 
 
