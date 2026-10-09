@@ -19,7 +19,7 @@ signal mission_select_requested()
 @onready var _fx: LevelFx = $Playfield/Fx
 @onready var _input: InputController = $InputController
 
-var _measurement := Measurement.new()  # MEASURE-MODE
+var _measurement: Measurement  # MEASURE-MODE
 var _paused := false
 var _next_mission_available := false
 ## Bumped on every completion, restart and load; a pending summary only shows if unchanged.
@@ -29,6 +29,7 @@ var _completion_serial := 0
 func _ready() -> void:
 	_controller.move_count_changed.connect(_hud.set_moves)
 	_controller.time_changed.connect(_hud.set_time)
+	_controller.contamination_changed.connect(_hud.set_contaminated)
 	_controller.level_completed.connect(_on_level_completed)
 	_controller.level_restart_requested.connect(_on_level_restarted)
 	_hud.restart_pressed.connect(_on_restart_pressed)
@@ -37,6 +38,7 @@ func _ready() -> void:
 	_hud.resume_pressed.connect(resume)
 	_hud.next_mission_pressed.connect(next_mission_requested.emit)
 	_hud.mission_select_pressed.connect(_on_mission_select_pressed)
+	_measurement = Measurement.new()  # MEASURE-MODE
 	add_child(_measurement)  # MEASURE-MODE
 	_measurement.setup(_controller)  # MEASURE-MODE
 	_measurement.enabled_changed.connect(_hud.set_measure_indicator)  # MEASURE-MODE

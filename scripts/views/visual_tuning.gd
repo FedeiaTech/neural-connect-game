@@ -78,6 +78,12 @@ const HAZARD_OVERLOAD := 0.35
 const EXPLOSION_FLASH_TIME := 0.6
 const EXPLOSION_SHAKE_STRENGTH := 14.0
 
+# --- Toxic neurons (T8.2) -----------------------------------------------------------
+## Faint warning glow of a toxic neuron at rest (1.0 while it contaminates a receptor).
+const TOXIC_WARN_IDLE := 0.3
+## Warning glow eases at this rate (amount per second).
+const TOXIC_WARN_RATE := 5.0
+
 const GOLDEN_ANGLE := 2.39996323
 
 

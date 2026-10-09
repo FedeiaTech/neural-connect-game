@@ -17,6 +17,9 @@ signal move_count_changed(n: int)
 signal time_changed(seconds: float)
 signal level_completed(result: LevelResult)
 signal level_restart_requested()
+## T8.2: a toxic neuron entered / left a receptor's reach (true while any contamination exists);
+## also emitted once per (re)build with the initial state.
+signal contamination_changed(contaminated: bool)
 ## Emitted after every (re)build with the new model, so listeners (e.g. AudioDirector) can rebind.
 signal model_built(model: PuzzleModel)
 ## The level was lost; it restarts by itself after the reason's delay.
@@ -178,6 +181,8 @@ func _build() -> void:
 	_model.solved.connect(_on_solved)
 	_model.edge_broke.connect(_on_edge_broke)
 	_model.neuron_destroyed.connect(_on_neuron_destroyed)
+	_model.contamination_formed.connect(_on_contamination_changed.unbind(2))
+	_model.contamination_cleared.connect(_on_contamination_changed.unbind(2))
 	_loss_reason = LossReason.NONE
 	if input_controller != null:
 		input_controller.bind(_model)
@@ -187,6 +192,7 @@ func _build() -> void:
 	_restart_countdown = 0.0
 	move_count_changed.emit(_move_count)
 	time_changed.emit(_elapsed)
+	contamination_changed.emit(_model.is_contaminated())
 	model_built.emit(_model)
 
 
@@ -272,6 +278,10 @@ func _on_solved() -> void:
 	_sync_move_count()
 	_set_state(State.COMPLETE)
 	level_completed.emit(LevelResult.create(_move_count, _elapsed, _level.par_moves, _level.par_time))
+
+
+func _on_contamination_changed() -> void:
+	contamination_changed.emit(_model.is_contaminated())
 
 
 func _on_edge_broke(_edge_id: int) -> void:

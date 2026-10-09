@@ -31,6 +31,10 @@ uniform float crossing = 0.0;
 uniform float contact = 0.0;
 uniform float brightness = 1.0;
 uniform float overload = 0.0;
+// Toxic neuron (T8.2): a pulsing warning halo (and a ring when contaminating), 0..1.
+uniform vec4 warn_color : source_color = vec4(1.0, 0.84, 0.1, 1.0);
+uniform float warn = 0.0;
+uniform float warn_speed = 2.4;
 
 float hash(float n) {
 	return fract(sin(n) * 43758.5453);
@@ -90,8 +94,16 @@ void fragment() {
 	}
 	float contact_ring = exp(-pow((d - r - 10.0) / 2.5, 2.0)) * contact;
 
+	// Toxic warning: a halo pulsing faster when contaminating (steady mid level without motion).
+	float w = clamp(warn, 0.0, 1.0);
+	float warn_beat = mix(0.6, 0.5 + 0.5 * sin(TIME * warn_speed * (1.0 + 1.6 * w) + phase), motion);
+	float warn_halo = exp(-outside * 0.9) * w * (0.3 + 0.7 * warn_beat) * 0.75;
+	warn_halo *= 1.0 - smoothstep(half_size_px * 0.72, half_size_px, d);
+	float warn_ring = exp(-pow((d - r - 9.0) / 2.2, 2.0)) * smoothstep(0.5, 1.0, w) * (0.35 + 0.65 * warn_beat);
+
 	vec3 halo_rgb = mix(glow_color.rgb, overload_color.rgb, o);
 	vec3 rgb = soma * core + (halo_rgb * halo + latency_color.rgb * latency
-		+ vec3(1.0, 0.88, 0.74) * sparks + vec3(contact_ring * 0.8)) * (1.0 - core);
+		+ vec3(1.0, 0.88, 0.74) * sparks + vec3(contact_ring * 0.8)
+		+ warn_color.rgb * (warn_halo + warn_ring)) * (1.0 - core);
 	COLOR = vec4(rgb * brightness, core * core_color.a);
 }

@@ -4,7 +4,8 @@ extends Node2D
 ## cyan NeuronView): a soft pulsing halo ring at the reach limit (radius + reach), a searching
 ## dendrite stub that sways towards the nearest free candidate while links are missing, and one
 ## dot per required link above the soma (filled when linked). Reduced motion: still ring, no
-## sway. Listens to link_formed / link_broken for its own receptor id.
+## sway. Listens to link_formed / link_broken for its own receptor id. T8.2: while a toxic neuron
+## contaminates it, the halo ring turns toxic yellow and beats faster.
 
 const DOT_RADIUS := 4.5
 const DOT_GAP := 14.0
@@ -19,6 +20,7 @@ var _radius := 28.0
 var _reach := 0.0
 var _required := 1
 var _linked := 0
+var _contaminated := false
 var _time := 0.0
 var _stub_angle := -PI * 0.5
 
@@ -34,6 +36,9 @@ func setup(id: int, model: PuzzleModel) -> void:
 	_phase_offset()
 	model.link_formed.connect(_on_link_changed)
 	model.link_broken.connect(_on_link_changed)
+	_contaminated = _contamination_in(model)
+	model.contamination_formed.connect(_on_contamination_changed.unbind(2))
+	model.contamination_cleared.connect(_on_contamination_changed.unbind(2))
 	queue_redraw()
 
 
@@ -48,6 +53,11 @@ func get_dot_states() -> Array[bool]:
 	for i in _required:
 		states.append(i < _linked)
 	return states
+
+
+## True while a toxic neuron is inside this receptor's reach (T8.2).
+func is_contaminated() -> bool:
+	return _contaminated
 
 
 ## True while links are missing (the stub is out, looking for a partner).
@@ -73,11 +83,14 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var motion := VisualTuning.motion_scale()
-	var pulse := 0.5 + 0.5 * sin(_time * HALO_PULSE_SPEED) * motion
-	var calm := 0.55 if not is_searching() else 1.0
+	var speed := HALO_PULSE_SPEED * (2.6 if _contaminated else 1.0)
+	var pulse := 0.5 + 0.5 * sin(_time * speed) * motion
+	var calm := 0.55 if not is_searching() and not _contaminated else 1.0
 	var halo := get_halo_radius()
-	draw_arc(Vector2.ZERO, halo, 0.0, TAU, 96, Color(Palette.RECEPTOR_GLOW, (0.04 + 0.04 * pulse) * calm), 14.0, true)
-	draw_arc(Vector2.ZERO, halo, 0.0, TAU, 96, Color(Palette.RECEPTOR, (0.16 + 0.14 * pulse) * calm), 2.0, true)
+	var glow := Palette.TOXIC_GLOW if _contaminated else Palette.RECEPTOR_GLOW
+	var line := Palette.TOXIC if _contaminated else Palette.RECEPTOR
+	draw_arc(Vector2.ZERO, halo, 0.0, TAU, 96, Color(glow, (0.04 + 0.04 * pulse) * calm), 14.0, true)
+	draw_arc(Vector2.ZERO, halo, 0.0, TAU, 96, Color(line, (0.16 + 0.14 * pulse) * calm), 2.0, true)
 	if is_searching():
 		_draw_stub(motion)
 	_draw_dots()
@@ -116,13 +129,25 @@ func _nearest_candidate_angle() -> float:
 	var angle := _stub_angle
 	var links := _model.get_links(receptor_id)
 	for id in _model.get_neuron_ids():
-		if _model.is_fixed(id) or links.has(id):
+		if _model.is_fixed(id) or _model.is_toxic(id) or links.has(id):
 			continue
 		var offset := _model.get_neuron_position(id) - position
 		if offset.length() < best:
 			best = offset.length()
 			angle = offset.angle()
 	return angle
+
+
+func _contamination_in(model: PuzzleModel) -> bool:
+	for pair in model.get_contamination_links():
+		if pair.x == receptor_id:
+			return true
+	return false
+
+
+func _on_contamination_changed() -> void:
+	_contaminated = _contamination_in(_model)
+	queue_redraw()
 
 
 func _on_link_changed(id: int, _neuron_id: int) -> void:

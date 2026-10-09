@@ -32,6 +32,11 @@ const OVERLOAD_FLASH := Color(1.0, 0.75, 1.0)
 const RECEPTOR := Color(0.36, 0.95, 1.0)
 const RECEPTOR_GLOW := Color(0.35, 0.85, 1.0)
 const LINK := Color(0.45, 0.96, 1.0)
+## Toxic neurons and their contamination links (T8.2): saturated lemon yellow with a slight
+## green tilt, away from the orange-red crossing feedback, the amber sparks and the light green
+## tension dendrites. Warning glow and contamination line use TOXIC_GLOW.
+const TOXIC := Color(1.0, 0.95, 0.1)
+const TOXIC_GLOW := Color(1.0, 0.86, 0.1)
 const CONTACT := Color(1.0, 1.0, 1.0, 0.6)
 const BOUNDARY := Color(1.0, 1.0, 1.0)
 const OBSTACLE := Color(1.0, 1.0, 1.0)

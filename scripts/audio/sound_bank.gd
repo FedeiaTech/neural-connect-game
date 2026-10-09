@@ -20,13 +20,15 @@ extends RefCounted
 ##   alarm     1 s loop: two-tone warble whose pitch and volume follow the lethal-wall proximity
 ##   explode   overload burst: low noise boom, crackle and a falling whine
 ##   link      ascending synaptic click: two ticks and a rising chirp (receptor link formed)
+##   toxic_alarm  1 s loop: four short dry 1250 Hz beeps (contamination warning; not the warble)
+##   toxic_clear  two ascending bell notes when the contamination is cleared
 ##   unlink    small snap: noise tick and a falling chirp (receptor link broken; not a loss)
 
 const NAMES: Array[StringName] = [&"ambient", &"grab", &"release", &"blocked", &"tension", &"snap",
 	&"chime", &"complete", &"star", &"ui_hover", &"ui_click", &"buzz", &"alarm", &"explode",
-	&"link", &"unlink"]
+	&"link", &"unlink", &"toxic_alarm", &"toxic_clear"]
 ## Sounds that loop (the AudioDirector keeps one voice for each).
-const LOOPS: Array[StringName] = [&"ambient", &"tension", &"buzz", &"alarm"]
+const LOOPS: Array[StringName] = [&"ambient", &"tension", &"buzz", &"alarm", &"toxic_alarm"]
 
 static var _cache: Dictionary[StringName, AudioStreamWAV] = {}
 
@@ -111,7 +113,29 @@ static func build(sound: StringName) -> AudioStreamWAV:
 			var unlink := Synth.mix(Synth.noise_burst(0.08, 45.0, 23),
 				Synth.tone(1300.0, 0.18, 0.001, 16.0, [1.0, 0.4], 320.0), 0, 0.7)
 			return _one_shot(unlink, 0.45)
+		&"toxic_alarm":
+			return Synth.to_stream(Synth.normalize(_beeps(1250.0, 4, 0.11), 0.35), true)
+		&"toxic_clear":
+			var first := _bell(880.0, 0.5, 6.0)
+			return _one_shot(Synth.mix(first, _bell(1318.5, 0.6, 6.0), roundi(0.1 * Synth.MIX_RATE), 0.9), 0.4)
 	return null
+
+
+## Seamless 1 s loop of `count` evenly spaced beeps at freq (a whole number of cycles per second),
+## each `length` seconds long with short ramps so nothing clicks.
+static func _beeps(freq: float, count: int, length: float) -> PackedFloat32Array:
+	var total := Synth.MIX_RATE
+	var samples := PackedFloat32Array()
+	samples.resize(total)
+	var slot := 1.0 / count
+	var ramp := 0.012
+	for i in total:
+		var t := float(i) / Synth.MIX_RATE
+		var local := fposmod(t, slot)
+		var gate := clampf(minf(local, length - local) / ramp, 0.0, 1.0)
+		var phase := TAU * freq * t
+		samples[i] = (sin(phase) + 0.35 * sin(2.0 * phase) + 0.15 * sin(3.0 * phase)) * gate
+	return samples
 
 
 static func _one_shot(samples: PackedFloat32Array, peak: float) -> AudioStreamWAV:

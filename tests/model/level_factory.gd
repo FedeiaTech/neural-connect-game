@@ -39,6 +39,22 @@ static func tension_edge(a: int, b: int, rest_length: float, max_length: float) 
 	return data
 
 
+## An immovable cyan receptor (solution position = position).
+static func receptor(id: int, position: Vector2, reach := 120.0, required := 1) -> NeuronData:
+	var data := neuron(id, position)
+	data.kind = NeuronData.Kind.RECEPTOR
+	data.reach = reach
+	data.required_links = required
+	return data
+
+
+## A movable toxic (yellow) neuron; the solution position defaults to the start position.
+static func toxic(id: int, position: Vector2, solution: Variant = null) -> NeuronData:
+	var data := neuron(id, position, solution)
+	data.kind = NeuronData.Kind.TOXIC
+	return data
+
+
 static func level(
 	neurons: Array[NeuronData],
 	dendrites: Array[DendriteData],

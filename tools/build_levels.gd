@@ -88,6 +88,7 @@ static func build_level(spec: Dictionary) -> LevelData:
 	var solution: PackedVector2Array = spec["sol"]
 	var fixed: Array = spec.get("fixed", [])
 	var receptors: Dictionary = spec.get("receptors", {})
+	var toxic: Array = spec.get("toxic", [])
 	var neurons: Array[NeuronData] = []
 	for id in solution.size():
 		var neuron := NeuronData.new()
@@ -98,6 +99,8 @@ static func build_level(spec: Dictionary) -> LevelData:
 			neuron.kind = NeuronData.Kind.RECEPTOR
 			neuron.reach = receptors[id][0]
 			neuron.required_links = receptors[id][1]
+		if toxic.has(id):
+			neuron.kind = NeuronData.Kind.TOXIC
 		if neuron.fixed or neuron.is_receptor():
 			neuron.position = solution[id]
 		elif spec.has("start"):
@@ -146,6 +149,8 @@ static func level_text(level: LevelData) -> String:
 			lines.append("kind = %d" % neuron.kind)
 			lines.append("reach = %s" % _float(neuron.reach))
 			lines.append("required_links = %d" % neuron.required_links)
+		elif neuron.is_toxic():
+			lines.append("kind = %d" % neuron.kind)
 		lines.append("")
 		neuron_refs.append('SubResource("Neuron_%d")' % i)
 	var dendrite_refs := PackedStringArray()

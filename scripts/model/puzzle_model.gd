@@ -14,7 +14,16 @@ extends RefCounted
 ## keyed Vector2i(receptor_id, neuron_id). Crossings are computed over static edges + links with
 ## the same rule; get_crossing_edges() lists static ids only, get_crossing_links() the links,
 ## get_crossing_count() / get_crossing_points() / get_crossing_neurons() include both.
-## Win (on release): zero crossings and every receptor holding required_links links.
+## Win (on release): zero crossings, every receptor holding required_links links and no
+## contamination link.
+##
+## Toxic neurons (T8.2, SOFT rule): a TOXIC neuron is movable and never a link candidate. Whenever
+## it is within a receptor's reach (same distance rule as links) it forms a contamination link,
+## keyed Vector2i(receptor_id, neuron_id) in a separate sorted set: it uses no slot, does not count
+## towards required_links and is a warning only (it is not a segment for crossing detection and
+## never loses the level). A static dendrite between the two does not prevent it. It clears when
+## the toxic neuron leaves the reach. contamination_formed / contamination_cleared notify changes;
+## the layout built by from_level() has its contamination set without signals.
 
 signal neuron_moved(id: int, pos: Vector2)
 signal neuron_blocked(id: int, contact: Vector2)
@@ -34,6 +43,9 @@ signal link_formed(receptor_id: int, neuron_id: int)
 signal link_broken(receptor_id: int, neuron_id: int)
 ## ratio 0..1 (see link_strain()), 1 at the reach limit. Emitted when a linked neuron moves.
 signal link_strain_changed(receptor_id: int, neuron_id: int, ratio: float)
+## T8.2: toxic neuron entered / left a receptor's reach.
+signal contamination_formed(receptor_id: int, neuron_id: int)
+signal contamination_cleared(receptor_id: int, neuron_id: int)
 signal solved()
 
 const NO_NEURON := -1
@@ -69,6 +81,9 @@ var _reach: Dictionary[int, float] = {}
 var _required: Dictionary[int, int] = {}
 var _links: Dictionary[int, Array] = {}
 var _strain: Dictionary[Vector2i, float] = {}
+## Toxic neuron ids (T8.2) and the current contamination links (sorted Vector2i(receptor, neuron)).
+var _toxic: Dictionary[int, bool] = {}
+var _contamination: Array[Vector2i] = []
 ## Static neighbour pairs Vector2i(min, max), to exclude statically connected candidates.
 var _static_pairs: Dictionary[Vector2i, bool] = {}
 
@@ -114,6 +129,8 @@ static func from_level(level: LevelData, use_solution := false) -> PuzzleModel:
 		model._ids.append(neuron.id)
 		model._positions[neuron.id] = neuron.solution_position if use_solution else neuron.position
 		model._fixed[neuron.id] = neuron.fixed or neuron.is_receptor()
+		if neuron.is_toxic():
+			model._toxic[neuron.id] = true
 		if neuron.is_receptor():
 			model._reach[neuron.id] = neuron.reach
 			model._required[neuron.id] = neuron.required_links
@@ -174,6 +191,8 @@ static func validate_level(level: LevelData) -> PackedStringArray:
 				errors.append("Fixed neuron %d: solution_position must equal position." % neuron.id)
 			if neuron.is_receptor():
 				_validate_receptor(neuron, errors)
+			if neuron.is_toxic() and neuron.fixed:
+				errors.append("Toxic neuron %d must be movable (not fixed)." % neuron.id)
 
 	var seen_pairs: Dictionary[Vector2i, int] = {}
 	for i in level.dendrites.size():
@@ -217,7 +236,10 @@ static func validate_level(level: LevelData) -> PackedStringArray:
 
 	if structure_ok:
 		var start := PuzzleModel.from_level(level)
-		if start.get_crossing_count() == 0:
+		if start.is_contaminated():
+			errors.append("Start layout has contamination link(s) %s: a toxic neuron starts inside a receptor's reach." % [
+				start.get_contamination_links()])
+		elif start.get_crossing_count() == 0:
 			if start.get_receptor_ids().is_empty():
 				errors.append("Start layout has no crossings: a level must start tangled.")
 			elif start.are_receptors_satisfied():
@@ -226,6 +248,9 @@ static func validate_level(level: LevelData) -> PackedStringArray:
 		if solution.get_crossing_count() > 0:
 			errors.append("Solution layout has %d crossing(s) between dendrites %s and links %s." % [
 				solution.get_crossing_count(), solution.get_crossing_edges(), solution.get_crossing_links()])
+		if solution.is_contaminated():
+			errors.append("Solution layout has contamination link(s) %s: a toxic neuron ends inside a receptor's reach." % [
+				solution.get_contamination_links()])
 		for receptor_id in solution.get_receptor_ids():
 			if not solution.is_receptor_satisfied(receptor_id):
 				errors.append("Solution layout leaves receptor %d with %d of %d link(s)." % [
@@ -410,7 +435,7 @@ func release() -> void:
 		_move_count += 1
 	_grabbed_id = NO_NEURON
 	_moved_during_grab = false
-	if not _solved and _crossing_count == 0 and are_receptors_satisfied():
+	if not _solved and _crossing_count == 0 and are_receptors_satisfied() and _contamination.is_empty():
 		_solved = true
 		solved.emit()
 
@@ -615,6 +640,25 @@ func are_receptors_satisfied() -> bool:
 	return true
 
 
+## True for a TOXIC neuron (T8.2).
+func is_toxic(id: int) -> bool:
+	return _toxic.has(id)
+
+
+## True while any toxic neuron is within a receptor's reach.
+func is_contaminated() -> bool:
+	return not _contamination.is_empty()
+
+
+## Contamination links as Vector2i(receptor_id, neuron_id), sorted.
+func get_contamination_links() -> Array[Vector2i]:
+	return _contamination.duplicate()
+
+
+func has_contamination(receptor_id: int, neuron_id: int) -> bool:
+	return _contamination.has(Vector2i(receptor_id, neuron_id))
+
+
 ## Every link as Vector2i(receptor_id, neuron_id), sorted by receptor then neuron.
 func get_link_pairs() -> Array[Vector2i]:
 	var pairs: Array[Vector2i] = []
@@ -750,6 +794,32 @@ func _update_links(moved_id: int, notify: bool) -> void:
 			if strain != _strain.get(key, -1.0):
 				_strain[key] = strain
 				link_strain_changed.emit(receptor_id, moved_id, strain)
+	_update_contamination(notify)
+
+
+## Recomputes the contamination links (toxic neuron within a receptor's reach); clears are
+## announced before formations.
+func _update_contamination(notify: bool) -> void:
+	if _toxic.is_empty():
+		return
+	var current: Array[Vector2i] = []
+	for receptor_id in get_receptor_ids():
+		for id in _ids:
+			if _toxic.has(id) and _in_reach(receptor_id, id):
+				current.append(Vector2i(receptor_id, id))
+	current.sort()
+	if current == _contamination:
+		return
+	var before := _contamination
+	_contamination = current
+	if not notify:
+		return
+	for pair in before:
+		if not current.has(pair):
+			contamination_cleared.emit(pair.x, pair.y)
+	for pair in current:
+		if not before.has(pair):
+			contamination_formed.emit(pair.x, pair.y)
 
 
 func _in_reach(receptor_id: int, neuron_id: int) -> bool:
@@ -763,7 +833,7 @@ func _closest_candidate(receptor_id: int) -> int:
 	var best_distance := INF
 	var linked: Array = _links[receptor_id]
 	for id in _ids:
-		if _fixed[id] or linked.has(id) or not _in_reach(receptor_id, id):
+		if _fixed[id] or _toxic.has(id) or linked.has(id) or not _in_reach(receptor_id, id):
 			continue
 		if _static_pairs.has(Vector2i(mini(id, receptor_id), maxi(id, receptor_id))):
 			continue

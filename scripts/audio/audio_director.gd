@@ -13,7 +13,9 @@ extends Node
 ##     crossing_points_changed -> buzz loop while crossings exist (volume follows the count,
 ##     capped; fades out when resolved); hazard_proximity_changed -> alarm loop whose pitch and
 ##     volume follow the highest proximity (stops on release); neuron_destroyed -> explode;
-##     link_formed -> link (ascending synaptic click); link_broken -> unlink (small snap).
+##     link_formed -> link (ascending synaptic click); link_broken -> unlink (small snap);
+##     contamination_formed -> toxic alarm loop (dry beeps, stays on until every contamination is
+##     cleared, also after release); contamination_cleared (last one) -> toxic_clear chime.
 ##   LevelController.level_completed -> complete. Hud.star_revealed(i) -> star, pitched up per star.
 ## The ambient drone loops on the Music bus from start; everything else uses the SFX bus. Both
 ## buses come from res://default_bus_layout.tres and feed Master (the settings volume).
@@ -34,7 +36,7 @@ const AMBIENT_FADE_IN := 3.0
 const VOLUMES: Dictionary[StringName, float] = {
 	&"grab": -8.0, &"release": -10.0, &"blocked": -14.0, &"snap": -4.0, &"chime": -10.0,
 	&"complete": -6.0, &"star": -8.0, &"ui_hover": -18.0, &"ui_click": -12.0,
-	&"explode": -3.0, &"link": -9.0, &"unlink": -11.0,
+	&"explode": -3.0, &"link": -9.0, &"unlink": -11.0, &"toxic_alarm": -16.0, &"toxic_clear": -8.0,
 }
 const POLYPHONY := 4
 ## The tension tone is silent below this ratio and rises to TENSION_MAX_DB at the limit.
@@ -80,6 +82,7 @@ var _buzz_on := false
 var _buzz_target_db := SILENT_DB
 var _buzz_tween: Tween
 var _alarm_on := false
+var _toxic_alarm_on := false
 ## Hazard proximity per neuron (only moved neurons report it).
 var _hazard: Dictionary[int, float] = {}
 ## False under --headless: the Dummy audio driver never mixes, so a started playback would never
@@ -156,6 +159,7 @@ func _exit_tree() -> void:
 	_buzz_on = false
 	_buzz_target_db = SILENT_DB
 	_alarm_on = false
+	_toxic_alarm_on = false
 	for player: AudioStreamPlayer in _players.values():
 		player.stop()
 	_tension_on = false
@@ -202,6 +206,11 @@ func get_buzz_target_db() -> float:
 
 func is_alarm_playing() -> bool:
 	return _alarm_on
+
+
+## True while any toxic neuron contaminates a receptor (T8.2).
+func is_toxic_alarm_playing() -> bool:
+	return _toxic_alarm_on
 
 
 ## True right after bind_ui(), while hover sounds are still muted.
@@ -318,6 +327,7 @@ func _bind_buttons(node: Node) -> void:
 func _bind_model(model: PuzzleModel) -> void:
 	_stop_tension()
 	_stop_alarm()
+	_stop_toxic_alarm()
 	_crossing_count = model.get_crossing_edges().size()
 	_set_buzz(model.get_crossing_count())
 	model.neuron_blocked.connect(_on_neuron_blocked)
@@ -327,6 +337,9 @@ func _bind_model(model: PuzzleModel) -> void:
 	model.neuron_destroyed.connect(_on_neuron_destroyed)
 	model.link_formed.connect(_on_link_formed)
 	model.link_broken.connect(_on_link_broken)
+	model.contamination_formed.connect(_on_contamination_formed.bind(model).unbind(2))
+	model.contamination_cleared.connect(_on_contamination_cleared.bind(model).unbind(2))
+	_set_toxic_alarm(model.is_contaminated())
 	model.tension_changed.connect(_on_tension_changed)
 	model.edge_broke.connect(_on_edge_broke)
 
@@ -431,9 +444,37 @@ func _on_link_broken(_receptor_id: int, _neuron_id: int) -> void:
 	play(&"unlink")
 
 
+func _on_contamination_formed(model: PuzzleModel) -> void:
+	_set_toxic_alarm(model.is_contaminated())
+
+
+func _on_contamination_cleared(model: PuzzleModel) -> void:
+	if model.is_contaminated():
+		return
+	_set_toxic_alarm(false)
+	play(&"toxic_clear")
+
+
+func _set_toxic_alarm(on: bool) -> void:
+	if on == _toxic_alarm_on:
+		return
+	_toxic_alarm_on = on
+	var player: AudioStreamPlayer = _players[&"toxic_alarm"]
+	if on:
+		_ensure_stream(&"toxic_alarm")
+		_start(player)
+	else:
+		player.stop()
+
+
+func _stop_toxic_alarm() -> void:
+	_set_toxic_alarm(false)
+
+
 func _on_neuron_destroyed(_id: int, _contact: Vector2) -> void:
 	_stop_alarm()
 	_stop_tension()
+	_stop_toxic_alarm()
 	play(&"explode")
 
 
@@ -475,6 +516,7 @@ func _on_edge_broke(_edge_id: int) -> void:
 func _on_level_completed(_result: LevelResult) -> void:
 	_stop_tension()
 	_stop_alarm()
+	_stop_toxic_alarm()
 	play(&"complete")
 
 

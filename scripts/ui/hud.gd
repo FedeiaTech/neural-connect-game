@@ -60,6 +60,9 @@ var _shown_seconds := -1
 var _moves := 0
 ## Last summary stats shown: [moves, seconds, progress] (empty before the first summary).
 var _stats: Array = []
+## Bottom-center status hints (T8.2): shown only while they apply.
+var _status_box: VBoxContainer
+var _contamination_hint: Label
 var _measure_label: Label  # MEASURE-MODE
 
 
@@ -81,6 +84,7 @@ func _ready() -> void:
 	set_moves(0)
 	set_time(0.0)
 	_apply_tooltips()
+	_build_status_labels()
 	_build_measure_indicator()  # MEASURE-MODE
 
 
@@ -90,6 +94,45 @@ func _notification(what: int) -> void:
 		if not _stats.is_empty():
 			_apply_count(_stats[2], _stats[0], _stats[1])
 		_apply_tooltips()
+
+
+## Bottom-center hints, built in code so the scene stays untouched. Mouse input passes through.
+func _build_status_labels() -> void:
+	_status_box = VBoxContainer.new()
+	_status_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_status_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 10)
+	_status_box.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_status_box.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_status_box.alignment = BoxContainer.ALIGNMENT_END
+	add_child(_status_box)
+	_contamination_hint = _make_status_label("HUD_CONTAMINATED", Palette.TOXIC)
+
+
+func _make_status_label(key: String, color: Color) -> Label:
+	var label := Label.new()
+	label.text = key
+	label.visible = false
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override(&"font_size", 28)
+	label.add_theme_color_override(&"font_color", color)
+	label.add_theme_color_override(&"font_outline_color", Color(color, 0.22))
+	label.add_theme_constant_override(&"outline_size", 10)
+	_status_box.add_child(label)
+	return label
+
+
+## T8.2: shows the contamination hint while a toxic neuron sits inside a receptor's reach.
+func set_contaminated(contaminated: bool) -> void:
+	_contamination_hint.visible = contaminated
+
+
+func is_contamination_hint_visible() -> bool:
+	return _contamination_hint.visible
+
+
+func get_contamination_hint_text() -> String:
+	return text_for(StringName(_contamination_hint.text))
 
 
 ## Text of key in the current locale (usable from static functions).

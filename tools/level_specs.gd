@@ -15,6 +15,7 @@ extends RefCounted
 ##     (a hand-picked shuffle of the solution spots, shifted so no neuron starts on a spot)
 ##   fixed: ids of red fixed neurons (they start on their solution spot)
 ##   receptors: {id: [reach, required_links]} cyan receptor neurons (T7.3; start on their spot)
+##   toxic: ids of movable yellow toxic neurons (T8.2): they must end outside every receptor's reach
 ##   lethal_edges: play-area edge indices that destroy on contact (edge i = point i -> i + 1)
 ##   lethal_obstacles: indices into obstacles that destroy on contact (T7.2)
 ##   edges: [a, b] normal dendrite, [a, b, rest_length, max_length] tension dendrite

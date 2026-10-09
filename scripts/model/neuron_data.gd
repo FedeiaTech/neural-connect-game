@@ -4,7 +4,9 @@ extends Resource
 
 ## NORMAL: a plain neuron (movable unless fixed). RECEPTOR (T7.3): an immovable cyan neuron
 ## that grows dynamic links to movable neurons within `reach` and needs `required_links` of them.
-enum Kind { NORMAL, RECEPTOR }
+## TOXIC (T8.2): a movable yellow neuron that must stay out of every receptor's reach: inside it
+## forms a contamination link that blocks the win (never a loss).
+enum Kind { NORMAL, RECEPTOR, TOXIC }
 
 ## Unique id inside the level. Dendrites reference neurons by this id.
 @export var id: int = 0
@@ -26,3 +28,7 @@ enum Kind { NORMAL, RECEPTOR }
 
 func is_receptor() -> bool:
 	return kind == Kind.RECEPTOR
+
+
+func is_toxic() -> bool:
+	return kind == Kind.TOXIC

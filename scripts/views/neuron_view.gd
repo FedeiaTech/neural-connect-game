@@ -11,6 +11,9 @@ extends Node2D
 ## crossings_changed, neuron_blocked) and filters them by id. The grabbed state is not a model
 ## concept, so the LevelController pushes it down with set_grabbed(). Freeing the view drops
 ## its connections automatically, which is how a restart rebuilds the views.
+## Toxic neurons (T8.2): a yellow soma with a faint pulsing warning glow that turns into a
+## strong fast pulse plus a ring while the neuron contaminates a receptor (the warning amount eases
+## towards its target; reduced motion snaps it and the pulse stands still).
 ## Reduced motion (GameState) freezes the shader animation, turns the sparkle off (the latency
 ## glow stays as a static tint) and snaps the fades.
 
@@ -25,6 +28,10 @@ var _radius := 28.0
 var _fixed := false
 ## Receptor (T7.3): cyan soma; ReceptorView draws its halo, stub and link dots.
 var _receptor := false
+## Toxic (T8.2): yellow soma; _contaminated while it sits inside a receptor's reach.
+var _toxic := false
+var _contaminated := false
+var _warn_amount := 0.0
 var _show_feedback := true
 var _highlighted := false
 var _grabbed := false
@@ -54,6 +61,7 @@ func setup(id: int, model: PuzzleModel, show_feedback := true) -> void:
 	_radius = model.get_neuron_radius()
 	_fixed = model.is_fixed(id)
 	_receptor = model.is_receptor(id)
+	_toxic = model.is_toxic(id)
 	_show_feedback = show_feedback
 	position = model.get_neuron_position(id)
 	_highlighted = show_feedback and model.get_crossing_neurons().has(id)
@@ -63,6 +71,11 @@ func setup(id: int, model: PuzzleModel, show_feedback := true) -> void:
 	model.neuron_blocked.connect(_on_neuron_blocked)
 	model.neuron_destroyed.connect(_on_neuron_destroyed)
 	model.hazard_proximity_changed.connect(_on_hazard_proximity_changed)
+	if _toxic:
+		_contaminated = _is_contaminated_in(model)
+		_warn_amount = get_warning_target()
+		model.contamination_formed.connect(_on_contamination_changed.bind(model).unbind(2))
+		model.contamination_cleared.connect(_on_contamination_changed.bind(model).unbind(2))
 	_configure_material()
 	queue_redraw()
 
@@ -80,6 +93,28 @@ func is_grabbed() -> bool:
 
 func is_highlighted() -> bool:
 	return _highlighted
+
+
+func is_toxic() -> bool:
+	return _toxic
+
+
+## True while this toxic neuron is inside a receptor's reach.
+func is_contaminated() -> bool:
+	return _contaminated
+
+
+## Warning glow the view eases towards: 0 for normal neurons, faint at rest, full when
+## contaminating.
+func get_warning_target() -> float:
+	if not _toxic:
+		return 0.0
+	return 1.0 if _contaminated else VisualTuning.TOXIC_WARN_IDLE
+
+
+## Warning glow currently shown, 0..1.
+func get_warning_amount() -> float:
+	return _warn_amount
 
 
 func is_fixed() -> bool:
@@ -118,6 +153,8 @@ func get_fill_color() -> Color:
 		return Palette.RECEPTOR
 	if _fixed:
 		return Palette.NEURON_FIXED
+	if _toxic:
+		return Palette.TOXIC
 	if _grabbed:
 		return Palette.NEURON_GRABBED
 	return Palette.NEURON
@@ -152,6 +189,11 @@ func _process(delta: float) -> void:
 		_highlight_amount = VisualTuning.approach(_highlight_amount, target, VisualTuning.HIGHLIGHT_RATE, delta)
 	else:
 		_highlight_amount = target
+	var warn_target := get_warning_target()
+	if motion > 0.0:
+		_warn_amount = VisualTuning.approach(_warn_amount, warn_target, VisualTuning.TOXIC_WARN_RATE, delta)
+	else:
+		_warn_amount = warn_target
 	_contact_flash = maxf(_contact_flash - delta, 0.0)
 	if _destroyed and visible:
 		_overload_age += delta
@@ -186,6 +228,10 @@ func _configure_material() -> void:
 	if _receptor:
 		m.set_shader_parameter(&"core_color", Palette.RECEPTOR)
 		m.set_shader_parameter(&"glow_color", Palette.RECEPTOR_GLOW)
+	elif _toxic:
+		m.set_shader_parameter(&"core_color", Palette.TOXIC)
+		m.set_shader_parameter(&"glow_color", Palette.TOXIC_GLOW)
+		m.set_shader_parameter(&"warn_color", Palette.TOXIC_GLOW)
 	else:
 		m.set_shader_parameter(&"core_color", Palette.NEURON_FIXED if _fixed else Palette.NEURON)
 		m.set_shader_parameter(&"glow_color", Palette.NEURON_FIXED_GLOW if _fixed else Palette.NEURON_GLOW)
@@ -219,6 +265,7 @@ func _update_dynamic_params(motion: float) -> void:
 	if _destroyed:
 		overload = maxf(overload, minf(_overload_age / VisualTuning.OVERLOAD_TIME, 1.0) * 0.6 + 0.4)
 	_set_param(&"overload", overload)
+	_set_param(&"warn", _warn_amount)
 	var brightness := lerpf(1.0, VisualTuning.GRAB_BRIGHTNESS, _grab_amount)
 	_set_param(&"brightness", brightness + _wave_boost * (VisualTuning.WAVE_BRIGHTNESS - 1.0))
 
@@ -256,6 +303,17 @@ func _on_neuron_destroyed(id: int, _contact: Vector2) -> void:
 	if id == neuron_id:
 		_destroyed = true
 		_overload_age = 0.0
+
+
+func _is_contaminated_in(model: PuzzleModel) -> bool:
+	for pair in model.get_contamination_links():
+		if pair.y == neuron_id:
+			return true
+	return false
+
+
+func _on_contamination_changed(model: PuzzleModel) -> void:
+	_contaminated = _is_contaminated_in(model)
 
 
 func _on_hazard_proximity_changed(id: int, proximity: float) -> void:

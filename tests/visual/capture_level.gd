@@ -11,9 +11,14 @@ extends Node
 ## mid explosion). approach / explode mark the right play-area side lethal on a copy of a
 ## mission without lethal walls. link / strain (receptor missions): pulls the nearest free
 ## neuron into the first receptor's reach (fresh link growing / near the reach limit).
+## T8: mission ids fixture_toxic / fixture_diseased load the test levels of
+## tests/visual/fixtures.gd. contam (fixture_toxic): the toxic neuron is dragged into the first
+## receptor's reach (contamination link, alarm glow, HUD hint). measure: the developer measurement
+## tag is shown (rows go to a throwaway CSV).
 
 const LevelScene := preload("res://scenes/level/level.tscn")
 const PerfProbe := preload("res://tests/visual/perf_probe.gd")
+const Fixtures := preload("res://tests/visual/fixtures.gd")
 const PERF_WARMUP_FRAMES := 60
 const PERF_SECONDS := 5.0
 
@@ -47,7 +52,7 @@ func _ready() -> void:
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	_level = LevelScene.instantiate()
 	add_child(_level)
-	var data := GameState.get_level(mission)
+	var data := Fixtures.load_fixture(mission) if Fixtures.is_fixture(mission) else GameState.get_level(mission)
 	if _mode in ["approach", "explode"] and data.lethal_edges.is_empty() and data.lethal_obstacles.is_empty():
 		# Debug only: a copy with the right play-area side lethal.
 		data = data.duplicate(true)
@@ -55,6 +60,9 @@ func _ready() -> void:
 	if _mode == "explode":
 		_target = maxi(_target, 90)
 	_level.load_level(data)
+	if _mode == "measure":
+		_level.get_measurement().csv_path = "user://capture_measure.csv"
+		_level.get_measurement().set_enabled(true)
 	_level.get_hud().hide_story()
 	_level.get_controller().start_playing()
 
@@ -152,6 +160,8 @@ func _trigger() -> void:
 			_drive_to_lethal(model, 8.0 if _mode == "approach" else -20.0)
 		"link", "strain":
 			_drive_to_receptor(model, 0.45 if _mode == "link" else 0.96)
+		"contam":
+			_drive_toxic_into_reach(model)
 
 
 ## Pulls the movable neuron closest to the first receptor into its reach, ending at the given
@@ -204,3 +214,21 @@ func _drive_to_lethal(model: PuzzleModel, gap: float) -> void:
 	model.drag_to(wall - direction * (model.get_neuron_radius() + gap))
 	if _mode == "explode":
 		_frames = _target - 26
+
+
+## Drags the first toxic neuron into the first receptor's reach (contamination).
+func _drive_toxic_into_reach(model: PuzzleModel) -> void:
+	var receptors := model.get_receptor_ids()
+	if receptors.is_empty():
+		return
+	var receptor := receptors[0]
+	for id in model.get_neuron_ids():
+		if not model.is_toxic(id):
+			continue
+		var center := model.get_neuron_position(receptor)
+		var direction := (model.get_neuron_position(id) - center).normalized()
+		model.grab(id)
+		_level.get_controller().get_neuron_view(id).set_grabbed(true)
+		model.drag_to(center + direction * (model.get_neuron_radius() + model.get_receptor_reach(receptor) * 0.9))
+		_frames = maxi(_frames, _target - 20)
+		return

@@ -37,6 +37,35 @@ func test_plans_a_receptor_level_through_its_links() -> void:
 	assert_array(model.get_links(0)).is_equal([1])
 
 
+## T8.2: the toxic neuron's straight path crosses the receptor's reach; the plan goes around it
+## and the model is never contaminated at any drag point.
+func test_plans_around_a_receptor_reach_for_a_toxic_neuron() -> void:
+	var neurons: Array[NeuronData] = [
+		LevelFactory.receptor(0, Vector2(500, 200), 120.0, 1),
+		LevelFactory.neuron(1, Vector2(850, 200), Vector2(620, 200)),
+		LevelFactory.toxic(2, Vector2(150, 200), Vector2(850, 400)),
+	]
+	var dendrites: Array[DendriteData] = []
+	_x_tangle(neurons, dendrites)
+	var level := LevelFactory.level(neurons, dendrites)
+	assert_array(PuzzleModel.validate_level(level)).is_empty()
+	var plan := SolutionPlanner.new().plan(level)
+	assert_bool(plan["ok"]).override_failure_message(str(plan["reason"])).is_true()
+	var model := PuzzleModel.from_level(level)
+	var toxic_moves := 0
+	for move: Dictionary in plan["moves"]:
+		assert_bool(model.grab(move["id"])).is_true()
+		for point: Vector2 in move["points"]:
+			model.drag_to(point)
+			assert_bool(model.is_contaminated()).override_failure_message(
+				"contaminated while moving neuron %d to %s" % [move["id"], point]).is_false()
+		model.release()
+		if move["id"] == 2:
+			toxic_moves += 1
+	assert_int(toxic_moves).is_greater(0)
+	assert_bool(model.is_solved()).is_true()
+
+
 func test_keeps_away_from_lethal_walls() -> void:
 	var neurons: Array[NeuronData] = []
 	var dendrites: Array[DendriteData] = []

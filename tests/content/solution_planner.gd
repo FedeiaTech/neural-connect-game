@@ -23,6 +23,9 @@ extends RefCounted
 ## It stops as soon as a shadow PuzzleModel, fed every planned move, reports solved (zero
 ## crossings over dendrites and receptor links, every receptor fully linked), like the game
 ## does on release. Lethal walls (T7.2) are kept LETHAL_MARGIN away; receptors never move.
+## Toxic neurons (T8.2): contamination is forbidden while planning. A toxic neuron never has a
+## grid cell, a goal or a path segment within (radius + reach + CLEARANCE) of a receptor center,
+## so the shadow model sees no contamination at any drag point.
 
 const CLEARANCE := 2.0
 const GRID_STEP := 40.0
@@ -47,6 +50,9 @@ var _ids: Array[int] = []
 var _positions: Dictionary[int, Vector2] = {}
 var _targets: Dictionary[int, Vector2] = {}
 var _fixed: Dictionary[int, bool] = {}
+## Toxic neuron ids and receptor centers / reaches (T8.2).
+var _toxic: Dictionary[int, bool] = {}
+var _receptors: Array[Dictionary] = []
 var _edges: Array[Vector2i] = []
 ## Neuron id -> Array of Vector2(partner id, max_length).
 var _tension: Dictionary[int, Array] = {}
@@ -139,6 +145,10 @@ func _setup(level: LevelData) -> void:
 		_positions[neuron.id] = neuron.position
 		_targets[neuron.id] = neuron.solution_position
 		_fixed[neuron.id] = neuron.fixed or neuron.is_receptor()
+		if neuron.is_toxic():
+			_toxic[neuron.id] = true
+		if neuron.is_receptor():
+			_receptors.append({"pos": neuron.position, "reach": neuron.reach})
 		_tension[neuron.id] = []
 	_ids.sort()
 	for dendrite in level.dendrites:
@@ -265,14 +275,16 @@ func _search(id: int) -> Dictionary:
 			var next := cell + direction
 			if parents.has(next) or not _cell_usable(id, next):
 				continue
-			if _link_static_ok(cell, direction) and _segment_clear_of_neurons(id, _grid[cell], _grid[next]):
+			if _link_static_ok(cell, direction) and _segment_clear_of_neurons(id, _grid[cell], _grid[next]) \
+					and _segment_toxic_ok(id, _grid[cell], _grid[next]):
 				parents[next] = cell
 				order.append(next)
 	return {"order": order, "parents": parents}
 
 
 func _cell_usable(id: int, cell: Vector2i) -> bool:
-	return _grid.has(cell) and _clear_of_neurons(id, _grid[cell]) and _tension_ok(id, _grid[cell])
+	return _grid.has(cell) and _clear_of_neurons(id, _grid[cell]) and _tension_ok(id, _grid[cell]) \
+		and _toxic_ok(id, _grid[cell])
 
 
 func _cell_path(parents: Dictionary, last: Vector2i) -> Array[Vector2i]:
@@ -321,7 +333,27 @@ func _clear_of_neurons(id: int, center: Vector2) -> bool:
 
 
 func _is_free(id: int, center: Vector2) -> bool:
-	return _in_playfield(center) and _clear_of_neurons(id, center)
+	return _in_playfield(center) and _clear_of_neurons(id, center) and _toxic_ok(id, center)
+
+
+## A toxic neuron stays out of every receptor's reach (with CLEARANCE); others are unrestricted.
+func _toxic_ok(id: int, center: Vector2) -> bool:
+	if not _toxic.has(id):
+		return true
+	for receptor in _receptors:
+		if center.distance_to(receptor["pos"]) - _radius <= receptor["reach"] + CLEARANCE:
+			return false
+	return true
+
+
+func _segment_toxic_ok(id: int, from: Vector2, to: Vector2) -> bool:
+	if not _toxic.has(id):
+		return true
+	for receptor in _receptors:
+		var closest := Geometry2D.get_closest_point_to_segment(receptor["pos"], from, to)
+		if closest.distance_to(receptor["pos"]) - _radius <= receptor["reach"] + CLEARANCE:
+			return false
+	return true
 
 
 func _tension_ok(id: int, center: Vector2) -> bool:
@@ -333,7 +365,8 @@ func _tension_ok(id: int, center: Vector2) -> bool:
 
 ## Same sub-steps as PuzzleModel.drag_to for the playfield, whole segment for other neurons.
 func _segment_free(id: int, from: Vector2, to: Vector2) -> bool:
-	return _segment_in_playfield(from, to) and _segment_clear_of_neurons(id, from, to)
+	return _segment_in_playfield(from, to) and _segment_clear_of_neurons(id, from, to) \
+		and _segment_toxic_ok(id, from, to)
 
 
 func _segment_in_playfield(from: Vector2, to: Vector2) -> bool:
