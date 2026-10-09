@@ -5,7 +5,8 @@ extends Node
 ##   godot --path . res://tests/visual/capture_screens.tscn -- <screen> <out.png> [frames] [reduced]
 ## screen: main_menu, settings, settings_reset (reset confirmation open), mission_select,
 ## mission_reset (m01 record reset confirmation), story (story overlay of m01, or of mXX with
-## story=mXX), summary (m02
+## story=mXX), boss=mXX (mission select scrolled to that chapter, everything before it completed),
+## summary (m02
 ## completion panel), pause (m02).
 ## Uses a temporary save (m01 completed with 2 stars) so the real progress is never touched.
 ## Optional 4th argument: "reduced" captures with reduced motion; "perf" turns vsync off and logs
@@ -37,9 +38,13 @@ func _ready() -> void:
 	if args.size() > 0:
 		_screen = args[0]
 	var story_mission := &"m01"
+	var boss_mission := &""
 	if _screen.begins_with("story="):
 		story_mission = StringName(_screen.trim_prefix("story="))
 		_screen = "story"
+	if _screen.begins_with("boss="):
+		boss_mission = StringName(_screen.trim_prefix("boss="))
+		_screen = "mission_boss"
 	if args.size() > 1:
 		_out = args[1]
 	if args.size() > 2:
@@ -63,6 +68,18 @@ func _ready() -> void:
 			add_child(settings)
 			if _screen == "settings_reset":
 				settings.get_reset_button().pressed.emit()
+		"mission_boss":
+			# Every mission before the boss is completed, so its node is playable; scroll to it.
+			for id in GameState.campaign.get_mission_ids():
+				if id == boss_mission:
+					break
+				GameState.progress.record(id, 2, 5, 40.0)
+			var boss_select: MissionSelect = MissionSelectScene.instantiate()
+			add_child(boss_select)
+			await get_tree().process_frame
+			var scroll: ScrollContainer = boss_select.get_node("Margin/Column/Scroll")
+			var map := boss_select.get_map_for(boss_mission)
+			scroll.scroll_vertical = int(map.get_parent().position.y)
 		"mission_select", "mission_reset":
 			var select: MissionSelect = MissionSelectScene.instantiate()
 			add_child(select)

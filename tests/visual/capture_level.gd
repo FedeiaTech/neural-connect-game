@@ -17,6 +17,8 @@ extends Node
 ## the first diseased dendrite is stretched to 90 % of its strain range (cracks, tremble, embers) /
 ## past its break length (snap effect, captured shortly after). measure: the developer measurement
 ## tag is shown (rows go to a throwaway CSV).
+## T8.6: boss keeps the boss intro card on screen (capture about 1 s after the load); toxicboom
+## (hard toxic missions) drags a toxic neuron into a receptor's reach and captures the overload.
 
 const LevelScene := preload("res://scenes/level/level.tscn")
 const PerfProbe := preload("res://tests/visual/perf_probe.gd")
@@ -65,8 +67,9 @@ func _ready() -> void:
 	if _mode == "measure":  # MEASURE-MODE
 		_level.get_measurement().csv_path = "user://capture_measure.csv"  # MEASURE-MODE
 		_level.get_measurement().set_enabled(true)  # MEASURE-MODE
-	_level.get_hud().hide_story()
-	_level.get_controller().start_playing()
+	if _mode != "boss":
+		_level.get_hud().hide_story()
+		_level.get_controller().start_playing()
 
 
 func _process(_delta: float) -> void:
@@ -164,6 +167,9 @@ func _trigger() -> void:
 			_drive_to_receptor(model, 0.45 if _mode == "link" else 0.96)
 		"contam":
 			_drive_toxic_into_reach(model)
+		"toxicboom":
+			_drive_toxic_into_reach(model)
+			_frames = maxi(_frames, _target - 30)
 		"dstrain", "dsnap":
 			_drive_diseased(model, 0.9 if _mode == "dstrain" else 1.2)
 

@@ -40,6 +40,8 @@ const MAX_MOVES_PER_NEURON := 4
 const LETHAL_MARGIN := PuzzleModel.LETHAL_SAFE_MARGIN_RADII * 28.0 * 0.5
 ## Step 3 only counts when it brings the neuron at least this much closer to its spot.
 const MIN_APPROACH := GRID_STEP
+## Margins below this are decided by the exact playfield test.
+const MARGIN_EPSILON := 0.01
 
 var _radius := 28.0
 var _play_area := PackedVector2Array()
@@ -369,13 +371,40 @@ func _segment_free(id: int, from: Vector2, to: Vector2) -> bool:
 		and _segment_toxic_ok(id, from, to)
 
 
+## Same samples as the model, but a sample whose distance to every wall (the margin) is known to
+## be large vouches for all samples within that distance, so open space costs a handful of tests
+## instead of one per sample (organic arenas have hundreds of outline vertices). Samples with a
+## small or negative margin are decided by the exact _in_playfield() test.
 func _segment_in_playfield(from: Vector2, to: Vector2) -> bool:
 	var step := maxf(_radius * PuzzleModel.STEP_FACTOR, PuzzleModel.MIN_STEP)
 	var steps := maxi(ceili(from.distance_to(to) / step), 1)
-	for i in range(1, steps + 1):
-		if not _in_playfield(from.lerp(to, float(i) / steps)):
-			return false
+	var spacing := from.distance_to(to) / steps
+	var i := 1
+	while i <= steps:
+		var point := from.lerp(to, float(i) / steps)
+		var margin := _playfield_margin(point)
+		if margin < MARGIN_EPSILON:
+			if not _in_playfield(point):
+				return false
+			i += 1
+		else:
+			i += 1 + (int(floorf(margin / spacing)) if spacing > 0.0 else 1)
 	return true
+
+
+## How far a circle center could move in any direction and still pass _in_playfield(), by the
+## distance to the play area, obstacle and lethal outlines (negative when it is not inside).
+func _playfield_margin(center: Vector2) -> float:
+	if not Geometry2D.is_point_in_polygon(center, _play_area):
+		return -1.0
+	var margin := GeometryUtils.distance_to_outline(center, _play_area) - (_radius + CLEARANCE)
+	for obstacle in _obstacles:
+		if Geometry2D.is_point_in_polygon(center, obstacle):
+			return -1.0
+		margin = minf(margin, GeometryUtils.distance_to_outline(center, obstacle) - (_radius + CLEARANCE))
+	if not _lethal.is_empty():
+		margin = minf(margin, PuzzleModel.lethal_gap(center, _radius, _lethal) - LETHAL_MARGIN)
+	return margin
 
 
 func _segment_clear_of_neurons(id: int, from: Vector2, to: Vector2) -> bool:

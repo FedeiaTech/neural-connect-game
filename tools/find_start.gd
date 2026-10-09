@@ -9,12 +9,25 @@ extends SceneTree
 ##   - every receptor starts unsatisfied (the player has to make the links),
 ##   - the solution planner solves it and the replay on the real model succeeds.
 ##
-##   godot --headless --path . -s res://tools/find_start.gd -- <mission_id> <min> <max> [seed] [swaps] [jitter]
+##   godot --headless --path . -s res://tools/find_start.gd -- <mission_id> <min> <max> [seed] [swaps] [jitter] [write]
+##
+## With `write` the found start is stored in tools/level_starts.gd (missions without an inline
+## "start" in tools/level_specs.gd read it from there).
 
 const Specs := preload("res://tools/level_specs.gd")
 const Builder := preload("res://tools/build_levels.gd")
 const SolutionPlanner := preload("res://tests/content/solution_planner.gd")
 const TRIES := 4000
+const STARTS_PATH := "res://tools/level_starts.gd"
+const STARTS_HEADER := "extends RefCounted
+## Start layouts of the missions authored with tools/layouts.gd (m31 and up), found by
+## tools/find_start.gd (write) and committed so the campaign stays reviewable: mission id ->
+## flat [x0, y0, x1, y1, ...] positions (neuron id = index). Edit freely; the builder validates.
+
+const STARTS := {
+"
+
+var _write := false
 
 
 func _init() -> void:
@@ -34,6 +47,7 @@ func _init() -> void:
 	rng.seed = int(args[3]) if args.size() > 3 else 1
 	var max_swaps := int(args[4]) if args.size() > 4 else 3
 	var jitter := float(args[5]) if args.size() > 5 else 70.0
+	_write = args.has("write")
 	var base := Builder.build_level(spec)
 	if args.has("calm"):
 		_calm(base, low, high)
@@ -45,6 +59,8 @@ func _init() -> void:
 		if result >= 0:
 			print("attempt %d: %d crossings, %d planned moves" % [attempt, PuzzleModel.from_level(level).get_crossing_count(), result])
 			print('"start": pts([%s]),' % _format(level))
+			if _write:
+				_store(args[0], level)
 			quit(0)
 			return
 	printerr("no start found in %d tries; rejections %s; crossings seen %d..%d; sample error %s" % [
@@ -93,6 +109,8 @@ func _calm(level: LevelData, low: int, high: int) -> void:
 		return
 	print("calm: %d crossings, %d planned moves" % [count, result])
 	print('"start": pts([%s]),' % _format(level))
+	if _write:
+		_store(str(level.mission_id), level)
 	quit(0)
 
 
@@ -141,22 +159,76 @@ func _shuffle(level: LevelData, rng: RandomNumberGenerator, swaps: int, jitter: 
 		a.position = b.position
 		b.position = swap
 	for neuron in movable:
+		var base := neuron.position
 		neuron.position += Vector2(rng.randf_range(-jitter, jitter), rng.randf_range(-jitter, jitter))
 		neuron.position = neuron.position.round()
-	# Tension repair: pull a movable end back to 85% of max_length from its partner.
-	for dendrite in level.dendrites:
-		if not dendrite.is_tension():
+		# A jitter that lands on a wall, a lethal margin or another neuron is dropped (T8.4).
+		if not _spot_ok(level, neuron):
+			neuron.position = base
+	_unlink_receptors(level, movable)
+	# Tension (and diseased, T8.4) repair: pull a movable end back to 85% of max_length from its
+	# partner, so the start respects the limit.
+	for _pass in 4:
+		for dendrite in level.dendrites:
+			if not (dendrite.is_tension() or dendrite.is_diseased()):
+				continue
+			var a := level.find_neuron(dendrite.a)
+			var b := level.find_neuron(dendrite.b)
+			if a.position.distance_to(b.position) <= 0.9 * dendrite.max_length:
+				continue
+			var moving := b if movable.has(b) else a
+			var anchor := a if moving == b else b
+			if not movable.has(moving):
+				continue
+			var direction := (moving.position - anchor.position).normalized()
+			moving.position = (anchor.position + direction * 0.85 * dendrite.max_length).round()
+
+
+## Receptor/toxic repair (T8.4): while a receptor starts satisfied or a toxic neuron starts inside
+## a reach, swap the offending neuron with the movable neuron farthest from that receptor.
+func _unlink_receptors(level: LevelData, movable: Array[NeuronData]) -> void:
+	for receptor in level.neurons:
+		if not receptor.is_receptor():
 			continue
-		var a := level.find_neuron(dendrite.a)
-		var b := level.find_neuron(dendrite.b)
-		if a.position.distance_to(b.position) <= 0.9 * dendrite.max_length:
-			continue
-		var moving := b if movable.has(b) else a
-		var anchor := a if moving == b else b
-		if not movable.has(moving):
-			continue
-		var direction := (moving.position - anchor.position).normalized()
-		moving.position = (anchor.position + direction * 0.85 * dendrite.max_length).round()
+		for round in 8:
+			var inside: Array[NeuronData] = []
+			var excess := 0
+			for neuron in movable:
+				if neuron.position.distance_to(receptor.position) - level.neuron_radius <= receptor.reach:
+					inside.append(neuron)
+			var partners := 0
+			for neuron in inside:
+				partners += int(not neuron.is_toxic())
+			var offender: NeuronData = null
+			for neuron in inside:
+				if neuron.is_toxic():
+					offender = neuron
+					break
+			if offender == null and partners >= receptor.required_links:
+				offender = inside[0]
+			if offender == null:
+				break
+			var far: NeuronData = null
+			for neuron in movable:
+				if neuron == offender or neuron in inside:
+					continue
+				if far == null or neuron.position.distance_to(receptor.position) > far.position.distance_to(receptor.position):
+					far = neuron
+			if far == null:
+				break
+			var swap := offender.position
+			offender.position = far.position
+			far.position = swap
+
+
+func _spot_ok(level: LevelData, neuron: NeuronData) -> bool:
+	if not GeometryUtils.is_circle_in_playfield(neuron.position, level.neuron_radius + 2.0, level.play_area, level.obstacles):
+		return false
+	for other in level.neurons:
+		if other != neuron and other.position.distance_to(neuron.position) < 2.0 * level.neuron_radius + 6.0:
+			return false
+	var lethal := PuzzleModel.lethal_segments_of(level)
+	return lethal.is_empty() or PuzzleModel.lethal_gap(neuron.position, level.neuron_radius, lethal) >= 26.0
 
 
 var _rejections := {"invalid": 0, "crossings": 0, "receptor": 0, "tight": 0, "planner": 0}
@@ -195,6 +267,29 @@ func _check(level: LevelData, low: int, high: int) -> int:
 		_rejections["planner"] += 1
 		return -1
 	return plan["moves"].size()
+
+
+## Stores the level's current neuron positions as the mission's start in tools/level_starts.gd
+## (entries sorted by id, one per line, so the file stays diff-friendly).
+func _store(id: String, level: LevelData) -> void:
+	var entries := {}
+	for line in FileAccess.get_file_as_string(STARTS_PATH).split("
+"):
+		var text := line.strip_edges()
+		if text.begins_with('"m') and text.contains('": ['):
+			entries[text.get_slice('"', 1)] = text.substr(text.find("[")).trim_suffix(",")
+	entries[id] = "[%s]" % _format(level)
+	var keys := entries.keys()
+	keys.sort()
+	var out := STARTS_HEADER
+	for key in keys:
+		out += '	"%s": %s,
+' % [key, entries[key]]
+	out += "}
+"
+	var file := FileAccess.open(STARTS_PATH, FileAccess.WRITE)
+	file.store_string(out)
+	print("stored start of %s in %s" % [id, STARTS_PATH])
 
 
 func _format(level: LevelData) -> String:

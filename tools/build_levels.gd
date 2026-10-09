@@ -31,8 +31,8 @@ func _init() -> void:
 	var ok := true
 	var levels: Array[LevelData] = []
 	var rows := PackedStringArray([
-		"| id | name | ch | neurons | dendrites | fixed | tension | lethal | receptors | start crossings | planned moves | par_moves | par_time | story | min spacing | edge clearance start / solution |",
-		"|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+		"| id | name | ch | neurons | dendrites | fixed | tension | diseased | toxic | lethal | receptors | start crossings | planned moves | par_moves | par_time | story | boss | area pts | size | min spacing | edge clearance start / solution |",
+		"|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
 	])
 	for spec in Specs.missions():
 		if not only.is_empty() and not only.has(spec["id"]):
@@ -51,6 +51,11 @@ func _init() -> void:
 			else:
 				errors.append("planner: " + plan["reason"])
 		level.par_moves = spec.get("par_moves", maxi(2 * moves, 4))
+		if self_intersects(level.play_area):
+			errors.append("play area outline crosses itself")
+		for outline in level.obstacles:
+			if self_intersects(outline):
+				errors.append("an obstacle outline crosses itself")
 		var tight := tight_spots(level)
 		if not tight.is_empty():
 			errors.append("dendrites too close to neurons at start (neuron: dendrite = distance): %s" % tight)
@@ -85,6 +90,8 @@ static func build_level(spec: Dictionary) -> LevelData:
 	level.par_time = spec["par_time"]
 	level.lethal_edges = PackedInt32Array(spec.get("lethal_edges", []))
 	level.lethal_obstacles = PackedInt32Array(spec.get("lethal_obstacles", []))
+	level.hard_toxic = spec.get("hard_toxic", false)
+	level.is_boss = spec.get("boss", false)
 	var solution: PackedVector2Array = spec["sol"]
 	var fixed: Array = spec.get("fixed", [])
 	var receptors: Dictionary = spec.get("receptors", {})
@@ -105,9 +112,12 @@ static func build_level(spec: Dictionary) -> LevelData:
 			neuron.position = solution[id]
 		elif spec.has("start"):
 			neuron.position = spec["start"][id]
-		else:
+		elif spec.has("perm"):
 			neuron.position = solution[spec["perm"][id]] + spec["offset"]
-		if not neuron.fixed and not neuron.is_receptor():
+		else:
+			# No start yet (a mission being authored): tools/find_start.gd searches one.
+			neuron.position = solution[id]
+		if not neuron.fixed and not neuron.is_receptor() and spec.has("perm"):
 			neuron.position += spec.get("nudge", {}).get(id, Vector2.ZERO)
 		neurons.append(neuron)
 	level.neurons = neurons
@@ -184,6 +194,10 @@ static func level_text(level: LevelData) -> String:
 		lines.append("lethal_edges = PackedInt32Array(%s)" % _ints(level.lethal_edges))
 	if not level.lethal_obstacles.is_empty():
 		lines.append("lethal_obstacles = PackedInt32Array(%s)" % _ints(level.lethal_obstacles))
+	if level.hard_toxic:
+		lines.append("hard_toxic = true")
+	if level.is_boss:
+		lines.append("is_boss = true")
 	lines.append('neurons = Array[ExtResource("2_neuron")]([%s])' % ", ".join(neuron_refs))
 	lines.append('dendrites = Array[ExtResource("3_dendrite")]([%s])' % ", ".join(dendrite_refs))
 	lines.append("par_moves = %d" % level.par_moves)
@@ -231,8 +245,13 @@ static func _row(level: LevelData, moves: int) -> String:
 	for neuron in level.neurons:
 		fixed += int(neuron.fixed)
 	var tension := 0
+	var diseased := 0
 	for dendrite in level.dendrites:
 		tension += int(dendrite.is_tension())
+		diseased += int(dendrite.is_diseased())
+	var toxic := 0
+	for neuron in level.neurons:
+		toxic += int(neuron.is_toxic())
 	var spacing := INF
 	for i in level.neurons.size():
 		for j in range(i + 1, level.neurons.size()):
@@ -243,12 +262,33 @@ static func _row(level: LevelData, moves: int) -> String:
 			receptors.append("%dx%d" % [int(neuron.reach), neuron.required_links])
 	var lethal := "%d+%d" % [level.lethal_edges.size(), level.lethal_obstacles.size()] \
 		if level.lethal_edges.size() + level.lethal_obstacles.size() > 0 else ""
-	return "| %s | %s | %d | %d | %d | %d | %d | %s | %s | %d | %d | %d | %d | %s | %d | %d / %d |" % [
+	return "| %s | %s | %d | %d | %d | %d | %d | %d | %d | %s | %s | %d | %d | %d | %d | %s | %s | %d | %s | %d | %d / %d |" % [
 		level.mission_id, level.mission_name, level.chapter_id, level.neurons.size(),
-		level.dendrites.size(), fixed, tension, lethal, " ".join(receptors),
+		level.dendrites.size(), fixed, tension, diseased, toxic,
+		lethal + (" hard" if level.hard_toxic else ""), " ".join(receptors),
 		PuzzleModel.from_level(level).get_crossing_count(),
 		moves, level.par_moves, int(level.par_time), "yes" if not level.story_text.is_empty() else "",
+		"BOSS" if level.is_boss else "", level.play_area.size(), _size_text(level.play_area),
 		int(spacing), int(edge_clearance(level, false)), int(edge_clearance(level, true))]
+
+
+## True when two non-adjacent edges of the closed outline cross (organic outlines must stay simple).
+static func self_intersects(outline: PackedVector2Array) -> bool:
+	var count := outline.size()
+	for i in count:
+		for j in range(i + 2, count):
+			if i == 0 and j == count - 1:
+				continue
+			if GeometryUtils.segments_cross(outline[i], outline[(i + 1) % count], outline[j], outline[(j + 1) % count]):
+				return true
+	return false
+
+
+static func _size_text(area: PackedVector2Array) -> String:
+	var bounds := Rect2(area[0], Vector2.ZERO)
+	for point in area:
+		bounds = bounds.expand(point)
+	return "%dx%d" % [int(bounds.size.x), int(bounds.size.y)]
 
 
 ## Start positions where a dendrite passes closer than MIN_START_CLEARANCE to a neuron
