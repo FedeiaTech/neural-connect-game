@@ -117,5 +117,5 @@ neuron_radius = 28.0
 show_crossing_feedback = true
 neurons = Array[ExtResource("2_neuron")]([SubResource("Neuron_0"), SubResource("Neuron_1"), SubResource("Neuron_2"), SubResource("Neuron_3"), SubResource("Neuron_4"), SubResource("Neuron_5"), SubResource("Neuron_6")])
 dendrites = Array[ExtResource("3_dendrite")]([SubResource("Dendrite_0"), SubResource("Dendrite_1"), SubResource("Dendrite_2"), SubResource("Dendrite_3"), SubResource("Dendrite_4"), SubResource("Dendrite_5"), SubResource("Dendrite_6"), SubResource("Dendrite_7"), SubResource("Dendrite_8"), SubResource("Dendrite_9"), SubResource("Dendrite_10"), SubResource("Dendrite_11")])
-par_moves = 14
+par_moves = 4
 par_time = 120.0

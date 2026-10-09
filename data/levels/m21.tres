@@ -142,5 +142,5 @@ show_crossing_feedback = true
 lethal_edges = PackedInt32Array(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54)
 neurons = Array[ExtResource("2_neuron")]([SubResource("Neuron_0"), SubResource("Neuron_1"), SubResource("Neuron_2"), SubResource("Neuron_3"), SubResource("Neuron_4"), SubResource("Neuron_5"), SubResource("Neuron_6"), SubResource("Neuron_7"), SubResource("Neuron_8"), SubResource("Neuron_9")])
 dendrites = Array[ExtResource("3_dendrite")]([SubResource("Dendrite_0"), SubResource("Dendrite_1"), SubResource("Dendrite_2"), SubResource("Dendrite_3"), SubResource("Dendrite_4"), SubResource("Dendrite_5"), SubResource("Dendrite_6"), SubResource("Dendrite_7"), SubResource("Dendrite_8"), SubResource("Dendrite_9"), SubResource("Dendrite_10"), SubResource("Dendrite_11"), SubResource("Dendrite_12")])
-par_moves = 20
+par_moves = 6
 par_time = 180.0

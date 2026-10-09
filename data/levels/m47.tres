@@ -195,5 +195,5 @@ hard_toxic = true
 is_boss = true
 neurons = Array[ExtResource("2_neuron")]([SubResource("Neuron_0"), SubResource("Neuron_1"), SubResource("Neuron_2"), SubResource("Neuron_3"), SubResource("Neuron_4"), SubResource("Neuron_5"), SubResource("Neuron_6"), SubResource("Neuron_7"), SubResource("Neuron_8"), SubResource("Neuron_9"), SubResource("Neuron_10"), SubResource("Neuron_11"), SubResource("Neuron_12"), SubResource("Neuron_13")])
 dendrites = Array[ExtResource("3_dendrite")]([SubResource("Dendrite_0"), SubResource("Dendrite_1"), SubResource("Dendrite_2"), SubResource("Dendrite_3"), SubResource("Dendrite_4"), SubResource("Dendrite_5"), SubResource("Dendrite_6"), SubResource("Dendrite_7"), SubResource("Dendrite_8"), SubResource("Dendrite_9"), SubResource("Dendrite_10"), SubResource("Dendrite_11"), SubResource("Dendrite_12"), SubResource("Dendrite_13"), SubResource("Dendrite_14")])
-par_moves = 28
+par_moves = 7
 par_time = 300.0

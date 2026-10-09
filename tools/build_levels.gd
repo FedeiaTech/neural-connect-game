@@ -50,7 +50,7 @@ func _init() -> void:
 				moves = plan["moves"].size()
 			else:
 				errors.append("planner: " + plan["reason"])
-		level.par_moves = spec.get("par_moves", maxi(2 * moves, 4))
+		level.par_moves = Specs.par_moves_for(String(spec["id"]), level.neurons.size())
 		if self_intersects(level.play_area):
 			errors.append("play area outline crosses itself")
 		for outline in level.obstacles:

@@ -33,6 +33,26 @@ const Layouts := preload("res://tools/layouts.gd")
 const Starts := preload("res://tools/level_starts.gd")
 const DEFAULT_AREA := [160, 120, 1760, 120, 1760, 1020, 160, 1020]
 
+## 3-star move limits (par_moves), set by the designer after the first measured streak
+## (streak 20261009-231045, rule ceil(best moves x 1.15)). They override any par_moves in a spec.
+const MEASURED_PAR_MOVES := {
+	"m01": 2, "m02": 2, "m03": 3, "m04": 3, "m05": 4, "m06": 3, "m07": 5, "m08": 3, "m10": 3,
+	"m11": 5, "m31": 5, "m32": 3, "m33": 4,
+}
+## Measured best moves looked inflated (exploring), so the designer fixed the limit at 5.
+const INFLATED_PAR_MOVES := ["m09", "m12"]
+## Missions not measured yet: 6 moves up to 10 neurons, 7 moves above that. Replace as they get measured.
+const UNTESTED_PAR_MOVES_SMALL := 6
+const UNTESTED_PAR_MOVES_LARGE := 7
+
+
+static func par_moves_for(mission_id: String, neuron_count: int) -> int:
+	if MEASURED_PAR_MOVES.has(mission_id):
+		return MEASURED_PAR_MOVES[mission_id]
+	if INFLATED_PAR_MOVES.has(mission_id):
+		return 5
+	return UNTESTED_PAR_MOVES_SMALL if neuron_count <= 10 else UNTESTED_PAR_MOVES_LARGE
+
 
 static func chapters() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

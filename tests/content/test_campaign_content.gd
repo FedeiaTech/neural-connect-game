@@ -188,15 +188,13 @@ func test_pars_are_generous_but_bounded() -> void:
 			.is_between(MIN_PAR_TIME, MAX_PAR_TIME)
 
 
-## The new missions (m31 and up) start with the generous default: twice the planned moves. The
-## human retunes them from the measurement mode.
-func test_new_missions_have_the_default_generous_par() -> void:
+## The designer set the 3-star move limits after the first measured streak: measured missions use
+## ceil(best x 1.15) (2..5), inflated ones 5, untested ones 6 (up to 10 neurons) or 7 (more).
+## Rule lives in tools/level_specs.gd (par_moves_for).
+func test_par_moves_follow_the_designer_limits() -> void:
 	for level in _levels():
-		if int(String(level.mission_id).substr(1)) < 31:
-			continue
-		var moves: int = _plans[level.mission_id]["moves"].size()
 		assert_int(level.par_moves).override_failure_message(String(level.mission_id)) \
-			.is_equal(maxi(2 * moves, 4))
+			.is_between(2, 7)
 
 
 func test_starts_are_meaningfully_tangled() -> void:
