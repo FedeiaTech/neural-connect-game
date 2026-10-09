@@ -60,6 +60,7 @@ var _shown_seconds := -1
 var _moves := 0
 ## Last summary stats shown: [moves, seconds, progress] (empty before the first summary).
 var _stats: Array = []
+var _measure_label: Label  # MEASURE-MODE
 
 
 func _ready() -> void:
@@ -80,6 +81,7 @@ func _ready() -> void:
 	set_moves(0)
 	set_time(0.0)
 	_apply_tooltips()
+	_build_measure_indicator()  # MEASURE-MODE
 
 
 func _notification(what: int) -> void:
@@ -338,3 +340,27 @@ func _dismiss_story() -> void:
 		return
 	hide_story()
 	story_dismissed.emit()
+
+
+# MEASURE-MODE begin: small corner tag shown while the developer measurement mode is on.
+func _build_measure_indicator() -> void:
+	_measure_label = Label.new()
+	_measure_label.text = "MEASURE"
+	_measure_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_measure_label.add_theme_font_size_override(&"font_size", 16)
+	_measure_label.add_theme_color_override(&"font_color", Color(1.0, 0.45, 0.85, 0.7))
+	_measure_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	_measure_label.offset_left = 12.0
+	_measure_label.offset_top = -34.0
+	_measure_label.visible = false
+	add_child(_measure_label)
+
+
+func set_measure_indicator(visible_now: bool) -> void:
+	if _measure_label != null:
+		_measure_label.visible = visible_now
+
+
+func is_measure_indicator_visible() -> bool:
+	return _measure_label != null and _measure_label.visible
+# MEASURE-MODE end

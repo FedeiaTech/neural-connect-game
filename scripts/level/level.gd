@@ -19,6 +19,7 @@ signal mission_select_requested()
 @onready var _fx: LevelFx = $Playfield/Fx
 @onready var _input: InputController = $InputController
 
+var _measurement := Measurement.new()  # MEASURE-MODE
 var _paused := false
 var _next_mission_available := false
 ## Bumped on every completion, restart and load; a pending summary only shows if unchanged.
@@ -36,6 +37,10 @@ func _ready() -> void:
 	_hud.resume_pressed.connect(resume)
 	_hud.next_mission_pressed.connect(next_mission_requested.emit)
 	_hud.mission_select_pressed.connect(_on_mission_select_pressed)
+	add_child(_measurement)  # MEASURE-MODE
+	_measurement.setup(_controller)  # MEASURE-MODE
+	_measurement.enabled_changed.connect(_hud.set_measure_indicator)  # MEASURE-MODE
+	_hud.set_measure_indicator(_measurement.enabled)  # MEASURE-MODE
 
 
 func _exit_tree() -> void:
@@ -58,6 +63,10 @@ func load_level(level: LevelData) -> void:
 
 func get_controller() -> LevelController:
 	return _controller
+
+
+func get_measurement() -> Measurement:  # MEASURE-MODE
+	return _measurement  # MEASURE-MODE
 
 
 func get_hud() -> Hud:
