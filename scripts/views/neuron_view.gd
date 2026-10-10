@@ -1,8 +1,11 @@
 class_name NeuronView
 extends Node2D
 ## Draws one neuron (SDD 3, 4, 5.4): a white soma (red when fixed) with a soft glow halo, a
-## gentle idle pulse with a per-neuron phase and an organic, strictly convex, slowly drifting body
-## (NeuronShape, a different blob per neuron id) with faint branching wisps outside it, all in assets/shaders/neuron.gdshader on a single quad. Grabbing brightens and
+## gentle idle pulse with a per-neuron phase and a multipolar neuron body (NeuronMorphology, seeded by
+## neuron id): an angular soma with a nucleus, tapered forking dendrites and one axon that sway
+## slightly. The soma, halo and effects are
+## assets/shaders/neuron.gdshader on a single quad, the processes a per-neuron mesh behind it
+## (drawn first in the same item and material). Dendrites grow towards linked neighbours. All in assets/shaders/neuron.gdshader on a single quad. Grabbing brightens and
 ## scales it up (tween); crossing involvement adds a soft, slowly breathing warm "latency" glow
 ## with a light sparkle around the unchanged soma (T7.1) that fades in and calms smoothly; a
 ## contact ring flashes when the model blocks it.
@@ -47,8 +50,11 @@ var _hazard := 0.0
 var _destroyed := false
 var _overload_age := 0.0
 var _shader_material := ShaderMaterial.new()
-## Organic body shape of this neuron (seeded by id); the shader mirrors it.
-var _shape: NeuronShape
+## Multipolar body of this neuron (seeded by id, oriented to its links); the shaders mirror it.
+var _morphology: NeuronMorphology
+## Dendrites and axon: a mesh drawn behind the soma quad in the same canvas item and material.
+var _arms_mesh: ArrayMesh
+var _link_angles := PackedFloat32Array()
 ## Last value pushed per dynamic shader parameter.
 var _param_cache: Dictionary[StringName, float] = {}
 
@@ -78,6 +84,7 @@ func setup(id: int, model: PuzzleModel, show_feedback := true) -> void:
 		_warn_amount = get_warning_target()
 		model.contamination_formed.connect(_on_contamination_changed.bind(model).unbind(2))
 		model.contamination_cleared.connect(_on_contamination_changed.bind(model).unbind(2))
+	_link_angles = _compute_link_angles(model)
 	_configure_material()
 	queue_redraw()
 
@@ -167,8 +174,12 @@ func get_highlight_amount() -> float:
 	return _highlight_amount
 
 
-func get_shape() -> NeuronShape:
-	return _shape
+func get_morphology() -> NeuronMorphology:
+	return _morphology
+
+
+func get_arms_mesh() -> ArrayMesh:
+	return _arms_mesh
 
 
 func get_shader_param(param: StringName) -> Variant:
@@ -216,6 +227,8 @@ func _draw() -> void:
 ## The only drawing entry point, so the look can change without touching state. One quad
 ## large enough for the grabbed soma and its halo; the shader does the rest.
 func _draw_neuron() -> void:
+	if _arms_mesh != null:
+		draw_mesh(_arms_mesh, null)
 	var half := _quad_half_size()
 	var rect := Rect2(-half, -half, 2.0 * half, 2.0 * half)
 	draw_polygon(
@@ -253,15 +266,25 @@ func _configure_material() -> void:
 	m.set_shader_parameter(&"pulse_depth",
 		VisualTuning.FIXED_PULSE_DEPTH if heavy else VisualTuning.NEURON_PULSE_DEPTH)
 	m.set_shader_parameter(&"phase", VisualTuning.phase_for(neuron_id))
-	_shape = NeuronShape.for_seed(neuron_id)
-	m.set_shader_parameter(&"shape_phase", _shape.phase)
-	m.set_shader_parameter(&"shape_amp", _shape.amp)
-	m.set_shader_parameter(&"shape_breath", _shape.breath_phase)
-	m.set_shader_parameter(&"shape_lobe", _shape.lobe)
-	m.set_shader_parameter(&"nucleus", _shape.nucleus)
-	m.set_shader_parameter(&"wisp_angle", _shape.wisp_angle)
-	m.set_shader_parameter(&"wisp_len", _shape.wisp_len)
-	m.set_shader_parameter(&"wisp_strength", VisualTuning.NEURON_WISP_STRENGTH)
+	var kind := NeuronMorphology.Kind.NORMAL
+	if _receptor:
+		kind = NeuronMorphology.Kind.RECEPTOR
+	elif _fixed:
+		kind = NeuronMorphology.Kind.FIXED
+	elif _toxic:
+		kind = NeuronMorphology.Kind.TOXIC
+	_morphology = NeuronMorphology.generate(neuron_id, kind, _link_angles)
+	m.set_shader_parameter(&"soma_radius", _morphology.soma_radius)
+	m.set_shader_parameter(&"corner_amp", _morphology.corner_amp)
+	m.set_shader_parameter(&"corner_width", _morphology.corner_width)
+	var corners := PackedFloat32Array(_morphology.corners)
+	m.set_shader_parameter(&"corner_count", corners.size())
+	corners.resize(NeuronMorphology.MAX_CORNERS)
+	m.set_shader_parameter(&"corners", corners)
+	m.set_shader_parameter(&"nucleus", _morphology.nucleus)
+	m.set_shader_parameter(&"shape_breath", _morphology.breath_phase)
+	_arms_mesh = _morphology.build_mesh()
+	m.set_shader_parameter(&"arm_alpha", VisualTuning.NEURON_ARM_ALPHA)
 	_update_dynamic_params(VisualTuning.motion_scale())
 
 
@@ -279,7 +302,9 @@ func _update_dynamic_params(motion: float) -> void:
 	_set_param(&"overload", overload)
 	_set_param(&"warn", _warn_amount)
 	var brightness := lerpf(1.0, VisualTuning.GRAB_BRIGHTNESS, _grab_amount)
-	_set_param(&"brightness", brightness + _wave_boost * (VisualTuning.WAVE_BRIGHTNESS - 1.0))
+	var total_brightness := brightness + _wave_boost * (VisualTuning.WAVE_BRIGHTNESS - 1.0)
+	_set_param(&"brightness", total_brightness)
+	_set_param(&"mesh_scale", lerpf(_radius, _radius * GRAB_SCALE, _grab_amount))
 
 
 func _set_param(param: StringName, value: float) -> void:
@@ -287,6 +312,30 @@ func _set_param(param: StringName, value: float) -> void:
 		return
 	_param_cache[param] = value
 	_shader_material.set_shader_parameter(param, value)
+
+
+## Angles to the linked neighbours (edge list, longest link first): dendrites and the axon grow
+## towards them. Computed once; the model is not changed.
+func _compute_link_angles(model: PuzzleModel) -> PackedFloat32Array:
+	var here := model.get_neuron_position(neuron_id)
+	var found: Array[Vector2] = []
+	var seen := {}
+	for edge in model.get_edge_count():
+		var ends := model.get_edge_endpoints(edge)
+		var other := -1
+		if ends.x == neuron_id:
+			other = ends.y
+		elif ends.y == neuron_id:
+			other = ends.x
+		if other < 0 or seen.has(other):
+			continue
+		seen[other] = true
+		found.append(model.get_neuron_position(other) - here)
+	found.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.length() > b.length())
+	var angles := PackedFloat32Array()
+	for offset in found:
+		angles.append(fposmod(offset.angle(), TAU))
+	return angles
 
 
 func _animate_grab(target: float) -> void:

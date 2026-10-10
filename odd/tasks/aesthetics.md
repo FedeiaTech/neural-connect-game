@@ -149,15 +149,25 @@ Engram mirror: pending (engram MCP unavailable in runs 4a and 4b).
 
 ## Neuron shape
 
-Decision: neuron bodies are smooth, strictly convex organic blobs (no stubs, no concave notches),
-a different blob per neuron id. `NeuronShape` (scripts/views/neuron_shape.gd) defines
-r(theta, t) = 0.93 * (1 + 0.015 sin(1.1 t + b)) * (1 + sum_k a_k cos(k theta + p_k + d_k t) + lobe),
-k = 1..4 plus one 3..5-fold lobe mode; amplitudes under 0.05 keep r in 0.82..1.05 of the collision
-radius and the polar condition r^2 + 2r'^2 - r r'' >= 0 true at all times (tests sample 200 seeds).
-Parameters come from `NeuronShape.for_seed(id)` (deterministic) and reach the shader as uniforms.
-SYNC: `assets/shaders/neuron.gdshader` (`shape_scale()` and the SHAPE_* constants) mirrors the GDScript
-formula; a test compares the constants. Reduced motion: t = 0, so the shape is static. A faint nucleus
-(offset inner blob) adds depth. 2-4 very faint wisps (max 0.35 radii, low alpha, swaying) outside the
-body hint at branching; they are not part of the silhouette and are nearly invisible by design. The
-receptor's searching stub is now a soft convex bud (ReceptorView).
-
+Decision (revised twice): the first attempt (convex blob, then blob plus faint wisps) read as a
+slime, so neurons are now classic multipolar neurons, modeled on the Wikimedia Commons illustration
+"Blausen 0657 MultipolarNeuron" (visual reference only, not in the repo): a small angular soma with a
+visible nucleus, thick-rooted tapered dendrites that slim quickly and fork (Y) one or two times with
+the odd side twig, and one thin, nearly straight axon ending in a bulb or 2-3 end-feet. Concave
+regions between processes are wanted.
+- `NeuronMorphology` (scripts/views/neuron_morphology.gd) generates everything once per neuron from its
+  id (deterministic) in model radii: soma about 0.55-0.66, 3-6 primary dendrites by kind, tips never
+  beyond 1.5 (families are scaled down otherwise). Kinds: normal; fixed (stockier soma, short thick arms,
+  no twigs); receptor (3-4 shorter arms; ReceptorView's searching stub is a tapered tendril); toxic
+  (sharper soma corners, straighter spikier arms).
+- Link bias: NeuronView passes the angles to its linked neighbours (edge list, longest first) once at
+  setup; the axon grows towards the longest link and dendrites towards the next ones, the rest fill the
+  largest gaps. The model is untouched; moving neurons keep their arms.
+- Rendering: the soma stays one shader quad (`neuron.gdshader`: soma_profile() gives a corner towards
+  each process, nucleus disc with darker rim, all halo/crossing/overload/contact effects) and the
+  processes are one feathered triangle mesh per neuron, drawn first in the same canvas item with the same
+  material (told apart by vertex COLOR.g; no child node, so no orphan nodes): 2 draw commands per neuron,
+  no per-frame allocation. Only the vertex shader animates the mesh (tips sway,
+  overload tremble); the soma breathes slightly; reduced motion is static.
+SYNC: NeuronMorphology.SOMA_BASE / CORNER_CAP / SOMA_BREATH / SOMA_BREATH_SPEED / SWAY and the soma
+formula mirror the shader; tests compare the constants and hand-computed reference values.

@@ -122,9 +122,10 @@ receptors since Phase 7) and the beauty comes from light, motion and sound.
 - **Background:** pure black base with a very subtle drifting layer of faint particles
   (floating cells/spores) and a soft vignette. Never competes with gameplay readability.
 - **Neurons:** white soma with a soft glow (additive bloom), a gentle idle pulse, and a
-  slowly drifting, strictly convex organic body (a different blob per neuron, `NeuronShape`, kept within
-  the collision circle) with a faint nucleus and barely visible branching wisps. Grabbing one brightens it
-  and scales it slightly; red fixed neurons have a slower, heavier pulse.
+  multipolar neuron body (`NeuronMorphology`, seeded by neuron id): an angular soma with a visible
+  nucleus, tapered forking dendrites and one axon, growing towards linked neighbours and swaying
+  slightly (fixed, receptor and toxic neurons change its proportions). Grabbing one brightens it and
+  scales it slightly; red fixed neurons have a slower, heavier pulse.
 - **Dendrites:** thin glowing lines with a faint electrical pulse traveling along them.
   Aesthetic is isolated from logic (see 8.1) so it can later switch to curved/organic branches.
 - **Line smoothing:** every line is antialiased. Dendrite cores feather over about one screen

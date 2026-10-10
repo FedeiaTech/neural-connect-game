@@ -2,7 +2,7 @@ class_name ReceptorView
 extends Node2D
 ## Receptor extras (T7.3, SDD 5.4), drawn additively around one receptor neuron (its soma is a
 ## cyan NeuronView): a soft pulsing halo ring at the reach limit (radius + reach), a searching
-## soft bud that sways towards the nearest free candidate while links are missing, and one
+## tapered tendril that sways towards the nearest free candidate while links are missing, and one
 ## dot per required link above the soma (filled when linked). Reduced motion: still ring, no
 ## sway. Listens to link_formed / link_broken for its own receptor id. T8.2: while a toxic neuron
 ## contaminates it, the halo ring turns toxic yellow and beats faster.
@@ -10,8 +10,7 @@ extends Node2D
 const DOT_RADIUS := 4.5
 const DOT_GAP := 14.0
 const DOT_DISTANCE := 13.0
-const BUD_LENGTH := 20.0
-const BUD_WIDTH := 6.0
+const STUB_LENGTH := 30.0
 const HALO_PULSE_SPEED := 1.6
 
 var receptor_id := PuzzleModel.NO_NEURON
@@ -97,26 +96,29 @@ func _draw() -> void:
 	_draw_dots()
 
 
-## Soft convex bud (an ellipse, never a spike) swelling out of the soma towards _stub_angle,
-## swaying and breathing with motion.
+## Searching tendril: a bright tapered process (thick at the soma, a point at the tip) reaching
+## out of the soma towards _stub_angle, swaying with motion.
 func _draw_stub(motion: float) -> void:
-	var length := BUD_LENGTH * (0.9 + 0.1 * sin(_time * 2.3) * motion)
-	var angle := _stub_angle + 0.12 * sin(_time * 1.7) * motion
-	var direction := Vector2.from_angle(angle)
-	var center := direction * (_radius * 0.9 + length * 0.4)
-	var halo := _ellipse(center, angle, length * 0.9, BUD_WIDTH * 1.7)
-	var bud := _ellipse(center, angle, length * 0.6, BUD_WIDTH)
-	draw_colored_polygon(halo, Color(Palette.RECEPTOR_GLOW, 0.16))
-	draw_colored_polygon(bud, Color(Palette.LINK, 0.6))
-	draw_circle(center + direction * length * 0.25, 2.2, Color(Palette.LINK, 0.9), true, -1.0, true)
-
-
-static func _ellipse(center: Vector2, angle: float, semi_long: float, semi_short: float) -> PackedVector2Array:
-	var points := PackedVector2Array()
-	for k in 20:
-		var a := TAU * float(k) / 20.0
-		points.append(center + Vector2(cos(a) * semi_long, sin(a) * semi_short).rotated(angle))
-	return points
+	var length := STUB_LENGTH * (0.9 + 0.1 * sin(_time * 2.3) * motion)
+	var direction := Vector2.from_angle(_stub_angle)
+	var side := direction.orthogonal()
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	var center := PackedVector2Array()
+	for k in 7:
+		var u := float(k) / 6.0
+		var sway := sin(_time * 4.0 + u * 3.5) * 3.5 * u * u * motion
+		var c := direction * (_radius * 0.55 + length * u) + side * sway
+		var half := 3.2 * pow(1.0 - u, 1.2)
+		center.append(c)
+		left.append(c + side * half)
+		right.append(c - side * half)
+	var outline := PackedVector2Array(left)
+	for k in range(right.size() - 1, -1, -1):
+		outline.append(right[k])
+	draw_colored_polygon(outline, Color(Palette.LINK, 0.55))
+	draw_polyline(center, Color(Palette.RECEPTOR_GLOW, 0.28), 5.0, true)
+	draw_circle(center[center.size() - 1], 1.8, Color(Palette.LINK, 0.9), true, -1.0, true)
 
 
 func _draw_dots() -> void:
