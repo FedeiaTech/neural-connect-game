@@ -6,7 +6,7 @@ extends RefCounted
 ## Every animated effect is scaled by motion_scale(): 0 when GameState.reduced_motion is on.
 
 # --- Neurons -------------------------------------------------------------------
-## Quad half size in soma radii (soma + dendrite stubs + halo).
+## Quad half size in soma radii (soma + wisps + halo).
 const NEURON_QUAD_EXTENT := 2.9
 const NEURON_GLOW_STRENGTH := 0.55
 const NEURON_PULSE_SPEED := 1.8
@@ -14,9 +14,8 @@ const NEURON_PULSE_DEPTH := 0.1
 ## Fixed (red) neurons: slower, heavier pulse.
 const FIXED_PULSE_SPEED := 0.85
 const FIXED_PULSE_DEPTH := 0.22
-const NEURON_WOBBLE := 0.045
-const NEURON_STUB_COUNT := 5.0
-const NEURON_STUB_LENGTH := 0.22
+## Peak alpha of the faint branching wisps outside the solid body (see NeuronShape).
+const NEURON_WISP_STRENGTH := 0.7
 const GRAB_BRIGHTNESS := 1.35
 const GRAB_TWEEN_TIME := 0.16
 ## Crossing warmth fades in/out at this rate (amount per second).

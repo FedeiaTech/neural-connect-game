@@ -6,6 +6,10 @@
 // breathes slowly in the halo, with a few small sparks twinkling around the soma (`sparkle`,
 // 0 with reduced motion, when the glow is static).
 // Overload (T7.2): before a lethal-wall explosion the soma trembles and burns violet-white.
+// Body shape: a smooth, strictly convex organic blob (low-frequency radius modulation, see
+// shape_scale()), different per neuron through the shape_* uniforms; no spikes or notches.
+// The formula and constants must stay in sync with NeuronShape (scripts/views/neuron_shape.gd),
+// which the tests use to prove convexity and the radius band around the collision circle.
 shader_type canvas_item;
 render_mode blend_premul_alpha, unshaded;
 
@@ -23,9 +27,17 @@ uniform float pulse_speed = 1.8;
 uniform float pulse_depth = 0.1;
 uniform float phase = 0.0;
 uniform float motion = 1.0;
-uniform float wobble = 0.045;
-uniform float stub_count = 5.0;
-uniform float stub_length = 0.3;
+// Per-neuron body shape (NeuronShape.for_seed): phases and amplitudes of the four modes, and the
+// nucleus offset in soma radii.
+uniform vec4 shape_phase = vec4(0.0);
+uniform vec4 shape_amp = vec4(0.0);
+uniform vec2 nucleus = vec2(0.0);
+uniform float shape_breath = 0.0;
+uniform vec3 shape_lobe = vec3(3.0, 0.0, 0.0);
+// Branching hint: faint wisps outside the solid body (angles, lengths in soma radii; 0 = absent).
+uniform vec4 wisp_angle = vec4(0.0);
+uniform vec4 wisp_len = vec4(0.0);
+uniform float wisp_strength = 0.5;
 // 0..1 crossing latency glow, contact ring, overall brightness boost and overload.
 uniform float crossing = 0.0;
 uniform float contact = 0.0;
@@ -36,8 +48,42 @@ uniform vec4 warn_color : source_color = vec4(1.0, 0.84, 0.1, 1.0);
 uniform float warn = 0.0;
 uniform float warn_speed = 2.4;
 
+// Must stay in sync with NeuronShape (MEAN_RADIUS, BREATH, BREATH_SPEED, FREQ, DRIFT).
+const float SHAPE_MEAN = 0.93;
+const float SHAPE_BREATH = 0.015;
+const float SHAPE_BREATH_SPEED = 1.1;
+const vec4 SHAPE_FREQ = vec4(1.0, 2.0, 3.0, 4.0);
+const vec4 SHAPE_DRIFT = vec4(0.23, -0.31, 0.41, -0.27);
+const float SHAPE_LOBE_DRIFT = 0.19;
+const float WISP_SWAY = 0.14;
+
 float hash(float n) {
 	return fract(sin(n) * 43758.5453);
+}
+
+// Outline radius in soma radii at angle a and time t (t = TIME * motion). Convex by construction.
+float shape_scale(float a, float t) {
+	float g = dot(shape_amp, cos(SHAPE_FREQ * a + shape_phase + SHAPE_DRIFT * t));
+	g += shape_lobe.z * cos(shape_lobe.x * a + shape_lobe.y + SHAPE_LOBE_DRIFT * t);
+	return SHAPE_MEAN * (1.0 + SHAPE_BREATH * sin(t * SHAPE_BREATH_SPEED + shape_breath)) * (1.0 + g);
+}
+
+// Faint tapered wisp i leaving the body at its seeded angle, fading to nothing; returns 0..1.
+float wisp(vec2 p, float i, float t) {
+	float len = wisp_len[int(i)];
+	if (len <= 0.0) {
+		return 0.0;
+	}
+	float wa = wisp_angle[int(i)] + WISP_SWAY * sin(t * 0.7 + i * 2.3 + shape_breath);
+	vec2 dir = vec2(cos(wa), sin(wa));
+	float along = dot(p, dir) - radius_px * shape_scale(wa, t) * 0.8;
+	float u = along / (len * radius_px);
+	if (u < 0.0 || u > 1.0) {
+		return 0.0;
+	}
+	float perp = dot(p, vec2(-dir.y, dir.x)) - 0.35 * len * radius_px * u * u * sin(t * 0.9 + i * 1.9);
+	float w = mix(2.6, 0.5, u);
+	return exp(-perp * perp / (w * w)) * pow(1.0 - u, 1.5) * smoothstep(0.0, 0.25, u);
 }
 
 void fragment() {
@@ -49,17 +95,16 @@ void fragment() {
 	float ang = atan(p.y, p.x);
 	float pulse = 1.0 + pulse_depth * sin(t * pulse_speed + phase);
 
-	// Organic outline: slow membrane wobble plus a few short dendrite stubs.
-	float membrane = wobble * (0.5 * sin(3.0 * ang + t * 0.9 + phase)
-		+ 0.3 * sin(5.0 * ang - t * 1.3 + phase * 2.1)
-		+ 0.2 * sin(8.0 * ang + t * 0.7 + phase * 0.5));
-	float stubs = pow(max(cos(stub_count * (ang - phase)), 0.0), 14.0);
-	float r = radius_px * (1.0 + membrane + stub_length * stubs * (0.85 + 0.15 * sin(t * 1.1 + phase)));
+	// Organic convex outline: a slow, lopsided blob that breathes and drifts a little.
+	float r = radius_px * shape_scale(ang, t);
 	float core = 1.0 - smoothstep(r - 1.2, r + 1.2, d);
 
 	// Soma shading: slightly dimmer body, brighter rim and a soft nucleus.
 	float rn = clamp(d / max(r, 0.001), 0.0, 1.0);
-	float shade = mix(0.8, 1.0, smoothstep(0.45, 1.0, rn)) + 0.22 * exp(-rn * rn * 14.0);
+	vec2 nq = (p - nucleus * radius_px) / (radius_px * 0.42);
+	float nd2 = dot(nq, nq);
+	float nucleus_ring = exp(-pow((sqrt(nd2) - 1.0) / 0.35, 2.0));
+	float shade = mix(0.8, 1.0, smoothstep(0.45, 1.0, rn)) + 0.2 * exp(-nd2 * 2.2) - 0.05 * nucleus_ring;
 	vec3 soma = core_color.rgb * shade * (0.94 + 0.06 * pulse);
 	float o = clamp(overload, 0.0, 1.0);
 	soma = mix(soma, overload_color.rgb * 1.3, o * 0.7);
@@ -87,7 +132,7 @@ void fragment() {
 		float on = step(0.68, hash(slot * 1.93 + seed));
 		float life = sin(PI * fract(slot_time));
 		float sa = (cell + 0.3 + 0.4 * hash(slot + seed * 1.7)) / CELLS * TAU - PI;
-		float sr = r + 6.0 + 14.0 * hash(slot * 2.71 + seed);
+		float sr = radius_px * shape_scale(sa, t) + 6.0 + 14.0 * hash(slot * 2.71 + seed);
 		vec2 sp = vec2(cos(sa), sin(sa)) * sr;
 		float sd2 = dot(p - sp, p - sp);
 		sparks = on * life * (exp(-sd2 / 1.8) + 0.25 * exp(-sd2 / 20.0)) * sparkle * c;
@@ -101,8 +146,15 @@ void fragment() {
 	warn_halo *= 1.0 - smoothstep(half_size_px * 0.72, half_size_px, d);
 	float warn_ring = exp(-pow((d - r - 9.0) / 2.2, 2.0)) * smoothstep(0.5, 1.0, w) * (0.35 + 0.65 * warn_beat);
 
+	float wisps = 0.0;
+	for (int i = 0; i < 4; i++) {
+		wisps += wisp(p, float(i), t);
+	}
+	wisps = min(wisps, 1.0) * wisp_strength;
+	vec3 wisp_rgb = mix(glow_color.rgb, core_color.rgb, 0.6);
+
 	vec3 halo_rgb = mix(glow_color.rgb, overload_color.rgb, o);
-	vec3 rgb = soma * core + (halo_rgb * halo + latency_color.rgb * latency
+	vec3 rgb = soma * core + (halo_rgb * halo + wisp_rgb * wisps + latency_color.rgb * latency
 		+ vec3(1.0, 0.88, 0.74) * sparks + vec3(contact_ring * 0.8)
 		+ warn_color.rgb * (warn_halo + warn_ring)) * (1.0 - core);
 	COLOR = vec4(rgb * brightness, core * core_color.a);

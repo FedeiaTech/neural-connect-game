@@ -1,8 +1,8 @@
 class_name NeuronView
 extends Node2D
 ## Draws one neuron (SDD 3, 4, 5.4): a white soma (red when fixed) with a soft glow halo, a
-## gentle idle pulse with a per-neuron phase and an organic wobbling outline with short dendrite
-## stubs, all in assets/shaders/neuron.gdshader on a single quad. Grabbing brightens and
+## gentle idle pulse with a per-neuron phase and an organic, strictly convex, slowly drifting body
+## (NeuronShape, a different blob per neuron id) with faint branching wisps outside it, all in assets/shaders/neuron.gdshader on a single quad. Grabbing brightens and
 ## scales it up (tween); crossing involvement adds a soft, slowly breathing warm "latency" glow
 ## with a light sparkle around the unchanged soma (T7.1) that fades in and calms smoothly; a
 ## contact ring flashes when the model blocks it.
@@ -47,6 +47,8 @@ var _hazard := 0.0
 var _destroyed := false
 var _overload_age := 0.0
 var _shader_material := ShaderMaterial.new()
+## Organic body shape of this neuron (seeded by id); the shader mirrors it.
+var _shape: NeuronShape
 ## Last value pushed per dynamic shader parameter.
 var _param_cache: Dictionary[StringName, float] = {}
 
@@ -165,6 +167,10 @@ func get_highlight_amount() -> float:
 	return _highlight_amount
 
 
+func get_shape() -> NeuronShape:
+	return _shape
+
+
 func get_shader_param(param: StringName) -> Variant:
 	return _shader_material.get_shader_parameter(param)
 
@@ -247,9 +253,15 @@ func _configure_material() -> void:
 	m.set_shader_parameter(&"pulse_depth",
 		VisualTuning.FIXED_PULSE_DEPTH if heavy else VisualTuning.NEURON_PULSE_DEPTH)
 	m.set_shader_parameter(&"phase", VisualTuning.phase_for(neuron_id))
-	m.set_shader_parameter(&"wobble", VisualTuning.NEURON_WOBBLE)
-	m.set_shader_parameter(&"stub_count", VisualTuning.NEURON_STUB_COUNT)
-	m.set_shader_parameter(&"stub_length", VisualTuning.NEURON_STUB_LENGTH)
+	_shape = NeuronShape.for_seed(neuron_id)
+	m.set_shader_parameter(&"shape_phase", _shape.phase)
+	m.set_shader_parameter(&"shape_amp", _shape.amp)
+	m.set_shader_parameter(&"shape_breath", _shape.breath_phase)
+	m.set_shader_parameter(&"shape_lobe", _shape.lobe)
+	m.set_shader_parameter(&"nucleus", _shape.nucleus)
+	m.set_shader_parameter(&"wisp_angle", _shape.wisp_angle)
+	m.set_shader_parameter(&"wisp_len", _shape.wisp_len)
+	m.set_shader_parameter(&"wisp_strength", VisualTuning.NEURON_WISP_STRENGTH)
 	_update_dynamic_params(VisualTuning.motion_scale())
 
 

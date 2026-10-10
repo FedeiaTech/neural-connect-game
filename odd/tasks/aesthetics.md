@@ -146,3 +146,18 @@ Next: phase 4 complete; Phase 5 content (T5.1). Review slice base for run 4b: `3
 Engram mirror: pending (engram MCP unavailable in runs 4a and 4b).
 
 - Review 4b: slice `8c183a4..6e67a3e` medium, `slice_budget_reached` (3169 lines); user **declined** (candidate-scoped). Parent spot check `./run_tests.ps1` -> 326 cases, exit 0. Next slice base: `6e67a3e`.
+
+## Neuron shape
+
+Decision: neuron bodies are smooth, strictly convex organic blobs (no stubs, no concave notches),
+a different blob per neuron id. `NeuronShape` (scripts/views/neuron_shape.gd) defines
+r(theta, t) = 0.93 * (1 + 0.015 sin(1.1 t + b)) * (1 + sum_k a_k cos(k theta + p_k + d_k t) + lobe),
+k = 1..4 plus one 3..5-fold lobe mode; amplitudes under 0.05 keep r in 0.82..1.05 of the collision
+radius and the polar condition r^2 + 2r'^2 - r r'' >= 0 true at all times (tests sample 200 seeds).
+Parameters come from `NeuronShape.for_seed(id)` (deterministic) and reach the shader as uniforms.
+SYNC: `assets/shaders/neuron.gdshader` (`shape_scale()` and the SHAPE_* constants) mirrors the GDScript
+formula; a test compares the constants. Reduced motion: t = 0, so the shape is static. A faint nucleus
+(offset inner blob) adds depth. 2-4 very faint wisps (max 0.35 radii, low alpha, swaying) outside the
+body hint at branching; they are not part of the silhouette and are nearly invisible by design. The
+receptor's searching stub is now a soft convex bud (ReceptorView).
+
