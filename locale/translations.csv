@@ -185,3 +185,11 @@ MISSION_M48_NAME,The Core,El núcleo
 MISSION_M48_STORY,"Anchors, taut bonds, ember threads, live arcs, receptors and toxins, all at once.
 Wake the core.","Anclajes, enlaces tensos, hilos de brasa, arcos vivos, receptores y toxinas, todo a la vez.
 Despierta el núcleo."
+MENU_CREDITS,Credits,Créditos
+CREDITS_TITLE,Credits,Créditos
+CREDITS_DEVELOPER,Developed by,Desarrollado por
+CREDITS_RIGHTS,All rights reserved.,Todos los derechos reservados.
+EXIT_REPORT_TITLE,The app closed unexpectedly last time,La app se cerró inesperadamente la última vez
+EXIT_REPORT_COPY,Copy report,Copiar informe
+EXIT_REPORT_COPIED,Copied. Paste it in a message to send it.,Copiado. Pégalo en un mensaje para enviarlo.
+EXIT_REPORT_CLOSE,Close,Cerrar
