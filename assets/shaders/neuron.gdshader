@@ -22,6 +22,8 @@ uniform vec4 latency_color : source_color = vec4(1.0, 0.42, 0.28, 1.0);
 uniform float latency_speed = 1.1;
 uniform float latency_glow = 0.5;
 uniform float sparkle = 1.0;
+// 1 on weak mobile GPUs: skips the nucleus shading (see VisualTuning.is_low_quality).
+uniform float low_quality = 0.0;
 uniform vec4 overload_color : source_color = vec4(1.0, 0.75, 1.0, 1.0);
 uniform float radius_px = 28.0;
 uniform float half_size_px = 80.0;
@@ -115,12 +117,14 @@ void fragment() {
 	// Soma shading: a dimmer body with a brighter rim, and a visible nucleus (disc, darker rim,
 	// bright nucleolus).
 	float rn = clamp(d / max(r, 0.001), 0.0, 1.0);
-	vec2 nq = (p - nucleus * r) / (r * 0.48);
-	float nd = length(nq);
-	float nuc = 1.0 - smoothstep(0.82, 1.0, nd);
-	float nuc_rim = exp(-pow((nd - 0.97) / 0.12, 2.0));
-	float shade = mix(0.72, 0.96, smoothstep(0.4, 1.0, rn)) + 0.3 * nuc - 0.16 * nuc_rim
-		+ 0.18 * exp(-nd * nd * 28.0);
+	float shade = mix(0.72, 0.96, smoothstep(0.4, 1.0, rn));
+	if (low_quality < 0.5) {
+		vec2 nq = (p - nucleus * r) / (r * 0.48);
+		float nd = length(nq);
+		float nuc = 1.0 - smoothstep(0.82, 1.0, nd);
+		float nuc_rim = exp(-pow((nd - 0.97) / 0.12, 2.0));
+		shade += 0.3 * nuc - 0.16 * nuc_rim + 0.18 * exp(-nd * nd * 28.0);
+	}
 	vec3 soma = core_color.rgb * shade * (0.94 + 0.06 * pulse);
 	float o = clamp(overload, 0.0, 1.0);
 	soma = mix(soma, overload_color.rgb * 1.3, o * 0.7);

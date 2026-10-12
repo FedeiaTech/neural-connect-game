@@ -292,7 +292,9 @@ func _configure_material() -> void:
 ## material (each push re-uploads the material's uniforms; T4.7).
 func _update_dynamic_params(motion: float) -> void:
 	_set_param(&"motion", motion)
-	_set_param(&"sparkle", VisualTuning.LATENCY_SPARKLE * motion)
+	var low := VisualTuning.is_low_quality()
+	_set_param(&"low_quality", 1.0 if low else 0.0)
+	_set_param(&"sparkle", 0.0 if low else VisualTuning.LATENCY_SPARKLE * motion)
 	_set_param(&"radius_px", lerpf(_radius, _radius * GRAB_SCALE, _grab_amount))
 	_set_param(&"crossing", _highlight_amount)
 	_set_param(&"contact", _contact_flash / CONTACT_FLASH_TIME)

@@ -95,6 +95,22 @@ const DISEASED_SHAKE_FACTOR := 0.45
 const GOLDEN_ANGLE := 2.39996323
 
 
+## -1 = automatic (low quality on Android), 0 = forced off, 1 = forced on. Tests use the override.
+static var _low_quality_override := -1
+
+
+## Low quality trims the costliest GPU/CPU extras (neuron nucleus shading, crossing sparkle,
+## background spores, half-size particle bursts) for weak mobile GPUs. Gameplay is unchanged.
+static func is_low_quality() -> bool:
+	if _low_quality_override >= 0:
+		return _low_quality_override == 1
+	return OS.has_feature("android")
+
+
+static func set_low_quality_override(mode: int) -> void:
+	_low_quality_override = clampi(mode, -1, 1)
+
+
 static func is_motion_enabled() -> bool:
 	return not GameState.reduced_motion
 

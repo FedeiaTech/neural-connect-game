@@ -257,7 +257,7 @@ func _spawn_burst(a: Vector2, b: Vector2, color := Palette.TENSION, amount := 32
 	var burst := CPUParticles2D.new()
 	burst.one_shot = true
 	burst.explosiveness = 0.9
-	burst.amount = amount
+	burst.amount = maxi(amount / 2, 8) if VisualTuning.is_low_quality() else amount
 	burst.lifetime = 0.8
 	burst.texture = _get_spark_texture()
 	burst.emission_shape = CPUParticles2D.EMISSION_SHAPE_POINTS

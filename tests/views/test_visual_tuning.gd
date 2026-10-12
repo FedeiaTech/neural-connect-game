@@ -10,6 +10,25 @@ func before_test() -> void:
 
 func after_test() -> void:
 	GameState.reduced_motion = _saved_reduced_motion
+	VisualTuning.set_low_quality_override(-1)
+
+
+func test_low_quality_is_automatic_off_android_and_can_be_forced() -> void:
+	assert_bool(VisualTuning.is_low_quality()).is_equal(OS.has_feature("android"))
+	VisualTuning.set_low_quality_override(1)
+	assert_bool(VisualTuning.is_low_quality()).is_true()
+	VisualTuning.set_low_quality_override(0)
+	assert_bool(VisualTuning.is_low_quality()).is_false()
+
+
+func test_low_quality_neuron_turns_sparkle_off_and_flags_the_shader() -> void:
+	VisualTuning.set_low_quality_override(1)
+	var model := PuzzleModel.from_level(preload("res://tests/model/level_factory.gd").x_level())
+	var view: NeuronView = auto_free(preload("res://scenes/views/neuron_view.tscn").instantiate())
+	view.setup(0, model)
+	var material := view.material as ShaderMaterial
+	assert_float(material.get_shader_parameter(&"low_quality")).is_equal(1.0)
+	assert_float(material.get_shader_parameter(&"sparkle")).is_equal(0.0)
 
 
 func test_motion_scale_follows_reduced_motion() -> void:
