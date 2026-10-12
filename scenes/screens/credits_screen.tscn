@@ -1,0 +1,78 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/screens/credits_screen.gd" id="1_credits"]
+[ext_resource type="PackedScene" path="res://scenes/views/background.tscn" id="2_background"]
+[ext_resource type="Script" path="res://scripts/ui/glow_title.gd" id="3_title"]
+[ext_resource type="Script" path="res://scripts/ui/glow_button.gd" id="4_button"]
+
+[node name="CreditsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_credits")
+
+[node name="Background" parent="." instance=ExtResource("2_background")]
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+layout_mode = 2
+
+[node name="Column" type="VBoxContainer" parent="Center/Panel"]
+custom_minimum_size = Vector2(760, 0)
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="Title" type="Control" parent="Center/Panel/Column"]
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("3_title")
+text = "CREDITS_TITLE"
+font_size = 64
+
+[node name="GameLabel" type="Label" parent="Center/Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Neural Connect"
+horizontal_alignment = 1
+
+[node name="DeveloperCaption" type="Label" parent="Center/Panel/Column"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.91, 1, 0.62)
+text = "CREDITS_DEVELOPER"
+horizontal_alignment = 1
+
+[node name="DeveloperName" type="Label" parent="Center/Panel/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Federico Iacono"
+horizontal_alignment = 1
+
+[node name="Copyright" type="Label" parent="Center/Panel/Column"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.91, 1, 0.62)
+text = "Copyright © 2026 Chainsaw Games - iaTech"
+horizontal_alignment = 1
+
+[node name="Rights" type="Label" parent="Center/Panel/Column"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.91, 1, 0.62)
+text = "CREDITS_RIGHTS"
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="Center/Panel/Column"]
+custom_minimum_size = Vector2(240, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "COMMON_BACK"
+script = ExtResource("4_button")

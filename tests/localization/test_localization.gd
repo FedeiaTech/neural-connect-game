@@ -14,7 +14,8 @@ const HudScene := preload("res://scenes/ui/hud.tscn")
 const TEMP_PATH := "user://test_language_progress.json"
 const SCENES_DIR := "res://scenes"
 ## Text in scenes that is not translated on purpose (the game's name).
-const UNTRANSLATED := ["Neural Connect"]
+## Game name and credit literals (names and the copyright line are never translated).
+const UNTRANSLATED := ["Neural Connect", "Federico Iacono", "Copyright © 2026 Chainsaw Games - iaTech"]
 
 var _locale := ""
 var _sandbox: Sandbox

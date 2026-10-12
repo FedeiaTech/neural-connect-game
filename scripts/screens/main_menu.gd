@@ -8,6 +8,7 @@ extends Control
 
 signal play_pressed()
 signal settings_pressed()
+signal credits_pressed()
 signal quit_pressed()
 
 const ENTRANCE_DELAY := 0.45
@@ -19,12 +20,14 @@ const ENTRANCE_TIME := 0.5
 @onready var _subtitle: Label = $Center/Column/Subtitle
 @onready var _play_button: Button = $Center/Column/PlayButton
 @onready var _settings_button: Button = $Center/Column/SettingsButton
+@onready var _credits_button: Button = $Center/Column/CreditsButton
 @onready var _quit_button: Button = $Center/Column/QuitButton
 
 
 func _ready() -> void:
 	_play_button.pressed.connect(play_pressed.emit)
 	_settings_button.pressed.connect(settings_pressed.emit)
+	_credits_button.pressed.connect(credits_pressed.emit)
 	_quit_button.pressed.connect(quit_pressed.emit)
 	_quit_button.visible = not (OS.has_feature("web") or OS.has_feature("mobile"))
 	_play_button.grab_focus()
@@ -47,6 +50,10 @@ func get_settings_button() -> Button:
 	return _settings_button
 
 
+func get_credits_button() -> Button:
+	return _credits_button
+
+
 func get_quit_button() -> Button:
 	return _quit_button
 
@@ -54,7 +61,7 @@ func get_quit_button() -> Button:
 func _play_entrance() -> void:
 	if not VisualTuning.is_motion_enabled():
 		return
-	var items: Array[Control] = [_subtitle, _play_button, _settings_button, _quit_button]
+	var items: Array[Control] = [_subtitle, _play_button, _settings_button, _credits_button, _quit_button]
 	var tween := create_tween().set_parallel(true)
 	for i in items.size():
 		items[i].modulate.a = 0.0

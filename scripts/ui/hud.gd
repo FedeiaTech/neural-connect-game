@@ -75,6 +75,9 @@ var _boss := false
 
 
 func _ready() -> void:
+	if PlatformProfile.is_mobile():
+		# Taller touch buttons: start the bar higher so it stays clear of the play area frame.
+		$TopBar.add_theme_constant_override(&"margin_top", 8)
 	_star_row.star_revealed.connect(star_revealed.emit)
 	_completion_panel.offset_transform_enabled = true
 	_restart_button.pressed.connect(restart_pressed.emit)

@@ -261,6 +261,7 @@ func test_binding_twice_does_not_double_sounds() -> void:
 
 func test_main_wires_the_director_into_every_screen() -> void:
 	var main: Node = auto_free(MainScene.instantiate())
+	main.show_brand_intro = false
 	add_child(main)
 	var director: AudioDirector = main.get_node(^"AudioDirector")
 	var host: ScreenHost = main.get_screen_host()

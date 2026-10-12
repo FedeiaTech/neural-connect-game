@@ -12,6 +12,7 @@ func before_test() -> void:
 	_sandbox = Sandbox.new()
 	_sandbox.enter()
 	var main: Node = auto_free(MainScene.instantiate())
+	main.show_brand_intro = false
 	add_child(main)
 	_transition = main.get_node("Transition")
 

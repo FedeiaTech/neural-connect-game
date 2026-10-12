@@ -18,6 +18,8 @@ const PERF_WARMUP_FRAMES := 60
 const PERF_SECONDS := 5.0
 const MainMenuScene := preload("res://scenes/screens/main_menu.tscn")
 const SettingsScene := preload("res://scenes/screens/settings_screen.tscn")
+const BrandIntroScene := preload("res://scenes/screens/brand_intro.tscn")
+const CreditsScene := preload("res://scenes/screens/credits_screen.tscn")
 const MissionSelectScene := preload("res://scenes/screens/mission_select.tscn")
 const LevelScene := preload("res://scenes/level/level.tscn")
 const TEMP_SAVE := "user://capture_progress.json"
@@ -63,6 +65,10 @@ func _ready() -> void:
 		_target = 1_000_000
 	GameState.record_result(&"m01", LevelResult.create(5, 40.0, 4, 30.0))
 	match _screen:
+		"brand":
+			add_child(BrandIntroScene.instantiate())
+		"credits":
+			add_child(CreditsScene.instantiate())
 		"settings", "settings_reset":
 			var settings: SettingsScreen = SettingsScene.instantiate()
 			add_child(settings)
@@ -97,6 +103,10 @@ func _ready() -> void:
 			_level.get_controller().start_playing()
 		_:
 			add_child(MainMenuScene.instantiate())
+	# ScreenHost is not used here, so apply the platform profile it would apply (no-op on desktop;
+	# add the user arg --mobile-ui to preview the touch layout).
+	PlatformProfile.apply_to_theme(ThemeDB.get_project_theme())
+	PlatformProfile.adapt_buttons(self)
 	# Pretend the cursor rests near the left of the title so the network reacts.
 	get_viewport().warp_mouse(Vector2(560, 380))
 

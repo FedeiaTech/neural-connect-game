@@ -14,6 +14,7 @@ func before_test() -> void:
 	_sandbox = Sandbox.new()
 	_sandbox.enter()
 	_main = auto_free(MainScene.instantiate())
+	_main.show_brand_intro = false
 	add_child(_main)
 	_host = _main.get_screen_host()
 

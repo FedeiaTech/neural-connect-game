@@ -10,8 +10,10 @@ extends Node
 
 signal screen_changed(screen: Screen)
 
-enum Screen { NONE, MAIN_MENU, MISSION_SELECT, LEVEL, SETTINGS }
+enum Screen { NONE, MAIN_MENU, MISSION_SELECT, LEVEL, SETTINGS, BRAND_INTRO, CREDITS }
 
+const BrandIntroScene := preload("res://scenes/screens/brand_intro.tscn")
+const CreditsScene := preload("res://scenes/screens/credits_screen.tscn")
 const MainMenuScene := preload("res://scenes/screens/main_menu.tscn")
 const MissionSelectScene := preload("res://scenes/screens/mission_select.tscn")
 const SettingsScene := preload("res://scenes/screens/settings_screen.tscn")
@@ -25,6 +27,10 @@ const LevelScene := preload("res://scenes/level/level.tscn")
 var _screen := Screen.NONE
 var _current: Node
 var _busy := false
+
+
+func _ready() -> void:
+	PlatformProfile.apply_to_theme(ThemeDB.get_project_theme())
 
 
 ## Fades to the given screen. For Screen.LEVEL use play_mission() instead.
@@ -81,9 +87,14 @@ func _swap(screen: Screen, mission_id: StringName) -> void:
 			_current = _enter_mission_select()
 		Screen.SETTINGS:
 			_current = _enter_settings()
+		Screen.BRAND_INTRO:
+			_current = _enter_brand_intro()
+		Screen.CREDITS:
+			_current = _enter_credits()
 		Screen.LEVEL:
 			_current = _enter_level(mission_id)
 	_screen = screen if _current != null else Screen.NONE
+	PlatformProfile.adapt_buttons(_current)
 	_attach_audio(_current)
 	screen_changed.emit(_screen)
 
@@ -102,8 +113,23 @@ func _enter_main_menu() -> Node:
 	add_child(menu)
 	menu.play_pressed.connect(go_to.bind(Screen.MISSION_SELECT))
 	menu.settings_pressed.connect(go_to.bind(Screen.SETTINGS))
+	menu.credits_pressed.connect(go_to.bind(Screen.CREDITS))
 	menu.quit_pressed.connect(get_tree().quit)
 	return menu
+
+
+func _enter_brand_intro() -> Node:
+	var intro: BrandIntro = BrandIntroScene.instantiate()
+	add_child(intro)
+	intro.finished.connect(go_to.bind(Screen.MAIN_MENU))
+	return intro
+
+
+func _enter_credits() -> Node:
+	var credits: CreditsScreen = CreditsScene.instantiate()
+	add_child(credits)
+	credits.back_pressed.connect(go_to.bind(Screen.MAIN_MENU))
+	return credits
 
 
 func _enter_mission_select() -> Node:

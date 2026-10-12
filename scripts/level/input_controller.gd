@@ -12,12 +12,12 @@ signal grab_started(id: int)
 signal grab_ended(id: int)
 signal restart_requested()
 
-## Grab radius = neuron radius * this factor (generous for fingers, SDD 5.2).
-const GRAB_RADIUS_FACTOR := 1.6
 const MOUSE_POINTER := -1
 
 ## Node whose local space is the model space. Null means viewport space.
 @export var playfield: Node2D
+## Grab radius = neuron radius * this factor (SDD 5.2); bigger on mobile for fingers.
+var grab_radius_factor := PlatformProfile.grab_radius_factor()
 
 var _model: PuzzleModel
 var _enabled := false
@@ -112,7 +112,7 @@ func _check_lost_release() -> void:
 func _begin_drag(viewport_position: Vector2, pointer: int) -> void:
 	if _dragging_id != PuzzleModel.NO_NEURON:
 		return
-	var grab_radius := _model.get_neuron_radius() * GRAB_RADIUS_FACTOR
+	var grab_radius := _model.get_neuron_radius() * grab_radius_factor
 	var id := _model.pick_neuron(to_playfield(viewport_position), grab_radius)
 	if id == PuzzleModel.NO_NEURON or not _model.grab(id):
 		return

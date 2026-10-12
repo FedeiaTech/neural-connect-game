@@ -13,11 +13,15 @@ extends Control
 ## calls GameState.reset_mission() and rebuilds the map.
 ## T6.2: names, subtitles and "Locked" are translation keys shown by auto-translating Labels;
 ## the formatted texts (chapter headings, reset button and question) follow a live locale switch.
+## Mobile layout (mobile_layout, see PlatformProfile): no scrollbar, one chapter per page that
+## snaps and glides into place after a swipe, and chapters that are still entirely locked are not
+## built at all, so the next chapter stays a mystery until its first mission unlocks.
 
 signal mission_selected(mission_id: StringName)
 signal back_pressed()
 
 const HEADER := "Margin/Column/Header/"
+const PAGE_TIME := 0.4
 
 @onready var _back_button: Button = get_node(HEADER + "BackButton")
 @onready var _reset_button: Button = get_node(HEADER + "ResetRecordButton")
@@ -25,8 +29,13 @@ const HEADER := "Margin/Column/Header/"
 @onready var _confirm_label: Label = get_node(HEADER + "ConfirmRow/ConfirmLabel")
 @onready var _confirm_button: Button = get_node(HEADER + "ConfirmRow/ConfirmButton")
 @onready var _cancel_button: Button = get_node(HEADER + "ConfirmRow/CancelButton")
+@onready var _scroll: ScrollContainer = $Margin/Column/Scroll
 @onready var _chapters_box: VBoxContainer = $Margin/Column/Scroll/Chapters
 
+## Set before the screen enters the tree to force or disable the touch layout.
+var mobile_layout := PlatformProfile.is_mobile()
+var _sections: Array[Control] = []
+var _page_tween: Tween
 var _nodes: Dictionary[StringName, MissionNode] = {}
 var _maps: Dictionary[StringName, MissionMap] = {}
 var _headers: Array[ChapterHeader] = []
@@ -40,8 +49,16 @@ func _ready() -> void:
 	_reset_button.pressed.connect(_on_reset_button_pressed)
 	_confirm_button.pressed.connect(_confirm_reset)
 	_cancel_button.pressed.connect(_cancel_reset)
+	if mobile_layout:
+		_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+		_chapters_box.add_theme_constant_override(&"separation", 0)
+		_scroll.scroll_started.connect(_stop_page_tween)
+		_scroll.scroll_ended.connect(snap_to_nearest_chapter)
+		_scroll.resized.connect(_fit_sections)
 	_build()
 	_focus_first_playable()
+	if mobile_layout:
+		_enter_current_chapter()
 
 
 func _notification(what: int) -> void:
@@ -116,11 +133,93 @@ func request_mission_reset(mission_id: StringName) -> void:
 	_cancel_button.grab_focus()
 
 
+## How many chapters the mobile layout reveals: up to the last one with an unlocked mission
+## (always at least the first). The chapters after it stay hidden.
+static func revealed_chapters(chapter_unlocked: Array[bool]) -> int:
+	var count := 1
+	for i in chapter_unlocked.size():
+		if chapter_unlocked[i]:
+			count = i + 1
+	return count
+
+
+func get_scroll() -> ScrollContainer:
+	return _scroll
+
+
+func get_chapter_sections() -> Array[Control]:
+	return _sections
+
+
+## Glides the view to the chapter page closest to the current scroll position.
+func snap_to_nearest_chapter() -> void:
+	if _sections.is_empty():
+		return
+	var best := _sections[0]
+	for section in _sections:
+		if absf(section.position.y - _scroll.scroll_vertical) < absf(best.position.y - _scroll.scroll_vertical):
+			best = section
+	_glide_to(int(best.position.y))
+
+
+func _glide_to(target: int) -> void:
+	_stop_page_tween()
+	if not VisualTuning.is_motion_enabled() or not is_inside_tree():
+		_scroll.scroll_vertical = target
+		return
+	_page_tween = create_tween()
+	_page_tween.tween_property(_scroll, ^"scroll_vertical", target, PAGE_TIME) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
+func _stop_page_tween() -> void:
+	if _page_tween != null:
+		_page_tween.kill()
+		_page_tween = null
+
+
+## One chapter fills the visible area, so the next page never peeks in.
+func _fit_sections() -> void:
+	for section in _sections:
+		section.custom_minimum_size.y = _scroll.size.y
+
+
+## Opens on the newest revealed chapter, gliding in from the one before it.
+func _enter_current_chapter() -> void:
+	await get_tree().process_frame
+	if not is_inside_tree() or _sections.is_empty():
+		return
+	_fit_sections()
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
+	var last := _sections.size() - 1
+	if last > 0:
+		_scroll.scroll_vertical = int(_sections[last - 1].position.y)
+	_glide_to(int(_sections[last].position.y))
+
+
 func _build() -> void:
 	var campaign := GameState.campaign
+	var chapters: Array[ChapterData] = []
 	for chapter in campaign.chapters:
 		if chapter != null:
-			_chapters_box.add_child(_make_chapter(chapter, campaign))
+			chapters.append(chapter)
+	var count := chapters.size()
+	if mobile_layout:
+		var unlocked: Array[bool] = []
+		for chapter in chapters:
+			var any := false
+			for level in chapter.missions:
+				if level != null and GameState.is_unlocked(level.mission_id):
+					any = true
+			unlocked.append(any)
+		count = mini(count, revealed_chapters(unlocked))
+	for i in count:
+		var section := _make_chapter(chapters[i], campaign)
+		if mobile_layout:
+			_sections.append(section)
+		_chapters_box.add_child(section)
 
 
 ## Frees and rebuilds every chapter (after a record reset). Freed at once, not queued: the
@@ -132,7 +231,10 @@ func _rebuild() -> void:
 	_nodes.clear()
 	_maps.clear()
 	_headers.clear()
+	_sections.clear()
 	_build()
+	if mobile_layout:
+		_fit_sections()
 
 
 func _make_chapter(chapter: ChapterData, campaign: Campaign) -> Control:
@@ -143,6 +245,9 @@ func _make_chapter(chapter: ChapterData, campaign: Campaign) -> Control:
 	_headers.append(header)
 	section.add_child(header)
 	var map := MissionMap.new()
+	if mobile_layout:
+		# The page is one screen tall: the map takes the space under the header.
+		map.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	section.add_child(map)
 	for level in chapter.missions:
 		if level != null:
