@@ -28,6 +28,10 @@ Decisions already made (all details in `docs/SDD.md`, do not re-ask):
 - Settings (saved in `progress.json`): volume, reduced motion, language, low memory mode (`VisualTuning.is_low_memory()`: forces low quality, static crossing sparks, quarter-size bursts).
 - GDScript only. Tests with gdUnit4. Write the model test-first.
 
+Versions: every exported build bumps `config/version` (project.godot) and the Android preset
+(`version/name`, `version/code`, `export_path`), adds an entry to `version.md` and copies that file to
+`export/` next to the APK.
+
 Run tests: `./run_tests.ps1` (gdUnit4 v6.2.1 in `addons/gdUnit4`, tests in `tests/`, files `test_*.gd`
 extending `GdUnitTestSuite`). Godot binary on PATH: `godot` (4.7.2). Task tracking: `odd/tasks/`.
 
