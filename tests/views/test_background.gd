@@ -4,14 +4,35 @@ extends GdUnitTestSuite
 const BackgroundScene := preload("res://scenes/views/background.tscn")
 
 var _saved_reduced_motion := false
+var _saved_low_memory := false
 
 
 func before_test() -> void:
 	_saved_reduced_motion = GameState.reduced_motion
+	_saved_low_memory = GameState.low_memory_mode
+	GameState.low_memory_mode = false
 
 
 func after_test() -> void:
 	GameState.reduced_motion = _saved_reduced_motion
+	GameState.low_memory_mode = _saved_low_memory
+	VisualTuning.set_low_quality_override(-1)
+
+
+func test_low_memory_mode_hides_and_restores_the_spores_live() -> void:
+	VisualTuning.set_low_quality_override(0)
+	var background := _background()
+	assert_bool(background.get_spores().visible).is_true()
+	GameState.low_memory_mode = true
+	VisualTuning.set_low_quality_override(-1)
+	GameState.settings_changed.emit()
+	assert_bool(background.get_spores().visible).is_false()
+	assert_bool(background.get_spores().emitting).is_false()
+	GameState.low_memory_mode = false
+	VisualTuning.set_low_quality_override(0)
+	GameState.settings_changed.emit()
+	assert_bool(background.get_spores().visible).is_true()
+	assert_bool(background.get_spores().emitting).is_true()
 
 
 func _background() -> BackgroundView:

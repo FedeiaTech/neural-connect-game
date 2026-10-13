@@ -10,6 +10,7 @@ COMMON_MISSIONS,Missions,Misiones
 SETTINGS_TITLE,Settings,Ajustes
 SETTINGS_VOLUME,Master volume,Volumen general
 SETTINGS_REDUCED_MOTION,Reduced motion,Movimiento reducido
+SETTINGS_LOW_MEMORY,Low memory mode,Modo de ahorro de memoria
 SETTINGS_LANGUAGE,Language,Idioma
 SETTINGS_RESET_PROGRESS,Reset progress,Restablecer progreso
 SETTINGS_RESET_CONFIRM,Erase all mission progress?,¿Seguro? Se borrará todo el progreso.

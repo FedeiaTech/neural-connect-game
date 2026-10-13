@@ -95,20 +95,38 @@ const DISEASED_SHAKE_FACTOR := 0.45
 const GOLDEN_ANGLE := 2.39996323
 
 
-## -1 = automatic (low quality on Android), 0 = forced off, 1 = forced on. Tests use the override.
+## -1 = automatic (low quality on Android or in low memory mode), 0 = forced off, 1 = forced on.
+## Tests use the override.
 static var _low_quality_override := -1
 
 
 ## Low quality trims the costliest GPU/CPU extras (neuron nucleus shading, crossing sparkle,
 ## background spores, half-size particle bursts) for weak mobile GPUs. Gameplay is unchanged.
+## The low memory setting turns it on for any platform.
 static func is_low_quality() -> bool:
 	if _low_quality_override >= 0:
 		return _low_quality_override == 1
-	return OS.has_feature("android")
+	return OS.has_feature("android") or is_low_memory()
 
 
 static func set_low_quality_override(mode: int) -> void:
 	_low_quality_override = clampi(mode, -1, 1)
+
+
+## The player's low memory setting: on top of low quality it keeps crossing sparks static (no
+## arcs or particles) and shrinks particle bursts to a quarter.
+static func is_low_memory() -> bool:
+	return GameState.low_memory_mode
+
+
+## Particle count of a burst asked for requested particles: halved in low quality, a quarter in
+## low memory mode (never below a small floor, never above the request).
+static func burst_amount(requested: int) -> int:
+	if is_low_memory():
+		return mini(requested, maxi(requested / 4, 6))
+	if is_low_quality():
+		return mini(requested, maxi(requested / 2, 8))
+	return requested
 
 
 static func is_motion_enabled() -> bool:

@@ -180,6 +180,30 @@ func test_settings_persist_and_are_clamped() -> void:
 	assert_float(_state.master_volume).is_equal(0.0)
 
 
+func test_low_memory_mode_defaults_off_and_persists() -> void:
+	assert_bool(_state.low_memory_mode).is_false()
+	_state.set_low_memory_mode(true)
+	assert_bool(_new_state().low_memory_mode).is_true()
+	_state.set_low_memory_mode(false)
+	assert_bool(_new_state().low_memory_mode).is_false()
+
+
+func test_save_without_low_memory_key_or_with_a_bad_value_loads_as_off() -> void:
+	_write_temp(JSON.stringify({"version": 2, "progress": {"missions": {}},
+		"settings": {"master_volume": 0.5, "reduced_motion": true}}))
+	assert_bool(_new_state().low_memory_mode).is_false()
+	_write_temp(JSON.stringify({"version": 2, "progress": {"missions": {}},
+		"settings": {"low_memory_mode": "yes"}}))
+	assert_bool(_new_state().low_memory_mode).is_false()
+
+
+func test_low_memory_mode_emits_settings_changed() -> void:
+	var emitted := [0]
+	_state.settings_changed.connect(func() -> void: emitted[0] += 1)
+	_state.set_low_memory_mode(true)
+	assert_int(emitted[0]).is_equal(1)
+
+
 func test_master_volume_drives_the_master_bus() -> void:
 	_state.set_master_volume(0.5)
 	assert_float(AudioServer.get_bus_volume_db(0)).is_equal_approx(linear_to_db(0.5), 0.01)

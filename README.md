@@ -19,6 +19,8 @@ Made by **Federico Iacono** at **Chainsaw Games - iaTech**.
   neurons, tension dendrites that break when over-stretched, lethal walls, receptors, toxic
   neurons and diseased dendrites.
 - Stars are earned for moves and time.
+- Settings: master volume, reduced motion, language and a low memory mode (no background spores,
+  still crossing sparks, smaller particle bursts, trimmed neuron shading).
 - The same project serves both platforms: on mobile the UI uses larger touch targets, a more
   generous grab radius and a paged, swipeable mission map. Preview it on a PC with
   `godot --path . -- --mobile-ui`.

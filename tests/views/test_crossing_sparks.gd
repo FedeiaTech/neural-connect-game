@@ -4,15 +4,19 @@ extends GdUnitTestSuite
 const LevelFactory := preload("res://tests/model/level_factory.gd")
 
 var _saved_motion := false
+var _saved_low_memory := false
 
 
 func before_test() -> void:
 	_saved_motion = GameState.reduced_motion
+	_saved_low_memory = GameState.low_memory_mode
 	GameState.reduced_motion = false
+	GameState.low_memory_mode = false
 
 
 func after_test() -> void:
 	GameState.reduced_motion = _saved_motion
+	GameState.low_memory_mode = _saved_low_memory
 
 
 func _view(model: PuzzleModel, show_feedback := true) -> CrossingSparksView:
@@ -60,6 +64,18 @@ func test_reduced_motion_shows_a_static_marker() -> void:
 		view._process(0.03)
 	assert_bool(view.is_static()).is_true()
 	assert_int(view.get_particle_count()).is_equal(0)
+	assert_int(view.get_marker_count()).is_equal(1)
+
+
+func test_low_memory_mode_shows_static_markers_without_particles() -> void:
+	GameState.low_memory_mode = true
+	var model := PuzzleModel.from_level(LevelFactory.x_level())
+	var view := _view(model)
+	for i in 10:
+		view._process(0.03)
+	assert_bool(view.is_static()).is_true()
+	assert_int(view.get_particle_count()).is_equal(0)
+	assert_int(view.get_arc_count()).is_equal(0)
 	assert_int(view.get_marker_count()).is_equal(1)
 
 

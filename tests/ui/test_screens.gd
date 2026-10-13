@@ -111,6 +111,16 @@ func test_settings_apply_and_save_immediately() -> void:
 	assert_bool(saved["settings"]["reduced_motion"]).is_true()
 
 
+func test_settings_low_memory_toggle_shows_applies_and_saves() -> void:
+	GameState.set_low_memory_mode(true)
+	var settings: SettingsScreen = _add(SettingsScene)
+	assert_bool(settings.get_low_memory_toggle().button_pressed).is_true()
+	settings.get_low_memory_toggle().button_pressed = false
+	assert_bool(GameState.low_memory_mode).is_false()
+	var saved: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(Sandbox.TEMP_PATH))
+	assert_bool(saved["settings"]["low_memory_mode"]).is_false()
+
+
 func test_settings_back_button_emits_back_pressed() -> void:
 	var settings: SettingsScreen = _add(SettingsScene)
 	_recorder.watch(settings, [&"back_pressed"])

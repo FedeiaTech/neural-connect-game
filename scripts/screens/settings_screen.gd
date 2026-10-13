@@ -1,6 +1,6 @@
 class_name SettingsScreen
 extends Control
-## Minimal settings (SDD 5.5): master volume and reduced motion. Changes apply and save
+## Minimal settings (SDD 5.5): master volume, reduced motion and low memory mode. Changes apply and save
 ## immediately through GameState; Back (or ui_cancel) emits back_pressed.
 ## T4.5: shown on the shared Background inside a glowing panel, with a GlowTitle and GlowButton.
 ## T6.1: "Reset progress" swaps itself for an inline confirmation (Cancel has focus, ui_cancel
@@ -20,6 +20,7 @@ const LANGUAGE_NAMES := {"en": "English", "es": "Español"}
 @onready var _volume_slider: HSlider = get_node(COLUMN + "VolumeRow/VolumeSlider")
 @onready var _volume_value: Label = get_node(COLUMN + "VolumeRow/VolumeValue")
 @onready var _motion_toggle: CheckButton = get_node(COLUMN + "ReducedMotionToggle")
+@onready var _low_memory_toggle: CheckButton = get_node(COLUMN + "LowMemoryToggle")
 @onready var _back_button: Button = get_node(COLUMN + "BackButton")
 @onready var _title: GlowTitle = get_node(COLUMN + "Title")
 @onready var _language_selector: OptionButton = get_node(COLUMN + "LanguageRow/LanguageSelector")
@@ -36,11 +37,13 @@ func _ready() -> void:
 	# Show the saved values before listening, so filling the controls does not re-save.
 	_volume_slider.value = GameState.master_volume
 	_motion_toggle.button_pressed = GameState.reduced_motion
+	_low_memory_toggle.button_pressed = GameState.low_memory_mode
 	_update_volume_label(_volume_slider.value)
 	_fill_languages()
 	_language_selector.item_selected.connect(_on_language_selected)
 	_volume_slider.value_changed.connect(_on_volume_changed)
 	_motion_toggle.toggled.connect(GameState.set_reduced_motion)
+	_low_memory_toggle.toggled.connect(GameState.set_low_memory_mode)
 	_back_button.pressed.connect(back_pressed.emit)
 	_reset_button.pressed.connect(_ask_reset)
 	_confirm_button.pressed.connect(_confirm_reset)
@@ -63,6 +66,10 @@ func get_volume_slider() -> HSlider:
 
 func get_reduced_motion_toggle() -> CheckButton:
 	return _motion_toggle
+
+
+func get_low_memory_toggle() -> CheckButton:
+	return _low_memory_toggle
 
 
 func get_language_selector() -> OptionButton:

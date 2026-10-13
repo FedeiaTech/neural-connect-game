@@ -25,6 +25,7 @@ Decisions already made (all details in `docs/SDD.md`, do not re-ask):
 - Mouse first, touch-ready input. Multi-platform is the long-term goal.
 - No external images: all art via code, shaders and particles. Interactive animated menus.
 - Architecture: pure `PuzzleModel` (RefCounted) + views; two autoloads (`GameState`; `ExitReport` = exit diagnostics, kept out of GameState because tests instantiate that); signals up, calls down; no EventBus.
+- Settings (saved in `progress.json`): volume, reduced motion, language, low memory mode (`VisualTuning.is_low_memory()`: forces low quality, static crossing sparks, quarter-size bursts).
 - GDScript only. Tests with gdUnit4. Write the model test-first.
 
 Run tests: `./run_tests.ps1` (gdUnit4 v6.2.1 in `addons/gdUnit4`, tests in `tests/`, files `test_*.gd`

@@ -15,9 +15,6 @@ var _boss_look := false
 
 func _ready() -> void:
 	_spore_speed = _spores.speed_scale
-	if VisualTuning.is_low_quality():
-		_spores.emitting = false
-		_spores.visible = false
 	_fit_to_viewport()
 	get_viewport().size_changed.connect(_fit_to_viewport)
 	GameState.settings_changed.connect(_apply_motion)
@@ -53,4 +50,8 @@ func _fit_to_viewport() -> void:
 
 
 func _apply_motion() -> void:
+	# Low quality (Android, or the low memory setting) drops the spores entirely.
+	var spores_on := not VisualTuning.is_low_quality()
+	_spores.visible = spores_on
+	_spores.emitting = spores_on
 	_spores.speed_scale = _spore_speed if VisualTuning.is_motion_enabled() else 0.0

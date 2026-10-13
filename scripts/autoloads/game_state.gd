@@ -5,7 +5,8 @@ extends Node
 ## Save: one versioned JSON file (default user://progress.json) holding progress AND settings:
 ##   {"version": 2,
 ##    "progress": {"missions": {"m01": {"completed": true, "stars": 3, "moves": 5, "time": 31.2}}},
-##    "settings": {"master_volume": 1.0, "reduced_motion": false, "language": "en"}}
+##    "settings": {"master_volume": 1.0, "reduced_motion": false, "low_memory_mode": false,
+##                 "language": "en"}}
 ## A missing or corrupt file means fresh progress and default settings, never a crash; a corrupt
 ## file is moved to <save_path>.bak first. Unknown fields (newer saves) survive a save.
 ## Unlock rule (SDD 7.1, chapter rules undecided -> linear): the first campaign mission is always
@@ -37,6 +38,9 @@ var progress := Progress.new()
 ## Linear 0..1.
 var master_volume := 1.0
 var reduced_motion := false
+## Trims visual extras (spores, spark particles, bursts, neuron shading) to save memory; see
+## VisualTuning.is_low_memory(). Off by default.
+var low_memory_mode := false
 ## One of LANGUAGES.
 var language := "en"
 ## Data read by the last load_game(); save_game() merges into it to keep unknown fields.
@@ -69,6 +73,8 @@ func load_game() -> void:
 	master_volume = clampf(float(volume), 0.0, 1.0) if (volume is float or volume is int) else 1.0
 	var motion: Variant = settings.get("reduced_motion", false)
 	reduced_motion = motion if motion is bool else false
+	var low_memory: Variant = settings.get("low_memory_mode", false)
+	low_memory_mode = low_memory if low_memory is bool else false
 	var saved_language: Variant = settings.get("language")
 	language = saved_language if saved_language is String and LANGUAGES.has(saved_language) \
 		else default_language_for(OS.get_locale_language())
@@ -83,7 +89,8 @@ func save_game() -> Error:
 	var known := {
 		"version": SAVE_VERSION,
 		"progress": progress.to_dict(),
-		"settings": {"master_volume": master_volume, "reduced_motion": reduced_motion, "language": language},
+		"settings": {"master_volume": master_volume, "reduced_motion": reduced_motion,
+			"low_memory_mode": low_memory_mode, "language": language},
 	}
 	return SaveFile.write_json(save_path, merge_save_data(_loaded_data, known))
 
@@ -174,6 +181,12 @@ func set_master_volume(value: float) -> void:
 
 func set_reduced_motion(value: bool) -> void:
 	reduced_motion = value
+	save_game()
+	settings_changed.emit()
+
+
+func set_low_memory_mode(value: bool) -> void:
+	low_memory_mode = value
 	save_game()
 	settings_changed.emit()
 

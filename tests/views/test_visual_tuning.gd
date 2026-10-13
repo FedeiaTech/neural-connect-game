@@ -2,15 +2,41 @@ extends GdUnitTestSuite
 ## T4.1-T4.4: pure visual parameters (tension look, motion switch, membrane offsets).
 
 var _saved_reduced_motion := false
+var _saved_low_memory := false
 
 
 func before_test() -> void:
 	_saved_reduced_motion = GameState.reduced_motion
+	_saved_low_memory = GameState.low_memory_mode
 
 
 func after_test() -> void:
 	GameState.reduced_motion = _saved_reduced_motion
+	GameState.low_memory_mode = _saved_low_memory
 	VisualTuning.set_low_quality_override(-1)
+
+
+func test_low_memory_mode_forces_low_quality_unless_overridden() -> void:
+	GameState.low_memory_mode = true
+	assert_bool(VisualTuning.is_low_memory()).is_true()
+	assert_bool(VisualTuning.is_low_quality()).is_true()
+	VisualTuning.set_low_quality_override(0)
+	assert_bool(VisualTuning.is_low_quality()).is_false()
+	GameState.low_memory_mode = false
+	VisualTuning.set_low_quality_override(-1)
+	assert_bool(VisualTuning.is_low_memory()).is_false()
+
+
+func test_burst_amount_shrinks_with_quality_and_memory_modes() -> void:
+	VisualTuning.set_low_quality_override(0)
+	GameState.low_memory_mode = false
+	assert_int(VisualTuning.burst_amount(64)).is_equal(64)
+	VisualTuning.set_low_quality_override(1)
+	assert_int(VisualTuning.burst_amount(64)).is_equal(32)
+	assert_int(VisualTuning.burst_amount(8)).is_equal(8)
+	GameState.low_memory_mode = true
+	assert_int(VisualTuning.burst_amount(64)).is_equal(16)
+	assert_int(VisualTuning.burst_amount(8)).is_equal(6)
 
 
 func test_low_quality_is_automatic_off_android_and_can_be_forced() -> void:

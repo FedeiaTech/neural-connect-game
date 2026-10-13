@@ -68,9 +68,9 @@ func get_arc_count() -> int:
 	return _arcs.size()
 
 
-## True with reduced motion: markers are drawn as still stars.
+## True with reduced motion or low memory mode: markers are drawn as still stars.
 func is_static() -> bool:
-	return not VisualTuning.is_motion_enabled()
+	return not VisualTuning.is_motion_enabled() or VisualTuning.is_low_memory()
 
 
 ## A short jagged lightning line of segments pieces leaving center in a random direction,
