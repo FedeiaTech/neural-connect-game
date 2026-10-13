@@ -6,14 +6,17 @@ extends CanvasLayer
 ## vignette. It never competes with gameplay: low counts, low alpha, nothing on top of the
 ## playfield. Reduced motion freezes the spores in place.
 
+@onready var _base: ColorRect = $Base
 @onready var _spores: CPUParticles2D = $Spores
 @onready var _vignette: ColorRect = $Vignette
 
 var _spore_speed := 1.0
 var _boss_look := false
+var _depth_material: Material
 
 
 func _ready() -> void:
+	_depth_material = _base.material
 	_spore_speed = _spores.speed_scale
 	_fit_to_viewport()
 	get_viewport().size_changed.connect(_fit_to_viewport)
@@ -55,3 +58,7 @@ func _apply_motion() -> void:
 	_spores.visible = spores_on
 	_spores.emitting = spores_on
 	_spores.speed_scale = _spore_speed if VisualTuning.is_motion_enabled() else 0.0
+	# Low memory mode also drops the two background shaders: a flat black base and no vignette.
+	var plain := VisualTuning.is_low_memory()
+	_base.material = null if plain else _depth_material
+	_vignette.visible = not plain

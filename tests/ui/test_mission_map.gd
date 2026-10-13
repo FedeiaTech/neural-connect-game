@@ -80,6 +80,15 @@ func test_each_chapter_has_a_procedural_header_and_a_map() -> void:
 	assert_object(select.get_mission_node(&"m01").get_parent()).is_same(map)
 
 
+func test_low_memory_mode_draws_a_flat_chapter_header() -> void:
+	GameState.low_memory_mode = true
+	var header: ChapterHeader = auto_free(ChapterHeader.new())
+	header.setup(1, "X", "Y")
+	GameState.low_memory_mode = false
+	assert_object(header.get_backdrop().material).is_null()
+	assert_float(header.get_backdrop().color.a).is_less(1.0)
+
+
 func test_chapter_headers_use_different_seeds() -> void:
 	assert_float(ChapterHeader.seed_for(1)).is_not_equal(ChapterHeader.seed_for(2))
 

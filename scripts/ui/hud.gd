@@ -434,6 +434,9 @@ func _apply_tooltips() -> void:
 
 
 func _play_sweep() -> void:
+	# Low memory mode skips this decorative shader pass.
+	if VisualTuning.is_low_memory():
+		return
 	_sweep.show()
 	_sweep_tween = create_tween()
 	_sweep_tween.tween_method(_set_sweep_progress, -0.3, 1.3, SWEEP_TIME) \

@@ -35,6 +35,23 @@ func test_low_memory_mode_hides_and_restores_the_spores_live() -> void:
 	assert_bool(background.get_spores().emitting).is_true()
 
 
+func test_low_memory_mode_draws_a_plain_black_background_and_restores_the_shaders_live() -> void:
+	VisualTuning.set_low_quality_override(0)
+	var background := _background()
+	var base: ColorRect = background.get_node(^"Base")
+	assert_object(base.material).is_instanceof(ShaderMaterial)
+	assert_bool(background.get_vignette().visible).is_true()
+	GameState.low_memory_mode = true
+	GameState.settings_changed.emit()
+	assert_object(base.material).is_null()
+	assert_bool(background.get_vignette().visible).is_false()
+	assert_object(background.get_vignette().material).is_instanceof(ShaderMaterial)
+	GameState.low_memory_mode = false
+	GameState.settings_changed.emit()
+	assert_object(base.material).is_instanceof(ShaderMaterial)
+	assert_bool(background.get_vignette().visible).is_true()
+
+
 func _background() -> BackgroundView:
 	var background: BackgroundView = auto_free(BackgroundScene.instantiate())
 	add_child(background)

@@ -24,6 +24,31 @@ const PROC_MAX_LINES := 200
 const EXIT_MARKER := " EXIT "
 const PAUSED_MARKER := " LIFECYCLE paused"
 const RESUMED_MARKER := " LIFECYCLE resumed"
+## Android's own record of why the previous process died (ApplicationExitInfo, API 30+).
+const EXIT_QUERY_MAX := 5
+const EXIT_SHOWN := 3
+const FALLBACK_PACKAGE := "com.fedeiatech.neuralconnect"
+const SAFE_VISUALS_NOTE := "Safe visuals were enabled automatically after an abnormal close; " \
+	+ "turn them off in Settings."
+## ApplicationExitInfo.REASON_* codes.
+const EXIT_REASON_NAMES := {
+	0: "UNKNOWN", 1: "EXIT_SELF", 2: "SIGNALED", 3: "LOW_MEMORY", 4: "CRASH", 5: "CRASH_NATIVE", 6: "ANR",
+	7: "INITIALIZATION_FAILURE", 8: "PERMISSION_CHANGE", 9: "EXCESSIVE_RESOURCE_USAGE",
+	10: "USER_REQUESTED", 11: "USER_STOPPED", 12: "DEPENDENCY_DIED", 13: "OTHER", 14: "FREEZER",
+	15: "PACKAGE_STATE_CHANGE", 16: "PACKAGE_UPDATED",
+}
+const REASON_SIGNALED := 2
+const REASON_CRASH_NATIVE := 5
+const SIGNAL_NAMES := {
+	1: "SIGHUP", 2: "SIGINT", 3: "SIGQUIT", 4: "SIGILL", 5: "SIGTRAP", 6: "SIGABRT", 7: "SIGBUS",
+	8: "SIGFPE", 9: "SIGKILL", 10: "SIGUSR1", 11: "SIGSEGV", 12: "SIGUSR2", 13: "SIGPIPE",
+	14: "SIGALRM", 15: "SIGTERM",
+}
+## ActivityManager.RunningAppProcessInfo.IMPORTANCE_*.
+const IMPORTANCE_NAMES := {
+	100: "FOREGROUND", 125: "FOREGROUND_SERVICE", 200: "VISIBLE", 230: "PERCEPTIBLE", 300: "SERVICE",
+	325: "TOP_SLEEPING", 350: "CANT_SAVE_STATE", 400: "CACHED", 1000: "GONE",
+}
 
 var journal_path := JOURNAL_PATH
 var report_path := REPORT_PATH
@@ -48,18 +73,25 @@ func _ready() -> void:
 ## Judges the previous journal (writing the report when it ended abnormally) and starts a new one.
 func begin_session() -> void:
 	var previous := _read_lines(journal_path)
+	var system_exit := _query_system_exit_reasons()
+	var exit_text := ""
+	if system_exit["supported"]:
+		exit_text = format_exit_reasons(system_exit["entries"], system_exit["note"])
 	if not previous.is_empty():
 		var verdict := verdict_for(previous)
 		if not verdict.begins_with("CLEAN"):
+			var safe_note := _enable_safe_visuals(verdict)
 			var engine_log := _previous_engine_log()
-			_write_report("PREVIOUS SESSION: " + verdict, previous, engine_log)
-			_show_report.call_deferred(
-				format_report("PREVIOUS SESSION: " + verdict, _device_summary(), previous, engine_log))
+			_write_report("PREVIOUS SESSION: " + verdict, previous, engine_log, exit_text, safe_note)
+			_show_report.call_deferred(format_report("PREVIOUS SESSION: " + verdict, _device_summary(),
+				previous, engine_log, exit_text, safe_note))
 	_file = FileAccess.open(journal_path, FileAccess.WRITE)
 	_lines = []
 	_logger = _ErrorLogger.new(_log_engine_error)
 	OS.add_logger(_logger)
-	_log("START", "%s | %s" % [_device_summary(), "debug" if OS.is_debug_build() else "release"])
+	_log("START", "%s | %s | %s" % [_device_summary(), "debug" if OS.is_debug_build() else "release",
+		_visual_flags()])
+	_log_system_exit(system_exit)
 
 
 ## Pure: classifies a journal. Starts with "CLEAN" or "ABNORMAL".
@@ -83,17 +115,82 @@ static func verdict_for(lines: PackedStringArray) -> String:
 
 
 ## Pure: report text from a verdict, a device summary, the journal and (optionally) the engine log
-## tail of the same session.
+## tail of the same session, Android's exit-reason section and a note about safe visuals.
 static func format_report(verdict: String, device: String, lines: PackedStringArray,
-		engine_log: PackedStringArray = PackedStringArray()) -> String:
+		engine_log: PackedStringArray = PackedStringArray(), exit_reasons: String = "",
+		safe_note: String = "") -> String:
 	var tail := lines.slice(maxi(0, lines.size() - TAIL_LINES))
 	var events := key_events(lines)
 	var engine_section := "Engine log: not available"
 	if not engine_log.is_empty():
 		engine_section = "Engine log, last %d lines:\n%s" % [engine_log.size(), "\n".join(engine_log)]
-	return "Neural Connect exit report\n%s\n\n%s\nDevice: %s\n\nKey events (%d):\n%s\n\n" % [
-			Time.get_datetime_string_from_system(), verdict, device, events.size(), "\n".join(events)] \
+	var head := "Neural Connect exit report\n%s\n\n%s\nDevice: %s\n" % [
+		Time.get_datetime_string_from_system(), verdict, device]
+	if safe_note != "":
+		head += "Safe visuals: %s\n" % safe_note
+	if exit_reasons != "":
+		head += "\n%s\n" % exit_reasons
+	return head + "\nKey events (%d):\n%s\n\n" % [events.size(), "\n".join(events)] \
 		+ "Last %d journal lines (oldest first):\n%s\n\n%s\n" % [tail.size(), "\n".join(tail), engine_section]
+
+
+## Pure: name of an ApplicationExitInfo.REASON_* code.
+static func exit_reason_name(code: int) -> String:
+	return EXIT_REASON_NAMES.get(code, "UNKNOWN(%d)" % code)
+
+
+## Pure: one ApplicationExitInfo as a line. Keys: reason, status, description, importance, rss and
+## pss (kB), timestamp (ms since the epoch); missing keys are skipped.
+static func format_exit_info(entry: Dictionary) -> String:
+	var reason := int(entry.get("reason", 0))
+	var status := int(entry.get("status", 0))
+	var parts := PackedStringArray(["%s (code %d)" % [exit_reason_name(reason), reason]])
+	if reason == REASON_SIGNALED or reason == REASON_CRASH_NATIVE:
+		parts.append("signal=%d %s" % [status, SIGNAL_NAMES.get(status, "?")])
+	else:
+		parts.append("status=%d" % status)
+	if entry.has("importance"):
+		var importance := int(entry["importance"])
+		parts.append("importance=%s" % IMPORTANCE_NAMES.get(importance, str(importance)))
+	var rss := int(entry.get("rss", 0))
+	var pss := int(entry.get("pss", 0))
+	if rss > 0 or pss > 0:
+		parts.append("rss=%dMB pss=%dMB" % [int(rss / 1024.0), int(pss / 1024.0)])
+	var timestamp := int(entry.get("timestamp", 0))
+	if timestamp > 0:
+		parts.append("at %s UTC" % Time.get_datetime_string_from_unix_time(int(timestamp / 1000.0), true))
+	var description := str(entry.get("description", ""))
+	if description != "":
+		parts.append("description=\"%s\"" % description)
+	return " | ".join(parts)
+
+
+## Pure: the report section for Android's exit reasons (newest first, EXIT_SHOWN entries).
+## `note` says why there are none (shown when entries is empty).
+static func format_exit_reasons(entries: Array, note: String) -> String:
+	if entries.is_empty():
+		return "Android exit reasons (system record): not available (%s)" % (note if note != "" else "no entries")
+	var lines := PackedStringArray(["Android exit reasons (system record), newest first:"])
+	for i in mini(EXIT_SHOWN, entries.size()):
+		lines.append("  %d. %s" % [i + 1, format_exit_info(entries[i])])
+	return "\n".join(lines)
+
+
+## Pure: crash-loop protection. After an abnormal close on a device the next launch runs with the
+## trimmed visuals (low memory mode) unless they are already on. Desktop is left alone: killing the
+## debugger there is routine.
+static func should_enable_safe_visuals(verdict: String, mobile: bool, already_on: bool) -> bool:
+	return mobile and not already_on and verdict.begins_with("ABNORMAL")
+
+
+## Pure: the visual flags of a session, recorded in the journal START line.
+static func visual_flags_summary(low_memory: bool, low_quality: bool, reduced_motion: bool) -> String:
+	return "visuals: low_memory=%s low_quality=%s reduced_motion=%s" % [
+		_on_off(low_memory), _on_off(low_quality), _on_off(reduced_motion)]
+
+
+static func _on_off(value: bool) -> String:
+	return "on" if value else "off"
 
 
 ## Pure: the most recent lines that are not heartbeats (start, lifecycle, memory warnings, errors).
@@ -201,12 +298,102 @@ func _log(tag: String, detail: String) -> void:
 
 
 func _write_report(verdict: String, lines: PackedStringArray,
-		engine_log: PackedStringArray = PackedStringArray()) -> void:
+		engine_log: PackedStringArray = PackedStringArray(), exit_reasons: String = "",
+		safe_note: String = "") -> void:
 	var report := FileAccess.open(report_path, FileAccess.WRITE)
 	if report == null:
 		return
-	report.store_string(format_report(verdict, _device_summary(), lines, engine_log))
+	report.store_string(format_report(verdict, _device_summary(), lines, engine_log, exit_reasons, safe_note))
 	report.close()
+
+
+## Crash-loop protection (see should_enable_safe_visuals). GameState is reached by path so this
+## autoload stays independent of it; it must load before this one (project.godot order). Returns the
+## note for the report, "" when nothing changed.
+func _enable_safe_visuals(verdict: String) -> String:
+	var state := get_node_or_null("/root/GameState")
+	if state == null:
+		return ""
+	if not should_enable_safe_visuals(verdict, PlatformProfile.is_mobile(), state.low_memory_mode):
+		return ""
+	state.set_low_memory_mode(true)
+	return SAFE_VISUALS_NOTE
+
+
+func _visual_flags() -> String:
+	var state := get_node_or_null("/root/GameState")
+	if state == null:
+		return "visuals: unknown"
+	return visual_flags_summary(state.low_memory_mode, VisualTuning.is_low_quality(), state.reduced_motion)
+
+
+## Android only: asks the system why the previous processes of this app died. {supported, entries
+## (newest first, one Dictionary per ApplicationExitInfo), note (why there are no entries)}. Every
+## step is guarded: a missing singleton or an unexpected return type only fills `note`.
+func _query_system_exit_reasons() -> Dictionary:
+	var result := {"supported": false, "entries": [], "note": ""}
+	if not OS.has_feature("android"):
+		return result
+	result["supported"] = true
+	if not Engine.has_singleton("AndroidRuntime"):
+		result["note"] = "AndroidRuntime singleton missing"
+		return result
+	var runtime: Object = Engine.get_singleton("AndroidRuntime")
+	var activity: Variant = runtime.call(&"getActivity")
+	if not activity is Object:
+		result["note"] = "getActivity() returned no object"
+		return result
+	var manager: Variant = (activity as Object).call(&"getSystemService", "activity")
+	if not manager is Object:
+		result["note"] = "ActivityManager unavailable"
+		return result
+	var package_name: Variant = _java_call(activity, &"getPackageName", FALLBACK_PACKAGE)
+	var list: Variant = (manager as Object).call(&"getHistoricalProcessExitReasons",
+		package_name if package_name is String and package_name != "" else FALLBACK_PACKAGE, 0, EXIT_QUERY_MAX)
+	if not list is Object:
+		result["note"] = "getHistoricalProcessExitReasons returned no list (needs Android 11+)"
+		return result
+	var count := int(_java_call(list, &"size", 0))
+	var entries: Array = result["entries"]
+	for i in mini(count, EXIT_QUERY_MAX):
+		var info: Variant = (list as Object).call(&"get", i)
+		if info is Object:
+			entries.append(_read_exit_info(info))
+	if entries.is_empty():
+		result["note"] = "the system holds no exit record for this app yet (%d entries)" % count
+	return result
+
+
+func _read_exit_info(info: Object) -> Dictionary:
+	return {
+		"reason": int(_java_call(info, &"getReason", 0)),
+		"status": int(_java_call(info, &"getStatus", 0)),
+		"description": str(_java_call(info, &"getDescription", "")),
+		"importance": int(_java_call(info, &"getImportance", 0)),
+		"rss": int(_java_call(info, &"getRss", 0)),
+		"pss": int(_java_call(info, &"getPss", 0)),
+		"timestamp": int(_java_call(info, &"getTimestamp", 0)),
+	}
+
+
+## Calls a Java method through the wrapper; `fallback` when the call returns null.
+static func _java_call(object: Variant, method: StringName, fallback: Variant) -> Variant:
+	if not object is Object:
+		return fallback
+	var value: Variant = (object as Object).call(method)
+	return fallback if value == null else value
+
+
+## Writes the system's exit reasons into the journal so they survive with the session.
+func _log_system_exit(system_exit: Dictionary) -> void:
+	if not system_exit["supported"]:
+		return
+	var entries: Array = system_exit["entries"]
+	if entries.is_empty():
+		_log("SYSTEM_EXIT_REASON", "not available (%s)" % system_exit["note"])
+		return
+	for i in mini(EXIT_SHOWN, entries.size()):
+		_log("SYSTEM_EXIT_REASON", "%d. %s" % [i + 1, format_exit_info(entries[i])])
 
 
 ## Overlay shown after an abnormal exit: the report text, a button that copies it to the clipboard

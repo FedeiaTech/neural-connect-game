@@ -72,6 +72,14 @@ func test_reduced_motion_shows_the_summary_at_once() -> void:
 	assert_bool(_hud.is_sweeping()).is_false()
 
 
+func test_low_memory_mode_skips_the_light_sweep() -> void:
+	GameState.low_memory_mode = true
+	_hud.show_completion(_three_stars())
+	GameState.low_memory_mode = false
+	assert_bool(_hud.is_sweeping()).is_false()
+	assert_int(_hud.get_star_count()).is_equal(3)
+
+
 func test_hiding_the_summary_stops_the_reveal() -> void:
 	_hud.show_completion(_three_stars())
 	_hud.hide_completion()

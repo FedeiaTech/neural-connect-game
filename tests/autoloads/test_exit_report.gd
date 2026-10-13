@@ -97,6 +97,74 @@ func test_latest_rotated_log_ignores_the_current_log() -> void:
 	assert_str(ExitReportScript.latest_rotated_log(PackedStringArray(["godot.log"]))).is_equal("")
 
 
+func test_exit_reason_codes_map_to_android_names() -> void:
+	assert_str(ExitReportScript.exit_reason_name(5)).is_equal("CRASH_NATIVE")
+	assert_str(ExitReportScript.exit_reason_name(4)).is_equal("CRASH")
+	assert_str(ExitReportScript.exit_reason_name(3)).is_equal("LOW_MEMORY")
+	assert_str(ExitReportScript.exit_reason_name(6)).is_equal("ANR")
+	assert_str(ExitReportScript.exit_reason_name(2)).is_equal("SIGNALED")
+	assert_str(ExitReportScript.exit_reason_name(10)).is_equal("USER_REQUESTED")
+	assert_str(ExitReportScript.exit_reason_name(16)).is_equal("PACKAGE_UPDATED")
+	assert_str(ExitReportScript.exit_reason_name(999)).is_equal("UNKNOWN(999)")
+
+
+func test_native_crash_entry_shows_the_signal_memory_and_description() -> void:
+	var entry := {"reason": 5, "status": 11, "description": "crash_native: signal 11", "importance": 100,
+		"rss": 122880, "pss": 102400, "timestamp": 1760310000000}
+	var text: String = ExitReportScript.format_exit_info(entry)
+	assert_str(text).contains("CRASH_NATIVE (code 5)")
+	assert_str(text).contains("SIGSEGV")
+	assert_str(text).contains("importance=FOREGROUND")
+	assert_str(text).contains("rss=120MB")
+	assert_str(text).contains("pss=100MB")
+	assert_str(text).contains("crash_native: signal 11")
+	assert_str(text).contains("2025-10-12")
+
+
+func test_non_signal_entry_shows_a_plain_status() -> void:
+	var text: String = ExitReportScript.format_exit_info({"reason": 3, "status": 0, "importance": 400})
+	assert_str(text).contains("LOW_MEMORY")
+	assert_str(text).contains("status=0")
+	assert_str(text).contains("importance=CACHED")
+	assert_bool(text.contains("SIG")).is_false()
+
+
+func test_exit_reasons_section_keeps_three_entries_newest_first() -> void:
+	var entries: Array = []
+	for reason in [5, 3, 6, 4, 2]:
+		entries.append({"reason": reason, "status": 0})
+	var section: String = ExitReportScript.format_exit_reasons(entries, "")
+	assert_str(section).contains("Android exit reasons (system record)")
+	assert_str(section).contains("1. CRASH_NATIVE")
+	assert_str(section).contains("3. ANR")
+	assert_bool(section.contains("4. ")).is_false()
+
+
+func test_exit_reasons_section_explains_when_unavailable() -> void:
+	var section: String = ExitReportScript.format_exit_reasons([], "AndroidRuntime singleton missing")
+	assert_str(section).contains("not available")
+	assert_str(section).contains("AndroidRuntime singleton missing")
+
+
+func test_report_includes_the_exit_reasons_and_the_safe_visuals_note() -> void:
+	var report: String = ExitReportScript.format_report("V", "D", PackedStringArray(["[1.0s] START"]),
+		PackedStringArray(), "Android exit reasons (system record), newest first:\n  1. CRASH_NATIVE", "Safe visuals were enabled")
+	assert_str(report).contains("1. CRASH_NATIVE")
+	assert_str(report).contains("Safe visuals were enabled")
+
+
+func test_safe_visuals_turn_on_only_after_an_abnormal_close_on_a_device() -> void:
+	assert_bool(ExitReportScript.should_enable_safe_visuals("ABNORMAL, x", true, false)).is_true()
+	assert_bool(ExitReportScript.should_enable_safe_visuals("CLEAN, x", true, false)).is_false()
+	assert_bool(ExitReportScript.should_enable_safe_visuals("ABNORMAL, x", false, false)).is_false()
+	assert_bool(ExitReportScript.should_enable_safe_visuals("ABNORMAL, x", true, true)).is_false()
+
+
+func test_visual_flags_summary_names_every_flag() -> void:
+	var text: String = ExitReportScript.visual_flags_summary(true, false, true)
+	assert_str(text).is_equal("visuals: low_memory=on low_quality=off reduced_motion=on")
+
+
 func test_last_lines_returns_the_end_of_a_text() -> void:
 	var text := "a\nb\nc\nd\n"
 	var lines: PackedStringArray = ExitReportScript.last_lines(text, 2)

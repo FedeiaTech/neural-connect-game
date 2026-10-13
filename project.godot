@@ -11,15 +11,15 @@ config_version=5
 [application]
 
 config/name="Neural-connect"
-config/version="1.01"
+config/version="1.02"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
-ExitReport="*res://scripts/autoloads/exit_report.gd"
 GameState="*res://scripts/autoloads/game_state.gd"
+ExitReport="*res://scripts/autoloads/exit_report.gd"
 
 [debug]
 

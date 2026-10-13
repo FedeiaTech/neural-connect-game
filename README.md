@@ -57,8 +57,10 @@ Tests use [gdUnit4](https://github.com/MikeSchulze/gdUnit4) (bundled in `addons/
 ## Diagnostics
 
 If the app closes unexpectedly, the next launch shows a report (device, a one-second heartbeat with
-process and GPU memory, key events and the tail of the engine log) with a button to copy it. It is also written to `exit_report.txt`
-in the app's user folder.
+process and GPU memory, key events, the tail of the engine log and, on Android, the system's own
+exit reason) with a button to copy it. It is also written to `exit_report.txt` in the app's user
+folder. After an abnormal close on a device, the next launch turns on low memory mode (it skips the
+extra shaders and particles) and says so in the report; it can be switched off in Settings.
 
 ## Credits
 

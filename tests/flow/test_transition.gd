@@ -21,6 +21,18 @@ func after_test() -> void:
 	_sandbox.exit()
 
 
+func test_low_memory_mode_swaps_the_iris_for_a_plain_fade_live() -> void:
+	var fade: ColorRect = _transition.get_node("Fade")
+	assert_object(fade.material).is_instanceof(ShaderMaterial)
+	GameState.low_memory_mode = true
+	GameState.settings_changed.emit()
+	assert_object(fade.material).is_null()
+	assert_float(fade.color.r).is_equal(0.0)
+	GameState.low_memory_mode = false
+	GameState.settings_changed.emit()
+	assert_object(fade.material).is_instanceof(ShaderMaterial)
+
+
 func test_reduced_motion_is_instant() -> void:
 	assert_float(_transition.get_alpha()).is_equal(0.0)
 	_transition.cover()

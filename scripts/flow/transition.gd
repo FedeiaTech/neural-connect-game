@@ -12,10 +12,14 @@ const FADE_DURATION := 0.35
 @onready var _fade: ColorRect = $Fade
 
 var _tween: Tween
+var _iris_material: Material
 
 
 ## Starts covered so the first screen fades in from black.
 func _ready() -> void:
+	_iris_material = _fade.material
+	GameState.settings_changed.connect(_apply_style)
+	_apply_style()
 	set_alpha(1.0)
 	_fade.mouse_filter = Control.MOUSE_FILTER_STOP
 
@@ -46,6 +50,11 @@ func is_animating() -> bool:
 
 func is_blocking_input() -> bool:
 	return _fade.mouse_filter == Control.MOUSE_FILTER_STOP
+
+
+## Low memory mode drops the iris shader: the rect (black, alpha = progress) is a plain fade.
+func _apply_style() -> void:
+	_fade.material = null if VisualTuning.is_low_memory() else _iris_material
 
 
 func _fade_to(alpha: float) -> void:

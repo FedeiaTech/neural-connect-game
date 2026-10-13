@@ -6,6 +6,8 @@ extends Control
 
 const HeaderShader := preload("res://assets/shaders/chapter_header.gdshader")
 const HEIGHT := 150.0
+## Backdrop alpha when the shader is skipped (low memory mode).
+const FLAT_TINT_ALPHA := 0.14
 ## Chapter accents by chapter id (T8.4): each chapter wears the color of the mechanic it teaches
 ## (cold white, white, red anchors, green tension, ember orange, violet wires, cyan receptors,
 ## toxic yellow); the finale burns warm white-red. Ids past the table cycle through it.
@@ -67,6 +69,12 @@ func setup(chapter_id: int, title: String, subtitle: String) -> void:
 	_material.set_shader_parameter(&"seed", seed_for(chapter_id))
 	_material.set_shader_parameter(&"accent", accent_for(chapter_id))
 	_material.set_shader_parameter(&"motion", VisualTuning.motion_scale())
+	# Low memory mode skips the backdrop shader: a flat, dim tint of the chapter accent.
+	if VisualTuning.is_low_memory():
+		_backdrop.material = null
+		_backdrop.color = Color(accent_for(chapter_id), FLAT_TINT_ALPHA)
+	else:
+		_backdrop.material = _material
 
 
 func get_title_text() -> String:
