@@ -454,9 +454,10 @@ func _read_lines(path: String) -> PackedStringArray:
 
 
 func _device_summary() -> String:
-	return "%s | model=%s | cpu=%s | gpu=%s | godot=%s | screen=%s | app=%s" % [
+	return "%s | model=%s | cpu=%s | gpu=%s | renderer=%s/%s | godot=%s | screen=%s | app=%s" % [
 		_os_summary(), OS.get_model_name(), OS.get_processor_name(),
-		RenderingServer.get_video_adapter_name(), Engine.get_version_info().get("string", "?"),
+		RenderingServer.get_video_adapter_name(), RenderingServer.get_current_rendering_method(),
+		RenderingServer.get_current_rendering_driver_name(), Engine.get_version_info().get("string", "?"),
 		DisplayServer.screen_get_size(), ProjectSettings.get_setting("application/config/version", "?")]
 
 

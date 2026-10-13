@@ -5,7 +5,9 @@ crosses another, and let the signal through.
 
 Made by **Federico Iacono** at **Chainsaw Games - iaTech**.
 
-- Engine: Godot 4.7 (GL Compatibility renderer), GDScript only
+- Engine: Godot 4.7, GDScript only. Desktop uses the GL Compatibility renderer; Android uses
+  Vulkan (Forward Mobile), because the OpenGL ES driver of the test device (Mali-G52) crashed with
+  SIGSEGV. To go back, set `renderer/rendering_method.mobile` to `gl_compatibility`.
 - Platforms: Windows (desktop) and Android (touch-first layout)
 - Content: 48 hand-designed missions in 9 chapters, each ending in a boss
 - Languages: English and Spanish

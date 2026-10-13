@@ -47,7 +47,7 @@ func test_main_menu_shows_the_project_version() -> void:
 	var expected := "v%s" % ProjectSettings.get_setting("application/config/version")
 	assert_str(MainMenu.version_text()).is_equal(expected)
 	assert_str((menu.get_node("VersionLabel") as Label).text).is_equal(expected)
-	assert_str(expected).is_equal("v1.02")
+	assert_str(expected).is_equal("v1.03")
 
 
 func test_credits_back_button_emits_back_pressed() -> void:
