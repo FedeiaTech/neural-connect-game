@@ -15,6 +15,7 @@ const ENTRANCE_DELAY := 0.45
 const ENTRANCE_STAGGER := 0.09
 const ENTRANCE_TIME := 0.5
 
+@onready var _version_label: Label = $VersionLabel
 @onready var _network: MenuNetworkView = $Network
 @onready var _title: GlowTitle = $Center/Column/Title
 @onready var _subtitle: Label = $Center/Column/Subtitle
@@ -24,7 +25,13 @@ const ENTRANCE_TIME := 0.5
 @onready var _quit_button: Button = $Center/Column/QuitButton
 
 
+## "v1.01": the project version (Project Settings > Application > Config > Version).
+static func version_text() -> String:
+	return "v%s" % ProjectSettings.get_setting("application/config/version", "?")
+
+
 func _ready() -> void:
+	_version_label.text = version_text()
 	_play_button.pressed.connect(play_pressed.emit)
 	_settings_button.pressed.connect(settings_pressed.emit)
 	_credits_button.pressed.connect(credits_pressed.emit)

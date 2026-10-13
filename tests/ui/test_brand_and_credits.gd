@@ -6,6 +6,7 @@ const SignalRecorder := preload("res://tests/model/signal_recorder.gd")
 const MainScene := preload("res://scenes/main.tscn")
 const BrandIntroScene := preload("res://scenes/screens/brand_intro.tscn")
 const CreditsScene := preload("res://scenes/screens/credits_screen.tscn")
+const MainMenuScene := preload("res://scenes/screens/main_menu.tscn")
 
 var _sandbox: Sandbox
 var _recorder: SignalRecorder
@@ -38,6 +39,15 @@ func test_brand_intro_finishes_once_when_skipped() -> void:
 	intro._unhandled_input(_press_key())
 	intro._unhandled_input(_press_key())
 	assert_int(_recorder.count(&"finished")).is_equal(1)
+
+
+func test_main_menu_shows_the_project_version() -> void:
+	var menu: MainMenu = auto_free(MainMenuScene.instantiate())
+	add_child(menu)
+	var expected := "v%s" % ProjectSettings.get_setting("application/config/version")
+	assert_str(MainMenu.version_text()).is_equal(expected)
+	assert_str((menu.get_node("VersionLabel") as Label).text).is_equal(expected)
+	assert_str(expected).is_equal("v1.01")
 
 
 func test_credits_back_button_emits_back_pressed() -> void:

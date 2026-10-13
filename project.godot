@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Neural-connect"
-config/version="0.1.0"
+config/version="1.01"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
