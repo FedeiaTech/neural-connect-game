@@ -56,8 +56,8 @@ Tests use [gdUnit4](https://github.com/MikeSchulze/gdUnit4) (bundled in `addons/
 
 ## Diagnostics
 
-If the app closes unexpectedly, the next launch shows a report (device, memory heartbeat and the
-last events before the close) with a button to copy it. It is also written to `exit_report.txt`
+If the app closes unexpectedly, the next launch shows a report (device, a one-second heartbeat with
+process and GPU memory, key events and the tail of the engine log) with a button to copy it. It is also written to `exit_report.txt`
 in the app's user folder.
 
 ## Credits
