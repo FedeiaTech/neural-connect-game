@@ -153,6 +153,19 @@ func test_report_includes_the_exit_reasons_and_the_safe_visuals_note() -> void:
 	assert_str(report).contains("Safe visuals were enabled")
 
 
+func test_report_includes_the_native_crash_trace_section() -> void:
+	var trace: String = NativeTrace.format_section(PackedStringArray(["/vendor/lib64/libGLES_mali.so"]), "")
+	var report: String = ExitReportScript.format_report("V", "D", PackedStringArray(["[1.0s] START"]),
+		PackedStringArray(), "", "", trace)
+	assert_str(report).contains("Native crash trace")
+	assert_str(report).contains("libGLES_mali.so")
+
+
+func test_report_has_no_trace_section_without_one() -> void:
+	var report: String = ExitReportScript.format_report("V", "D", PackedStringArray(["[1.0s] START"]))
+	assert_str(report).not_contains("Native crash trace")
+
+
 func test_safe_visuals_turn_on_only_after_an_abnormal_close_on_a_device() -> void:
 	assert_bool(ExitReportScript.should_enable_safe_visuals("ABNORMAL, x", true, false)).is_true()
 	assert_bool(ExitReportScript.should_enable_safe_visuals("CLEAN, x", true, false)).is_false()

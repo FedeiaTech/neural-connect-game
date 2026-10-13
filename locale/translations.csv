@@ -194,3 +194,14 @@ EXIT_REPORT_TITLE,The app closed unexpectedly last time,La app se cerró inesper
 EXIT_REPORT_COPY,Copy report,Copiar informe
 EXIT_REPORT_COPIED,Copied. Paste it in a message to send it.,Copiado. Pégalo en un mensaje para enviarlo.
 EXIT_REPORT_CLOSE,Close,Cerrar
+SETTINGS_DIAGNOSTICS,Diagnostics,Diagnóstico
+DIAG_TITLE,Diagnostics,Diagnóstico
+DIAG_INTRO,"Runs about six minutes of automatic checks to find what closes the app. If the app closes, open it again: the checks continue with the next step by themselves. At the end you get a report to copy and send.","Ejecuta unos seis minutos de pruebas automáticas para encontrar qué cierra la app. Si la app se cierra, ábrela de nuevo: las pruebas continúan solas con el paso siguiente. Al final tendrás un informe para copiar y enviar."
+DIAG_START,Start diagnostics,Iniciar diagnóstico
+DIAG_RERUN,Run again,Ejecutar de nuevo
+DIAG_RESET,Clear results,Borrar resultados
+DIAG_STEP,Step %d of %d: %s (%d / %d s),Paso %d de %d: %s (%d / %d s)
+DIAG_RESUMED,The app closed during the last step. Continuing with the next one.,La app se cerró durante el último paso. Se continúa con el siguiente.
+DIAG_HINT_PLAY,"Play freely for the whole step: drag neurons, restart, pause.","Juega libremente durante todo el paso: arrastra neuronas, reinicia, pausa."
+DIAG_HINT_APP,"Use the app freely: tap buttons, open missions, play.","Usa la app libremente: toca botones, abre misiones, juega."
+DIAG_DONE,Finished. The report was saved and can be copied.,Terminado. El informe se guardó y se puede copiar.

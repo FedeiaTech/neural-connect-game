@@ -64,6 +64,11 @@ exit reason) with a button to copy it. It is also written to `exit_report.txt` i
 folder. After an abnormal close on a device, the next launch turns on low memory mode (it skips the
 extra shaders and particles) and says so in the report; it can be switched off in Settings.
 
+Settings > Diagnostics runs an automatic battery (about six minutes, `scripts/diagnostics`) that
+isolates each suspect of a native crash in its own step and survives the crash: the next launch marks
+the step the app died in as crashed and continues with the next one. It ends with a matrix report
+(also written to `diagnostics_report.txt` and the Downloads folder) that can be copied.
+
 ## Credits
 
 Developed by Federico Iacono.

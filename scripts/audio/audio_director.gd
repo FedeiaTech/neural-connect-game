@@ -209,6 +209,29 @@ func _process(_delta: float) -> void:
 	set_process(false)
 
 
+## Diagnostics: stops every voice, the ambient drone included, so a check can run on a silent
+## device. restore() brings the drone back.
+func silence() -> void:
+	if _ambient_tween != null:
+		_ambient_tween.kill()
+	if _buzz_tween != null:
+		_buzz_tween.kill()
+	_ambient_on = false
+	_buzz_on = false
+	_buzz_target_db = SILENT_DB
+	_alarm_on = false
+	_toxic_alarm_on = false
+	_diseased_on = false
+	_tension_on = false
+	for player: AudioStreamPlayer in _players.values():
+		player.stop()
+
+
+func restore() -> void:
+	if _sounds_ready and not _ambient_on:
+		_start_ambient()
+
+
 func are_sounds_ready() -> bool:
 	return _sounds_ready
 

@@ -20,6 +20,7 @@ const MainMenuScene := preload("res://scenes/screens/main_menu.tscn")
 const SettingsScene := preload("res://scenes/screens/settings_screen.tscn")
 const BrandIntroScene := preload("res://scenes/screens/brand_intro.tscn")
 const CreditsScene := preload("res://scenes/screens/credits_screen.tscn")
+const DiagnosticsScene := preload("res://scenes/screens/diagnostics_screen.tscn")
 const MissionSelectScene := preload("res://scenes/screens/mission_select.tscn")
 const LevelScene := preload("res://scenes/level/level.tscn")
 const TEMP_SAVE := "user://capture_progress.json"
@@ -69,6 +70,10 @@ func _ready() -> void:
 			add_child(BrandIntroScene.instantiate())
 		"credits":
 			add_child(CreditsScene.instantiate())
+		"diagnostics":
+			var diagnostics: DiagnosticsScreen = DiagnosticsScene.instantiate()
+			diagnostics.state_path = "user://capture_diagnostics_state.json"
+			add_child(diagnostics)
 		"settings", "settings_reset":
 			var settings: SettingsScreen = SettingsScene.instantiate()
 			add_child(settings)

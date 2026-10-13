@@ -10,10 +10,11 @@ extends Node
 
 signal screen_changed(screen: Screen)
 
-enum Screen { NONE, MAIN_MENU, MISSION_SELECT, LEVEL, SETTINGS, BRAND_INTRO, CREDITS }
+enum Screen { NONE, MAIN_MENU, MISSION_SELECT, LEVEL, SETTINGS, BRAND_INTRO, CREDITS, DIAGNOSTICS }
 
 const BrandIntroScene := preload("res://scenes/screens/brand_intro.tscn")
 const CreditsScene := preload("res://scenes/screens/credits_screen.tscn")
+const DiagnosticsScene := preload("res://scenes/screens/diagnostics_screen.tscn")
 const MainMenuScene := preload("res://scenes/screens/main_menu.tscn")
 const MissionSelectScene := preload("res://scenes/screens/mission_select.tscn")
 const SettingsScene := preload("res://scenes/screens/settings_screen.tscn")
@@ -23,6 +24,9 @@ const LevelScene := preload("res://scenes/level/level.tscn")
 @export var transition: Transition
 ## Optional; receives every new screen so it can play sounds from that screen's signals.
 @export var audio: AudioDirector
+## False for a host nested inside the diagnostic battery: its Settings screen hides the
+## Diagnostics button so a check can never open the battery inside itself.
+var diagnostics_enabled := true
 
 var _screen := Screen.NONE
 var _current: Node
@@ -91,6 +95,8 @@ func _swap(screen: Screen, mission_id: StringName) -> void:
 			_current = _enter_brand_intro()
 		Screen.CREDITS:
 			_current = _enter_credits()
+		Screen.DIAGNOSTICS:
+			_current = _enter_diagnostics()
 		Screen.LEVEL:
 			_current = _enter_level(mission_id)
 	_screen = screen if _current != null else Screen.NONE
@@ -132,6 +138,13 @@ func _enter_credits() -> Node:
 	return credits
 
 
+func _enter_diagnostics() -> Node:
+	var diagnostics: DiagnosticsScreen = DiagnosticsScene.instantiate()
+	add_child(diagnostics)
+	diagnostics.back_pressed.connect(go_to.bind(Screen.SETTINGS))
+	return diagnostics
+
+
 func _enter_mission_select() -> Node:
 	var select: MissionSelect = MissionSelectScene.instantiate()
 	add_child(select)
@@ -144,6 +157,10 @@ func _enter_settings() -> Node:
 	var settings: SettingsScreen = SettingsScene.instantiate()
 	add_child(settings)
 	settings.back_pressed.connect(go_to.bind(Screen.MAIN_MENU))
+	if diagnostics_enabled:
+		settings.diagnostics_pressed.connect(go_to.bind(Screen.DIAGNOSTICS))
+	else:
+		settings.set_diagnostics_available(false)
 	return settings
 
 

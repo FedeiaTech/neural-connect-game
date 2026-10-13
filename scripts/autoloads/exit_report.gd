@@ -26,6 +26,7 @@ const PAUSED_MARKER := " LIFECYCLE paused"
 const RESUMED_MARKER := " LIFECYCLE resumed"
 ## Android's own record of why the previous process died (ApplicationExitInfo, API 30+).
 const EXIT_QUERY_MAX := 5
+const TRACE_MAX_BYTES := 262144
 const EXIT_SHOWN := 3
 const FALLBACK_PACKAGE := "com.fedeiatech.neuralconnect"
 const SAFE_VISUALS_NOTE := "Safe visuals were enabled automatically after an abnormal close; " \
@@ -52,6 +53,14 @@ const IMPORTANCE_NAMES := {
 
 var journal_path := JOURNAL_PATH
 var report_path := REPORT_PATH
+## What the system said about the previous process (the "Android exit reasons" section, and the
+## readable part of its native crash tombstone). Empty when there was nothing to say. The diagnostics
+## battery attaches them to the step the app died in.
+var last_exit_text := ""
+var last_trace_text := ""
+## Where the battery keeps its run; while one is in progress a close is expected and not reported
+## on its own (the battery shows it in its matrix) and the safe visuals stay off.
+var diagnostics_state_path := DiagnosticState.DEFAULT_PATH
 
 var _file: FileAccess
 var _lines: PackedStringArray = []
@@ -77,14 +86,19 @@ func begin_session() -> void:
 	var exit_text := ""
 	if system_exit["supported"]:
 		exit_text = format_exit_reasons(system_exit["entries"], system_exit["note"])
+	last_exit_text = exit_text
+	last_trace_text = NativeTrace.format_section(system_exit["trace_lines"], system_exit["trace_note"])
 	if not previous.is_empty():
 		var verdict := verdict_for(previous)
 		if not verdict.begins_with("CLEAN"):
-			var safe_note := _enable_safe_visuals(verdict)
+			var diagnosing := DiagnosticState.is_active_on_disk(diagnostics_state_path)
+			var safe_note := "" if diagnosing else _enable_safe_visuals(verdict)
 			var engine_log := _previous_engine_log()
-			_write_report("PREVIOUS SESSION: " + verdict, previous, engine_log, exit_text, safe_note)
-			_show_report.call_deferred(format_report("PREVIOUS SESSION: " + verdict, _device_summary(),
-				previous, engine_log, exit_text, safe_note))
+			_write_report("PREVIOUS SESSION: " + verdict, previous, engine_log, exit_text, safe_note,
+				last_trace_text)
+			if not diagnosing:
+				_show_report.call_deferred(format_report("PREVIOUS SESSION: " + verdict, _device_summary(),
+					previous, engine_log, exit_text, safe_note, last_trace_text))
 	_file = FileAccess.open(journal_path, FileAccess.WRITE)
 	_lines = []
 	_logger = _ErrorLogger.new(_log_engine_error)
@@ -118,7 +132,7 @@ static func verdict_for(lines: PackedStringArray) -> String:
 ## tail of the same session, Android's exit-reason section and a note about safe visuals.
 static func format_report(verdict: String, device: String, lines: PackedStringArray,
 		engine_log: PackedStringArray = PackedStringArray(), exit_reasons: String = "",
-		safe_note: String = "") -> String:
+		safe_note: String = "", trace_section: String = "") -> String:
 	var tail := lines.slice(maxi(0, lines.size() - TAIL_LINES))
 	var events := key_events(lines)
 	var engine_section := "Engine log: not available"
@@ -130,6 +144,8 @@ static func format_report(verdict: String, device: String, lines: PackedStringAr
 		head += "Safe visuals: %s\n" % safe_note
 	if exit_reasons != "":
 		head += "\n%s\n" % exit_reasons
+	if trace_section != "":
+		head += "\n%s\n" % trace_section
 	return head + "\nKey events (%d):\n%s\n\n" % [events.size(), "\n".join(events)] \
 		+ "Last %d journal lines (oldest first):\n%s\n\n%s\n" % [tail.size(), "\n".join(tail), engine_section]
 
@@ -299,11 +315,12 @@ func _log(tag: String, detail: String) -> void:
 
 func _write_report(verdict: String, lines: PackedStringArray,
 		engine_log: PackedStringArray = PackedStringArray(), exit_reasons: String = "",
-		safe_note: String = "") -> void:
+		safe_note: String = "", trace_section: String = "") -> void:
 	var report := FileAccess.open(report_path, FileAccess.WRITE)
 	if report == null:
 		return
-	report.store_string(format_report(verdict, _device_summary(), lines, engine_log, exit_reasons, safe_note))
+	report.store_string(format_report(verdict, _device_summary(), lines, engine_log, exit_reasons, safe_note,
+		trace_section))
 	report.close()
 
 
@@ -331,7 +348,8 @@ func _visual_flags() -> String:
 ## (newest first, one Dictionary per ApplicationExitInfo), note (why there are no entries)}. Every
 ## step is guarded: a missing singleton or an unexpected return type only fills `note`.
 func _query_system_exit_reasons() -> Dictionary:
-	var result := {"supported": false, "entries": [], "note": ""}
+	var result := {"supported": false, "entries": [], "note": "", "trace_lines": PackedStringArray(),
+		"trace_note": ""}
 	if not OS.has_feature("android"):
 		return result
 	result["supported"] = true
@@ -358,7 +376,14 @@ func _query_system_exit_reasons() -> Dictionary:
 	for i in mini(count, EXIT_QUERY_MAX):
 		var info: Variant = (list as Object).call(&"get", i)
 		if info is Object:
-			entries.append(_read_exit_info(info))
+			var entry := _read_exit_info(info)
+			entries.append(entry)
+			# Only the newest native crash: its tombstone names the library and function that failed.
+			if int(entry["reason"]) == REASON_CRASH_NATIVE and result["trace_lines"].is_empty() \
+					and result["trace_note"] == "":
+				var trace := _read_trace(info)
+				result["trace_lines"] = trace["lines"]
+				result["trace_note"] = trace["note"]
 	if entries.is_empty():
 		result["note"] = "the system holds no exit record for this app yet (%d entries)" % count
 	return result
@@ -374,6 +399,39 @@ func _read_exit_info(info: Object) -> Dictionary:
 		"pss": int(_java_call(info, &"getPss", 0)),
 		"timestamp": int(_java_call(info, &"getTimestamp", 0)),
 	}
+
+
+## The readable text of the tombstone Android keeps for a native crash (ApplicationExitInfo
+## .getTraceInputStream(), API 31+, read whole with InputStream.readAllBytes() on API 33+ and byte by
+## byte before that). {lines, note}; every step is guarded and `note` says why there are no lines.
+func _read_trace(info: Object) -> Dictionary:
+	var out := {"lines": PackedStringArray(), "note": ""}
+	var stream: Variant = info.call(&"getTraceInputStream")
+	if not stream is Object:
+		out["note"] = "the system keeps no trace for this crash"
+		return out
+	var data: Variant = (stream as Object).call(&"readAllBytes")
+	var bytes := PackedByteArray()
+	if data is PackedByteArray:
+		bytes = data
+	else:
+		bytes = _read_stream_bytes(stream as Object)
+	_java_call(stream, &"close", null)
+	out["lines"] = NativeTrace.relevant_lines(bytes)
+	if out["lines"].is_empty():
+		out["note"] = "the tombstone has no readable library or function names (%d bytes read)" % bytes.size()
+	return out
+
+
+## Reads an InputStream one byte at a time (slow, but only a fallback), up to TRACE_MAX_BYTES.
+func _read_stream_bytes(stream: Object) -> PackedByteArray:
+	var bytes := PackedByteArray()
+	while bytes.size() < TRACE_MAX_BYTES:
+		var value: Variant = stream.call(&"read")
+		if not value is int or int(value) < 0:
+			break
+		bytes.append(int(value))
+	return bytes
 
 
 ## Calls a Java method through the wrapper; `fallback` when the call returns null.
@@ -434,13 +492,21 @@ func _show_report(text: String) -> void:
 
 
 func _copy_to_downloads(text: String) -> void:
+	write_to_downloads(text, "neural_connect_exit_report.txt")
+
+
+## Best effort: writes text into the public Downloads folder (where the player can find it without
+## a cable). False when the folder is unknown or not writable.
+static func write_to_downloads(text: String, file_name: String) -> bool:
 	var dir := OS.get_system_dir(OS.SYSTEM_DIR_DOWNLOADS)
 	if dir == "":
-		return
-	var file := FileAccess.open(dir.path_join("neural_connect_exit_report.txt"), FileAccess.WRITE)
-	if file != null:
-		file.store_string(text)
-		file.close()
+		return false
+	var file := FileAccess.open(dir.path_join(file_name), FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(text)
+	file.close()
+	return true
 
 
 func _read_lines(path: String) -> PackedStringArray:

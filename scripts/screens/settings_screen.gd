@@ -9,6 +9,8 @@ extends Control
 ## calls GameState.set_language() and every visible text follows at once.
 
 signal back_pressed()
+## Opens the on-device diagnostic battery (DiagnosticsScreen).
+signal diagnostics_pressed()
 
 const PERCENT := 100.0
 const COLUMN := "Center/Panel/Column/"
@@ -21,7 +23,8 @@ const LANGUAGE_NAMES := {"en": "English", "es": "Español"}
 @onready var _volume_value: Label = get_node(COLUMN + "VolumeRow/VolumeValue")
 @onready var _motion_toggle: CheckButton = get_node(COLUMN + "ReducedMotionToggle")
 @onready var _low_memory_toggle: CheckButton = get_node(COLUMN + "LowMemoryToggle")
-@onready var _back_button: Button = get_node(COLUMN + "BackButton")
+@onready var _back_button: Button = get_node(COLUMN + "FooterRow/BackButton")
+@onready var _diagnostics_button: Button = get_node(COLUMN + "FooterRow/DiagnosticsButton")
 @onready var _title: GlowTitle = get_node(COLUMN + "Title")
 @onready var _language_selector: OptionButton = get_node(COLUMN + "LanguageRow/LanguageSelector")
 @onready var _reset_button: Button = get_node(RESET + "ResetButton")
@@ -45,6 +48,7 @@ func _ready() -> void:
 	_motion_toggle.toggled.connect(GameState.set_reduced_motion)
 	_low_memory_toggle.toggled.connect(GameState.set_low_memory_mode)
 	_back_button.pressed.connect(back_pressed.emit)
+	_diagnostics_button.pressed.connect(diagnostics_pressed.emit)
 	_reset_button.pressed.connect(_ask_reset)
 	_confirm_button.pressed.connect(_confirm_reset)
 	_cancel_button.pressed.connect(_close_reset)
@@ -82,6 +86,15 @@ func get_title() -> GlowTitle:
 
 func get_back_button() -> Button:
 	return _back_button
+
+
+func get_diagnostics_button() -> Button:
+	return _diagnostics_button
+
+
+## Hides the Diagnostics button where the battery must not open (inside a check of its own).
+func set_diagnostics_available(available: bool) -> void:
+	_diagnostics_button.visible = available
 
 
 func get_reset_button() -> Button:

@@ -4,6 +4,24 @@ Newest first. The version shown on the main menu (`v1.03`) comes from `applicati
 `project.godot`; the Android preset (`export_presets.cfg`) keeps the same name and an increasing
 version code. Exported APKs are named `NeuralConnect-<version>.apk`.
 
+## 1.04 (2026-10-13) - Diagnostic battery
+
+- New Settings > Diagnostics: about six minutes of automatic checks that each isolate one suspect of
+  the native crash (bare app, menu, triangle-array drawing, meshes, neuron and dendrite shaders,
+  whole mission, simulated play, particles, every sound, audio loops, synthesis worker threads, iris
+  transition, mission map, studio logo, screen changes with and without audio, and two manual steps
+  where the player touches the screen).
+- It survives the crash it is hunting: each step is written to disk before it starts, so after the
+  app dies the next launch records the step as CRASHED (with how long it ran and the process uptime)
+  and continues with the next one by itself. Open the app again, nothing else to do.
+- The final report is a matrix of steps (OK / CRASHED / SKIPPED with fps and memory), hints (a time
+  pattern between crashes, touch input) and a device block (renderer, GPU, audio, display). It is
+  saved to the app folder and Downloads, with a Copy button.
+- The exit report reads the readable part of the system tombstone of a native crash (library and
+  function names) and shows it in a "Native crash trace" section.
+- A run in progress suppresses the exit-report overlay and the automatic safe visuals, so the
+  battery is not disturbed.
+
 ## 1.03 (2026-10-12) - Vulkan on Android
 
 - Android now renders with Vulkan (Forward Mobile) instead of OpenGL ES. Desktop keeps GL

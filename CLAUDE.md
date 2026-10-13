@@ -28,6 +28,12 @@ Decisions already made (all details in `docs/SDD.md`, do not re-ask):
 - Settings (saved in `progress.json`): volume, reduced motion, language, low memory mode (`VisualTuning.is_low_memory()`: forces low quality, static crossing sparks, quarter-size bursts).
 - GDScript only. Tests with gdUnit4. Write the model test-first.
 
+Diagnostics: `scripts/diagnostics` is the on-device crash battery (Settings > Diagnostics): `DiagnosticSteps`
+holds the isolated checks (add a `DiagnosticStep` subclass there to test a new suspect), `DiagnosticRunner` runs
+them and `DiagnosticState` persists BEGIN/END per step so a relaunch resumes after a native crash; main.gd routes
+to the battery when a run is in progress. Steps must not open the battery from inside (nested hosts set
+`diagnostics_enabled = false`).
+
 Versions: every exported build bumps `config/version` (project.godot) and the Android preset
 (`version/name`, `version/code`, `export_path`), adds an entry to `version.md` and copies that file to
 `export/` next to the APK.

@@ -6,11 +6,17 @@ extends Node
 
 ## Show the Chainsaw Games splash first. Set before the node enters the tree.
 var show_brand_intro := true
+## A diagnostic run in progress (DiagnosticRunner) takes over the launch: its screen continues with
+## the step after the one the app died in. Set before the node enters the tree.
+var diagnostics_state_path := DiagnosticState.DEFAULT_PATH
 
 @onready var _screen_host: ScreenHost = $ScreenHost
 
 
 func _ready() -> void:
+	if DiagnosticState.is_active_on_disk(diagnostics_state_path):
+		_screen_host.go_to(ScreenHost.Screen.DIAGNOSTICS)
+		return
 	_screen_host.go_to(ScreenHost.Screen.BRAND_INTRO if show_brand_intro else ScreenHost.Screen.MAIN_MENU)
 
 
